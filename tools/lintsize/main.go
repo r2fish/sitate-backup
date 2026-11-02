@@ -105,7 +105,7 @@ func checkFile(f string, errw *os.File) (int, int, bool) {
 }
 
 // targets は検査の対象を返す。HEAD が無いとき(最初の commit の前)は管理下と未追跡の全部、
-// あるときは LINT_BASE からの git diff --name-only(必須)。いずれも git の管理下のファイルに限る。
+// あるときは LINT_BASE からの git diff --name-only(必須)と未追跡のファイル(commit の前の受け入れで新しいファイルを見落とさない)。
 func targets(base string) ([]string, error) {
 	if exec.Command("git", "rev-parse", "--verify", "-q", "HEAD").Run() != nil {
 		return gitLines("ls-files", "--cached", "--others", "--exclude-standard")
@@ -113,7 +113,15 @@ func targets(base string) ([]string, error) {
 	if base == "" {
 		return nil, fmt.Errorf("LINT_BASE=<開始 commit> が要ります(HEAD があるとき)")
 	}
-	return gitLines("diff", "--name-only", base)
+	changed, err := gitLines("diff", "--name-only", base)
+	if err != nil {
+		return nil, err
+	}
+	untracked, err := gitLines("ls-files", "--others", "--exclude-standard")
+	if err != nil {
+		return nil, err
+	}
+	return append(changed, untracked...), nil
 }
 
 func gitLines(args ...string) ([]string, error) {
