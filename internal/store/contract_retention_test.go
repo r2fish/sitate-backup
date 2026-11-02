@@ -28,6 +28,7 @@ func newRetentionState(t *testing.T, items map[string]any) (*Retention, *fake.Ob
 	t.Helper()
 	st, clk, _ := fake.NewTestStore(fake.RoleWrite)
 	sf := &fake.StateFiles{Items: map[string]json.RawMessage{}}
+	sf.Items["sealed"] = json.RawMessage("true") // prune は sealed が true のときだけ進む
 	for k, v := range items {
 		b, _ := json.Marshal(v)
 		sf.Items[k] = b

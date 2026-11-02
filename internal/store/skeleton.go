@@ -56,6 +56,16 @@ func (*ObjectStore) BucketConfig(ctx context.Context) (contract.BucketConfig, er
 	return r0, contract.ErrNotImplemented("store.ObjectStore.BucketConfig")
 }
 
+// RetainUntil は contract.ObjectStore を満たす。
+func (*ObjectStore) RetainUntil(ctx context.Context, key, versionID string) (time.Time, error) {
+	return time.Time{}, contract.ErrNotImplemented("store.ObjectStore.RetainUntil")
+}
+
+// CheckSkew は contract.ObjectStore を満たす。
+func (*ObjectStore) CheckSkew(ctx context.Context) error {
+	return contract.ErrNotImplemented("store.ObjectStore.CheckSkew")
+}
+
 // StoreTime は contract.ObjectStore を満たす。
 func (*ObjectStore) StoreTime(ctx context.Context) (time.Time, error) {
 	var r0 time.Time

@@ -107,3 +107,9 @@ D-0157 の申し送り 6 件を直した。そのときに決めた形と、見�
 - `PR_SET_PDEATHSIG` は直接の子にしか効かず、核を SIGKILL すると孫が残る(規則 13)。アダプタ側の義務か次の実行の掃除の対象かを決めてほしい。
 - 要求のスキーマの検証は 3.2.1 の義務に無いが、実行器で行う(仕様より厳しい。呼び出し側の誤りを起動の前に止める)。
 - `Validate` が並行に呼べなかったので直した(U0-core の欠陥)。
+
+## 13. U1b のレビューから(7.5 の表に足すお願いと回答がほしいもの)
+
+- `Index` に `SetRetain`・`Records`、`ObjectStore` に `RetainUntil`・`CheckSkew` を足した。チャンクの retain-until の記録が無く、4.3 の「索引の値が目標 A に足りなければ延ばしてから参照する」と `verify` の照合が実装できなかった。`VersionInfo.RetainUntil` は S3 の一覧が返さないので実物はゼロと直した。
+- 試験の直し: `StoreProbe.Try` の `extend_retention` を外した(7.5 は試さないとする)。`prune` の試験に `sealed: true` を入れた(無いときは進まない)。
+- 回答がほしいもの: 直前の応答の `Date` は、要求が途切れると古くなる。古い `Date` で計算すると `TIME_SKEW` で止まるか、retain-until が短くなる。監督の扱いは、`TIME_SKEW_MAX` の半分より古ければ `BucketConfig` で取り直す。4.2 に 1 文足してほしい。

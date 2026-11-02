@@ -303,9 +303,6 @@ func TestContractStoreProbe(t *testing.T) {
 	if ok, err := p.Try(ctx, "write", "put"); err != nil || !ok {
 		t.Errorf("書き込み鍵の put は許される: %v %v", ok, err)
 	}
-	if ok, err := p.Try(ctx, "write", "extend_retention"); err != nil || !ok {
-		t.Errorf("書き込み鍵の延長は許される: %v %v", ok, err)
-	}
 	if ok, err := p.Try(ctx, "write", "retention_shorten"); err != nil || ok {
 		t.Errorf("書き込み鍵の短縮は拒否される: %v %v", ok, err)
 	}

@@ -179,6 +179,28 @@ func (i *Index) SetVersion(_ context.Context, id, v string) error {
 	return nil
 }
 
+// SetRetain は contract.Index を満たす。
+func (i *Index) SetRetain(_ context.Context, v string, until time.Time) error {
+	for k, r := range i.M {
+		if r.VersionID == v {
+			r.RetainUntil = until
+			i.M[k] = r
+		}
+	}
+	return nil
+}
+
+// Records は contract.Index を満たす。
+func (i *Index) Records(context.Context) ([]contract.VersionRef, error) {
+	var out []contract.VersionRef
+	for id, r := range i.M {
+		if r.VersionID != "" {
+			out = append(out, contract.VersionRef{Key: "chunks/" + id[:2] + "/" + id, VersionID: r.VersionID, Size: r.Size, ETag: r.ETag, RetainUntil: r.RetainUntil})
+		}
+	}
+	return out, nil
+}
+
 // Rebuild は contract.Index を満たす。
 func (i *Index) Rebuild(context.Context, [][]byte, []byte) error { return nil }
 

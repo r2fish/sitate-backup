@@ -52,6 +52,7 @@ type VersionRef struct {
 	Size           int64
 	ETag           string
 	RetainUntil    time.Time
+	WrittenAt      time.Time // 書き込み時刻(記録にあれば。無ければゼロ)
 }
 
 // RetentionMismatch は verify の retention_short[]・retention_long[] の要素(spec 3.1.2「結果の配列の要素の形」)。
@@ -218,6 +219,11 @@ type Index interface {
 	Lookup(ctx context.Context, chunkID string) (*ChunkRef, error)
 	Reserve(ctx context.Context, ref ChunkRef) error // 先行書き込み。版 ID は送信の応答の後に追記
 	SetVersion(ctx context.Context, chunkID, versionID string) error
+	// SetRetain は版の retain-until の記録を更新する(書き込みの応答と延長の後。spec 4.3「索引と prune の整合」、4.5 の index/chunks)。
+	// 重複排除の判定はこの記録の値で行い、保管先から読み直さない。
+	SetRetain(ctx context.Context, versionID string, until time.Time) error
+	// Records は版 ID のある全チャンクの記録(verify の照合と extend の入力。Key は chunks/ のキー)。
+	Records(ctx context.Context) ([]VersionRef, error)
 	Rebuild(ctx context.Context, manifests [][]byte, against []byte) error // 比べる定義を入力に受ける
 	Remove(ctx context.Context, versionID string) error
 }

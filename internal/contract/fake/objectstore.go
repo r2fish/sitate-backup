@@ -111,6 +111,17 @@ func (s *ObjectStore) BucketConfig(_ context.Context) (contract.BucketConfig, er
 	return cfg, err
 }
 
+// RetainUntil は contract.ObjectStore を満たす。
+func (s *ObjectStore) RetainUntil(_ context.Context, key, version string) (time.Time, error) {
+	return s.Core.GetRetention(s.Bucket, s.Prefix+key, version)
+}
+
+// CheckSkew は contract.ObjectStore を満たす。偽物の時計はずれない。
+func (s *ObjectStore) CheckSkew(ctx context.Context) error {
+	_, err := s.StoreTime(ctx)
+	return err
+}
+
 // StoreTime は contract.ObjectStore を満たす。応答の Date は実時刻で(サーバーと同じ。模擬時間は Object Lock の期限の判定だけ)、
 // 核が「Date + 注入したオフセット」を計算する。Healthy でなければ保管先の 5xx 相当の誤りを返す。
 func (s *ObjectStore) StoreTime(_ context.Context) (time.Time, error) {

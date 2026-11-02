@@ -5,6 +5,7 @@ package acquire
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/r2fish/sitate-backup/internal/contract"
 )
@@ -29,6 +30,16 @@ func (*Index) Lookup(ctx context.Context, chunkID string) (*contract.ChunkRef, e
 // Reserve は contract.Index を満たす。
 func (*Index) Reserve(ctx context.Context, ref contract.ChunkRef) error {
 	return contract.ErrNotImplemented("acquire.Index.Reserve")
+}
+
+// SetRetain は contract.Index を満たす。
+func (*Index) SetRetain(ctx context.Context, versionID string, until time.Time) error {
+	return contract.ErrNotImplemented("acquire.Index.SetRetain")
+}
+
+// Records は contract.Index を満たす。
+func (*Index) Records(ctx context.Context) ([]contract.VersionRef, error) {
+	return nil, contract.ErrNotImplemented("acquire.Index.Records")
 }
 
 // SetVersion は contract.Index を満たす。

@@ -35,8 +35,7 @@ type VersionInfo struct {
 	Size         int64
 	IsLatest     bool
 	DeleteMarker bool
-	// RetainUntil は保管先から読んだ現在の retain-until(削除マーカーと保持の無い版はゼロ)。verify の retention_short・retention_long と prune が使う
-	// (spec 4.2 の verify は保管先から版指定で読んだ値を記録した値と比べる。spec 7.5 の ObjectStore の表の版付き一覧は書き込み時刻までしか挙げていないため、値を運ぶ項目を足した)。
+	// RetainUntil は一覧が運べるときだけの値。S3 の版付き一覧は retain-until を返さないので、実物はゼロで返す。読むときは ObjectStore.RetainUntil。
 	RetainUntil time.Time
 }
 
@@ -61,4 +60,8 @@ type ObjectStore interface {
 	BucketConfig(ctx context.Context) (BucketConfig, error)
 	// StoreTime は直前の応答の Date(実時刻。偽物も実時刻を返す)。試験ビルドの「Date + 注入したオフセット」は核が計算する(作業指示書 3.3)。
 	StoreTime(ctx context.Context) (time.Time, error)
+	// RetainUntil は版を指定して現在の retain-until を読む(保持の無い版はゼロ。読めなければ誤りで、ゼロを期限切れと取り違えない)。
+	RetainUntil(ctx context.Context, key, versionID string) (time.Time, error)
+	// CheckSkew は保管先の Date と手元の時計の差を確かめ、TIME_SKEW_MAX を超えれば TIME_SKEW を返す(保持の操作の始めに使う。spec 4.2)。
+	CheckSkew(ctx context.Context) error
 }
