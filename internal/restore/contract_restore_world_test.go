@@ -27,9 +27,9 @@ type worldOpts struct {
 
 func shaOfBytes(b []byte) string { h := sha256.Sum256(b); return "sha256:" + hex.EncodeToString(h[:]) }
 
-// manifestBody は世代のマニフェストの本体(fake の Codec で包んだもの。最小の項目だけ: def_hash・key_id)。
-func manifestBody(ref, defHash, keyID string) string {
-	c, _ := json.Marshal(map[string]any{"format": "sitate.manifest/v1", "manifest_id": ref, "def_hash": defHash, "key_id": keyID})
+// manifestBody は世代のマニフェストの本体(fake の Codec で包んだもの。最小の項目だけ: def_hash・key_id・definition)。
+func manifestBody(ref, defHash, keyID string, def []byte) string {
+	c, _ := json.Marshal(map[string]any{"format": "sitate.manifest/v1", "manifest_id": ref, "def_hash": defHash, "key_id": keyID, "definition": json.RawMessage(def)})
 	b, _ := fake.Codec{}.Encode(contract.MagicManifest, strings.TrimPrefix(ref, "m-"), contract.Header{}, c, nil)
 	return string(b)
 }
@@ -64,7 +64,7 @@ func keyringWorld(t *testing.T, def string, o worldOpts) *env {
 	if o.UnknownKeyID {
 		keyID = "k9"
 	}
-	e := rtWorldBody(t, manifestBody(refA, dh, keyID), manifestBody(refB, dh, "k1"))
+	e := rtWorldBody(t, manifestBody(refA, dh, keyID, norm), manifestBody(refB, dh, "k1", norm))
 	e.St.Def = norm
 	e.St.Items["repo_id"] = json.RawMessage(strconv_q(repoID))
 	repo, _ := json.Marshal(map[string]any{"format_version": 1, "repo_id": repoID, "keyring_id": keyringID})
