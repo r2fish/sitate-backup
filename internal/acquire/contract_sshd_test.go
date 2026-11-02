@@ -58,7 +58,6 @@ func (s *fakeSource) URL(user string) string {
 var (
 	srcMu   sync.Mutex
 	srcByPt = map[int]*fakeSource{}
-	srcNext = 20000
 )
 
 type stubCloser struct{ s *fakeSource }
@@ -66,6 +65,7 @@ type stubCloser struct{ s *fakeSource }
 func (c stubCloser) Close() error { c.s.mu.Lock(); c.s.closed = true; c.s.mu.Unlock(); return nil }
 
 // startSource は元サーバーの代わりの偽の SSH(contract.SSH を満たす routeSSH が、接続先のポートで引く)を起こす。
+// pull 接続のポートは 22 固定(spec 3.3)なので、最後に起こしたものがポート 22 の相手になる。
 // reply が nil なら標準出力なし・終了 0。実物の ssh サーバーは起こさない(接続の実物は結合 U1c・U1f-2 の持ち物)。
 func startSource(t *testing.T, reply func(execRec) (string, int)) *fakeSource {
 	t.Helper()
@@ -78,8 +78,7 @@ func startSource(t *testing.T, reply func(execRec) (string, int)) *fakeSource {
 		t.Fatal(err)
 	}
 	srcMu.Lock()
-	srcNext++
-	s := &fakeSource{Port: srcNext, FP: ssh.FingerprintSHA256(signer.PublicKey()), Reply: reply}
+	s := &fakeSource{Port: 22, FP: ssh.FingerprintSHA256(signer.PublicKey()), Reply: reply}
 	srcByPt[s.Port] = s
 	srcMu.Unlock()
 	s.ln = stubCloser{s}

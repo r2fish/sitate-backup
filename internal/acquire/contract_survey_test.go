@@ -343,3 +343,20 @@ func TestContractAcquireSourceSurveySudoOS(t *testing.T) {
 		}
 	})
 }
+
+// pull 接続のポートは 22 固定(spec 3.3)。22 以外は接続の前に ARG_INVALID(--host、unsupported_port)で止める。省略は 22。
+func TestContractAcquireSourcePortNot22(t *testing.T) {
+	_, perr := shapeAcquire().SourceSurvey(ctx, contract.Call{Words: surveyWords})
+	harness.Implemented(t, perr)
+	src := startSource(t, nil)
+	a, _ := newSrcAcquire(map[string]json.RawMessage{})
+	_, err := a.SourceSurvey(ctx, sourceCall(surveyWords, "ssh://root@127.0.0.1:2222", newAdminKey(t)))
+	ce := harness.ExpectCode(t, err, contract.CodeArgInvalid)
+	var d struct{ Flag, Reason string }
+	if json.Unmarshal(ce.Detail, &d) != nil || d.Flag != "--host" || d.Reason != "unsupported_port" {
+		t.Errorf("detail: %s", ce.Detail)
+	}
+	if src.Conns() != 0 {
+		t.Error("接続した")
+	}
+}

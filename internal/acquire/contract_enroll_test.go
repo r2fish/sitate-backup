@@ -6,7 +6,6 @@ package acquire
 
 import (
 	"encoding/json"
-	"strconv"
 	"strings"
 	"testing"
 
@@ -39,7 +38,7 @@ func dbOnlyDoc(t *testing.T, readable bool) string {
 func TestContractAcquireSourceEnrollHostDiffers(t *testing.T) {
 	src := startSource(t, nil)
 	a, st := newSrcAcquire(enrollItems(map[string]json.RawMessage{"source_seen": seenItem("localhost", src.FP)}))
-	url := "ssh://root@localhost:" + strconv.Itoa(src.Port)
+	url := "ssh://root@localhost:22"
 	_, err := a.SourceEnroll(ctx, sourceCall(enrollWords, url, newAdminKey(t)))
 	ce := harness.ExpectCode(t, err, contract.CodeDefInvalid)
 	errEnvelope(t, ce)

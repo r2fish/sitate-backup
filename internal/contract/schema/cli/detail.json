@@ -102,7 +102,8 @@
       "missing",
       "format",
       "reused",
-      "mismatch"
+      "mismatch",
+      "unsupported_port"
      ]
     }
    }
@@ -1151,12 +1152,15 @@
     "mismatches",
     "prereq",
     "needed_gb",
-    "free_gb"
+    "free_gb",
+    "os",
+    "arch"
    ],
    "additionalProperties": false,
    "properties": {
     "reason": {
      "enum": [
+      "unsupported_platform",
       "enroll_mismatch",
       "disk_short",
       "prereq_missing",
@@ -1212,8 +1216,65 @@
        "type": "null"
       }
      ]
+    },
+    "os": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^[A-Za-z0-9_.-]{1,32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "arch": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^[A-Za-z0-9_.-]{1,32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
     }
-   }
+   },
+   "allOf": [
+    {
+     "if": {
+      "properties": {
+       "reason": {
+        "const": "unsupported_platform"
+       }
+      }
+     },
+     "then": {
+      "properties": {
+       "os": {
+        "not": {
+         "type": "null"
+        }
+       },
+       "arch": {
+        "not": {
+         "type": "null"
+        }
+       }
+      }
+     },
+     "else": {
+      "properties": {
+       "os": {
+        "type": "null"
+       },
+       "arch": {
+        "type": "null"
+       }
+      }
+     }
+    }
+   ]
   },
   "RESTORE_MISMATCH": {
    "type": "object",

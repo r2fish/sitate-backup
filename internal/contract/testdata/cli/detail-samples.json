@@ -262,7 +262,9 @@
   "mismatches": [],
   "prereq": [],
   "needed_gb": 10,
-  "free_gb": null
+  "free_gb": null,
+  "os": null,
+  "arch": null
  },
  "RESTORE_MISMATCH": {
   "hash_mismatch": [

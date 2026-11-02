@@ -217,6 +217,8 @@
  "core.code.TEARDOWN_UNVERIFIED": "[仮] core.code.TEARDOWN_UNVERIFIED",
  "core.code.TIME_SKEW": "[仮] core.code.TIME_SKEW",
  "core.code.UNEXPECTED_VERSION": "[仮] core.code.UNEXPECTED_VERSION",
+ "core.reason.ARG_INVALID.unsupported_port": "[仮] core.reason.ARG_INVALID.unsupported_port",
+ "core.reason.RESTORE_ENROLL_MISMATCH.unsupported_platform": "[仮] core.reason.RESTORE_ENROLL_MISMATCH.unsupported_platform {os} {arch}",
  "core.why.ADAPTER_ERROR": "[仮] core.why.ADAPTER_ERROR",
  "core.why.ADAPTER_TIMEOUT": "[仮] core.why.ADAPTER_TIMEOUT",
  "core.why.ALL_TARGETS_FAILED": "[仮] core.why.ALL_TARGETS_FAILED",

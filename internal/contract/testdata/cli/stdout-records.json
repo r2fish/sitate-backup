@@ -1,5 +1,5 @@
 {
- "$comment": "標準出力の 2 レコードの試験ベクトル(spec 3.1.4)。stdout は1行1レコードの JSON の並び。words は明らかに合成の語(fake…)で、実のフレーズではない。want が ok なら secret_record の有無と phrase_emitted が一致、discard はアプリが破棄する形(error は 3.7 のアプリの原因コード)。 null・数・文字列だけのレコードは封筒でないので ENVELOPE_INVALID。ENVELOPE_INVALID は秘密のレコードが先頭に見えていない出力だけ。秘密が先頭に見えていて次が封筒でない([秘密,秘密]・[秘密,別の schema]・[秘密,null])は ENVELOPE_SECRET_MISMATCH、先頭が封筒で次が秘密([封筒,秘密])は先頭が秘密でないので ENVELOPE_INVALID。raw は途中で切れた行を含む出力(1 行ずつ)、end は出力の終わり方で、ssh_disconnected(SSH が切れた)は秘密の有無に関わらず SSH_DISCONNECTED、complete(接続は正常に終わった)で封筒が切れていれば、秘密が見えていれば ENVELOPE_SECRET_MISMATCH、見えていなければ ENVELOPE_INVALID。",
+ "$comment": "標準出力の 2 レコードの試験ベクトル(spec 3.1.4)。stdout は1行1レコードの JSON の並び。words は明らかに合成の語(fake…)で、実のフレーズではない。want が ok なら secret_record の有無と phrase_emitted が一致、discard はアプリが破棄する形(error は 3.7 のアプリの原因コード)。判定の順は spec 3.1.4: (1) SSH が切れた SSH_DISCONNECTED (2) 3 レコード以上 ENVELOPE_TOO_MANY_RECORDS (3) どれかのレコードの schema が sitate.secret-string/v1 で正しい形の [秘密, 封筒] でないか、phrase_emitted が true で秘密のレコードが無い ENVELOPE_SECRET_MISMATCH (4) それ以外で封筒 1 レコードの形でない ENVELOPE_INVALID。[封筒,秘密] は (3)、[封筒,別の schema] と null・数・文字列だけのレコードは (4)。raw は途中で切れた行を含む出力(1 行ずつ)、end は出力の終わり方。",
  "cases": [
   {
    "name": "envelope-only",
@@ -390,6 +390,40 @@
     }
    ],
    "want": "discard",
+   "error": "ENVELOPE_SECRET_MISMATCH"
+  },
+  {
+   "name": "envelope-then-other-schema",
+   "stdout": [
+    {
+     "schema": "sitate.out/v1",
+     "command": [
+      "version"
+     ],
+     "ok": true,
+     "dry_run": false,
+     "run_id": "r-20261018T173000Z-3f9a",
+     "result": {
+      "version": "1.0.0",
+      "format_versions": {
+       "write": 1,
+       "read": [
+        1
+       ],
+       "test": true
+      },
+      "signing_key_fp": "SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "build": "test",
+      "sim_time": "2026-11-02T10:00:00Z"
+     },
+     "warnings": [],
+     "error": null
+    },
+    {
+     "schema": "sitate.other/v1"
+    }
+   ],
+   "want": "discard",
    "error": "ENVELOPE_INVALID"
   },
   {
@@ -756,7 +790,7 @@
     ],
     "keyring_version": 1
    },
-   "error": "ENVELOPE_INVALID"
+   "error": "ENVELOPE_SECRET_MISMATCH"
   },
   {
    "name": "keyring-version-zero",

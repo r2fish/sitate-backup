@@ -46,6 +46,9 @@ type Call struct {
 	// 値は結果・ログ・誤りの detail に出さない。使い終えたら呼び出し側が Wipe する。無ければ nil。
 	// Args のキーと Secrets の形は seams.go(ArgHost・ArgAdminRef ほか、SecretKind*)に固定した。
 	PhraseIn *Secret
+	// SnapshotKeyIn は --snapshot-key-stdin で受けた標準入力の 1 行目(DestKeyLine の JSON。spec 3.5 の表の 7・8)。扱いは PhraseIn と同じ。無ければ nil。
+	// 標準入力の終わり(取り消し)は cli が ctx の取り消しで渡す。入口は読み出しを止めて終わる。
+	SnapshotKeyIn *Secret
 }
 
 // Reply は入口の結果。Result は JSON の値(スキーマは schema/cli/results.json)。Phrase は専用出力経路へ出す秘密(cli だけが書いて消す)。

@@ -118,7 +118,6 @@ func TestContractRestoreVerify(t *testing.T) {
 }
 
 // 後のイテレーションの機能(イテレーション 2)。
-func TestContractRestoreRestore(t *testing.T) { harness.Later(t, 2, "Restore.Restore") }
 func TestContractRestoreJournalVerify(t *testing.T) {
 	harness.Later(t, 2, "Restore.JournalVerify")
 }

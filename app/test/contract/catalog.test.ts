@@ -38,7 +38,8 @@ test("catalog: the key families match their sources (codes, why, app codes, ops,
   assert.deepEqual(family("app."), APP_CODES.slice().sort());
   assert.deepEqual(family("card.op.").map((k) => k.replace(/\.title$/, "")).sort(), [...ops].sort());
   assert.deepEqual(family("chat.tool.display.name."), [...toolNames].sort());
-  for (const k of Object.keys(keys)) assert.match(k, /^(core\.(code|why)|app|card|chat|status|phrase)\.[a-zA-Z0-9_.-]+$/, k);
+  assert.deepEqual(family("core.reason."), ["ARG_INVALID.unsupported_port", "RESTORE_ENROLL_MISMATCH.unsupported_platform"]);
+  for (const k of Object.keys(keys)) assert.match(k, /^(core\.(code|why|reason)|app|card|chat|status|phrase)\.[a-zA-Z0-9_.-]+$/, k);
 });
 
 test("catalog: no empty values, placeholders carry the mark", () => {

@@ -79,7 +79,7 @@ function parse(stdout: string, label: string, end: "complete" | "ssh_disconnecte
 
 test("vectors: the stdout two-record vectors cover one record, two records, and every discarded shape", () => {
   assert.deepEqual(stdoutCases.map((c) => c.name).sort(), ([
-    "emitted-without-secret", "envelope-only", "envelope-only-phrase-false", "envelope-then-secret", "null-only", "number-only", "secret-only", "secret-then-envelope",
+    "emitted-without-secret", "envelope-only", "envelope-only-phrase-false", "envelope-then-other-schema", "envelope-then-secret", "null-only", "number-only", "secret-only", "secret-then-envelope",
     "secret-then-envelope-no-phrase-emitted", "secret-then-envelope-phrase-emitted-false", "secret-then-null", "secret-then-other-schema", "secret-then-secret", "string-only", "three-records",
     "ssh-disconnected-secret-visible", "ssh-disconnected-no-secret", "complete-truncated-envelope-secret-visible", "complete-truncated-envelope-no-secret",
   ]).sort());
@@ -133,14 +133,15 @@ test("vectors: truncated output after the secret record is discarded without the
 });
 
 // 決定(設計の監督): schema が sitate.secret-string/v1 なのに正しく読めない秘密のレコードは「正しい秘密のレコードが無い」と扱い、
-// ENVELOPE_SECRET_MISMATCH で破棄する(フレーズを表示せず、結果に秘密を残さない)。schema が別のものは秘密のレコードではなく ENVELOPE_INVALID。
-test("vectors: a malformed secret record is discarded as ENVELOPE_SECRET_MISMATCH, one with another schema as ENVELOPE_INVALID", () => {
+// ENVELOPE_SECRET_MISMATCH で破棄する(フレーズを表示せず、結果に秘密を残さない)。schema が別のものは秘密のレコードではなく、単独なら ENVELOPE_INVALID、
+// phrase_emitted が true の封筒と並べば「秘密のレコードが無い」ので ENVELOPE_SECRET_MISMATCH(spec 3.1.4 の判定の順)。
+test("vectors: a malformed secret record is discarded as ENVELOPE_SECRET_MISMATCH, one with another schema by the spec 3.1.4 order", () => {
   const invalid: { name: string; record: any }[] = readJson(join(vectorDir, "stdout-records.json")).secret_record_invalid;
   assert.ok(invalid.some((v) => v.name === "wrong-kind"));
   const envelope = stdoutCases.find((c) => c.name === "secret-then-envelope")!.stdout![1];
   for (const v of invalid) {
-    const code = v.record.schema === "sitate.secret-string/v1" ? "ENVELOPE_SECRET_MISMATCH" : "ENVELOPE_INVALID";
     for (const records of [[v.record, envelope], [v.record]]) {
+      const code = v.record.schema === "sitate.secret-string/v1" || records.length === 2 ? "ENVELOPE_SECRET_MISMATCH" : "ENVELOPE_INVALID";
       const got = parse(asStdout(records), `${v.name} (${records.length})`);
       assert.deepEqual(got, { ok: false, code }, `${v.name} (${records.length})`);
       assert.ok(!leaks(got), `${v.name}: 結果に秘密が残る`);

@@ -93,7 +93,7 @@ func TestStdoutRecordVectors(t *testing.T) {
 		if contract.Validate("cli/secret-record.json", c.Record) == nil {
 			t.Errorf("%s: 拒否すべき秘密のレコードを通した", c.Name)
 		}
-		// 秘密のレコードの形が不正なら、封筒が正しくても全体を破棄する(秘密の形は ENVELOPE_SECRET_MISMATCH、秘密のレコードでないものは ENVELOPE_INVALID)。
+		// 秘密のレコードの形が不正なら、封筒が正しくても全体を破棄する(spec 3.1.4 の判定の順)。
 		var env json.RawMessage
 		for _, k := range d.Cases {
 			if k.Name == "secret-then-envelope" {

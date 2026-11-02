@@ -677,6 +677,15 @@
  "core.code.UNEXPECTED_VERSION": {
   "args": {}
  },
+ "core.reason.ARG_INVALID.unsupported_port": {
+  "args": {}
+ },
+ "core.reason.RESTORE_ENROLL_MISMATCH.unsupported_platform": {
+  "args": {
+   "arch": "string",
+   "os": "string"
+  }
+ },
  "core.why.ADAPTER_ERROR": {
   "args": {}
  },

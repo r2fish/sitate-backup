@@ -60,3 +60,16 @@
 - Go 1.26.10、Electron 45.2.1、PostgreSQL 17.11(digest 固定)
 - MinIO: `cgr.dev/chainguard/minio@sha256:0a01100085e30fb08d2f39e39c9f5c9d83a95707f220b007d813b690cd41622d`(`RELEASE.2026-10-23T20-06-51Z`)、`cgr.dev/chainguard/minio-client@sha256:3b67177c0e12f44f646a5cf21b20fc5a79dd2d7a6b4db632b436f0b9e2e46717`。公式の配布は入手できなかった
 - `SURVEY_DU_TIMEOUT_S` は仮に 600(推測。U0-env の後に合成データで確かめる)
+
+## 7. 仕様書 1.2.6・作業指示書 1.0.15 への追従(監督の直し)
+
+D-0157 の申し送り 6 件を直した。そのときに決めた形と、見つけたもの。
+
+- カタログの組のキー: 原因コードと `reason` の組のキーの置き場が無かったので `core.reason.<原因コード>.<reason>` を足した。今は `ARG_INVALID.unsupported_port` と `RESTORE_ENROLL_MISMATCH.unsupported_platform`(引数 `os`・`arch`)の 2 件。
+- 判定の順の読み方: `[別の schema, 封筒(phrase_emitted が true)]` は 3.1.4 の順の (3) の「`phrase_emitted` が `true` で秘密のレコードが無い」に当たるので `ENVELOPE_SECRET_MISMATCH` にした(ベクトルの `wrong-schema` を変えた)。
+- `detail.os`・`detail.arch`: 復元先が報告した値なので `^[A-Za-z0-9_.-]{1,32}$` に絞った。3.7 の送る欄の行に `os`・`arch` が無い。今はモデルへ送らない。送るなら行を足すお願い。
+- 契約の不足: 復元先の `restore` が標準入力の鍵と引数の保管先を受ける口が無かった。`Call.SnapshotKeyIn`(1 行目の `DestKeyLine`。終わりは `cli` が ctx の取り消しで渡す)、`StoreAddr`、`StoreOpener`、`Restore.OpenStore` を足した。7.5 の表に足すお願い。
+- 仕様の穴: 空でない `--to` の原因コードが無い。契約試験はコードを問わず、失敗と保管先を開かないことだけを見る。
+- 試験の直し: `acquire` の偽の元サーバーが 22 以外のポートで接続していて、ポート 22 固定と合わなかったので 22 に揃えた。`unsupported_port` の試験を足した。`--host` の検査は `source survey` で試す(`source enroll` は同じ規則を U1c の受け入れで見る)。
+- `restore` の契約試験は入口の前提(引数の保管先、鍵の秘匿、空でない `--to`)まで。世代の書き出しは 5.6 の完了条件 7 の U1e の試験と主経路の通しで確かめる。
+- 範囲の検査はリポジトリに道具が無かったので `test/tools/check_scope.py` を足した。`make test-mainpath` を足した。第 1 段のハーネスは部品の受け入れの後に `test/mainpath/` に置く。

@@ -147,6 +147,11 @@ const (
 	ArgHost                  = "host"      // --host: ssh://<user>@<host>:<port>(ポートの省略は 22、IPv6 は [...] で囲む)。要素 1 つ
 	ArgAdminRef              = "admin-ref" // --admin-ref: 管理用資格情報の参照名。値は Call.Secrets[参照名] か Secrets.Get(参照名)。要素 1 つ
 	ArgBackup                = "backup"    // --backup: latest | latest-any | <manifest_id>。要素 1 つ
+	ArgTo                    = "to"        // --to: 空のディレクトリ。要素 1 つ
+	ArgEndpoint              = "endpoint"  // --endpoint: 保管先の所在(spec 3.1.2.4 の (a))。要素 1 つ
+	ArgBucket                = "bucket"    // --bucket: 同上
+	ArgPrefix                = "prefix"    // --prefix: 同上
+	ArgChecks                = "checks"    // --checks: all | none。要素 1 つ
 	ArgReissue               = "reissue"   // --reissue: 値なし(キーがあれば真)
 	ArgRestoreVerifyExpected = "expected"  // restore-verify: 期待する照合の入力(RestoreVerifyInput の JSON)。要素 1 つ
 	ArgRestoreVerifyActual   = "actual"    // restore-verify: 復元先が報告した値(RestoreVerifyInput の JSON)。要素 1 つ
@@ -252,6 +257,15 @@ type PlacedFile struct {
 type DestPlaceOut struct {
 	Files []PlacedFile `json:"files"`
 }
+
+// StoreAddr は引数で渡す保管先の所在(spec 3.1.2.4 の (a) の --endpoint・--bucket・--prefix)。
+type StoreAddr struct {
+	Endpoint, Bucket, Prefix string
+}
+
+// StoreOpener は引数の所在と読み取り鍵で ObjectStore を開く(提供: cli が store の実物を注入、利用: restore の (a))。
+// 状態を持たない復元先で使う。secret は DestKeyLine の read_key.secret で、呼び出しの後に呼び出し側が消してよい。
+type StoreOpener func(ctx context.Context, addr StoreAddr, keyID string, secret *Secret) (ObjectStore, error)
 
 // DestKeyLine は (3) `sitate restore --snapshot-key-stdin` の標準入力の 1 行目(JSON)。2 行目以降は無く、標準入力は復元が終わるまで開けたままにする(終わりは取り消し)。
 type DestKeyLine struct {

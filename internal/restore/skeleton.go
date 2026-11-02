@@ -24,6 +24,8 @@ type Restore struct {
 	SSH     contract.SSH
 	Bundle  contract.BundleSource
 	Secrets contract.Secrets
+	// OpenStore は (a)(--endpoint・--bucket・--prefix)で引数の保管先を開く。状態を持たない復元先で Store の代わりに使う。実物は cli が注入する。
+	OpenStore contract.StoreOpener
 }
 
 var _ contract.Restore = (*Restore)(nil)

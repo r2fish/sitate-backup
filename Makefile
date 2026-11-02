@@ -10,7 +10,7 @@ export NAME
 
 .PHONY: shell-linux test test-app test-contract contract-status test-adapters lint-install lint-size \
 	build build-test build-app build-app-test sign-test sign sign-installer sign-test-installer \
-	test-env-up test-env-down test-e2e _test _test-contract _test-adapters _build _contract-status
+	test-env-up test-env-down test-e2e test-mainpath _test _test-contract _test-adapters _build _contract-status
 
 shell-linux:
 	@$(LINUX) '$(CMD)'
@@ -40,6 +40,11 @@ _test-contract:
 
 test-app:
 	npm --prefix app test
+
+# 主経路の通し(作業指示書 6 章)。make test に含めない。STAGE は 1〜3。
+test-mainpath:
+	@case "$(STAGE)" in 1|2|3) ;; *) echo "STAGE は 1|2|3" >&2; exit 64;; esac
+	@$(LINUX) 'go test -count=1 -tags $(TEST_TAG),mainpath -run "^TestStage$(STAGE)" ./test/mainpath/'
 
 contract-status:
 	@mkdir -p test/env/.run && (cd app && node scripts/contract-status.mjs) > test/env/.run/app-status.jsonl

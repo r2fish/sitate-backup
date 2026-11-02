@@ -5,6 +5,7 @@ package restore
 // 保持中のマニフェストが参照する鍵 ID が含まれることを確かめる。2 は config/<def_hash> を記録した版 ID で読み、正規化のハッシュを照らす。
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/r2fish/sitate-backup/internal/contract"
@@ -83,9 +84,10 @@ func TestContractRestoreTestDestArch(t *testing.T) {
 func TestContractRestoreTestDestArchUnsupported(t *testing.T) {
 	w := newPassOpts(t, worldOpts{Arch: "riscv64"})
 	_, err := w.RestoreTest(ctx, rtCall(false))
-	harness.Implemented(t, err)
-	if err == nil {
-		t.Fatal("対応しない arch なのに成功した")
+	ce := harness.ExpectCode(t, err, contract.CodeRestoreEnrollMismatch)
+	var d struct{ Reason, OS, Arch string }
+	if json.Unmarshal(ce.Detail, &d) != nil || d.Reason != "unsupported_platform" || d.OS != "Linux" || d.Arch != "riscv64" {
+		t.Errorf("detail: %s", ce.Detail)
 	}
 	if w.scripts != 1 || w.keyLine != "" {
 		t.Errorf("隔離の検査の後に進んだ: 台本 %d 回, 鍵 %q", w.scripts, w.keyLine)

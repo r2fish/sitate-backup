@@ -3,6 +3,7 @@
 // - ファイル形式: `ja/catalog.json`・`en/catalog.json` は、キー(文字列)→ 値(文字列)の平らな JSON の 1 つのオブジェクト。
 // - キーの一覧と置換変数の引数: `keys.json`(キー → { args: { 引数名: 型 } })。ビルドの検査は、日英のカタログのキーがこの一覧と一致することを求める。
 // - キーの名前空間(先頭の語): core.code.<原因コード>、core.why.<why のコード>(核。コードの一覧は CLI スキーマ)、
+//   core.reason.<原因コード>.<detail.reason の値>(reason ごとの案内が要るものだけ。今は 2 件。設計の監督の D-0157 の申し送りで U0 が形を決めた)、
 //   app.<系>.<名前>(アプリの原因コードの列挙。核の名前空間と別)、card.*(承認カード)、chat.*(チャット欄)、
 //   status.*(状態と報告の表示)、phrase.*(フレーズのパネル)。
 // - 値は ICU MessageFormat。置換変数は {名前}(string)、{名前, number}(number)、{名前, date, short}(date)の 3 つに限る。

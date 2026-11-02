@@ -180,7 +180,7 @@ type Acquire interface {
 type Restore interface {
 	List(ctx context.Context, c Call) (Reply, error)
 	RestoreTest(ctx context.Context, c Call) (Reply, error)
-	Restore(ctx context.Context, c Call) (Reply, error) // 後のイテレーション(イテレーション 2)
+	Restore(ctx context.Context, c Call) (Reply, error) // イテレーション 1 は (a) の --to <空のディレクトリ>・--endpoint・--bucket・--prefix・--snapshot-key-stdin と materialize(spec 8.2)
 	RestoreDestEnroll(ctx context.Context, c Call) (Reply, error)
 	RestoreDestCheck(ctx context.Context, c Call) (Reply, error)
 	RestoreVerify(ctx context.Context, c Call) (Reply, error)

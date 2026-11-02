@@ -10,51 +10,65 @@ import (
 // SecretRecordSchema は標準出力の先頭レコードの schema(spec 3.1.4)。
 const SecretRecordSchema = "sitate.secret-string/v1"
 
-// ClassifyStdout は標準出力のレコード列(1 行 1 レコード)を spec 3.1.4 の規則で分ける。
-// 戻り値の code は破棄すべきとき 3.7 のアプリの原因コード(ENVELOPE_SECRET_MISMATCH / ENVELOPE_TOO_MANY_RECORDS / ENVELOPE_INVALID)、
-// 受理できるときは空。hasSecret は先頭が秘密のレコードかどうか。
+// ClassifyStdout は標準出力のレコード列(1 行 1 レコード)を spec 3.1.4 の判定の順で分ける。
+// 戻り値の code は破棄すべきとき 3.7 のアプリの原因コード、受理できるときは空。hasSecret はどれかのレコードが秘密のレコードかどうか。
 func ClassifyStdout(records []json.RawMessage) (code string, hasSecret bool, err error) {
 	if len(records) == 0 {
 		return "ENVELOPE_INVALID", false, errors.New("レコードが無い")
 	}
+	hasSecret = anySecret(records)
 	if len(records) > 2 {
-		return "ENVELOPE_TOO_MANY_RECORDS", false, nil
+		return "ENVELOPE_TOO_MANY_RECORDS", hasSecret, nil
 	}
+	if !hasSecret {
+		if anyEmitted(records) {
+			return "ENVELOPE_SECRET_MISMATCH", false, nil
+		}
+		if len(records) != 1 || !isEnvelope(records[0]) {
+			return "ENVELOPE_INVALID", false, nil // [封筒, 別の schema] を含む
+		}
+		return "", false, nil
+	}
+	if len(records) == 2 && schemaOf(records[0]) == SecretRecordSchema && contract.Validate("cli/secret-record.json", records[0]) == nil &&
+		isEnvelope(records[1]) && anyEmitted(records[1:]) {
+		return "", true, nil
+	}
+	return "ENVELOPE_SECRET_MISMATCH", true, nil
+}
+
+func schemaOf(r json.RawMessage) string {
 	var head struct {
 		Schema string `json:"schema"`
 	}
-	_ = json.Unmarshal(records[0], &head)
-	hasSecret = head.Schema == SecretRecordSchema
-	if hasSecret && len(records) == 1 {
-		return "ENVELOPE_SECRET_MISMATCH", true, nil // 秘密のレコードだけで封筒が無い
-	}
-	if len(records) == 2 && !hasSecret {
-		return "ENVELOPE_INVALID", false, nil // 先頭が秘密のレコードでも封筒でもない
-	}
-	if hasSecret && contract.Validate("cli/secret-record.json", records[0]) != nil {
-		return "ENVELOPE_SECRET_MISMATCH", true, nil // 秘密のレコードの形が不正(23 語・余分な欄・keyring_version 0 など)
-	}
-	envRec := records[len(records)-1]
-	var env struct {
-		Schema        string `json:"schema"`
-		PhraseEmitted bool   `json:"phrase_emitted"`
-	}
-	if json.Unmarshal(envRec, &env) != nil || env.Schema != "sitate.out/v1" {
-		if hasSecret {
-			return "ENVELOPE_SECRET_MISMATCH", true, nil // 秘密が見えていて、次が封筒でない([秘密, 秘密]・[秘密, 別の schema]・[秘密, null])。秘密だけの出力と同じ
+	_ = json.Unmarshal(r, &head)
+	return head.Schema
+}
+
+func isEnvelope(r json.RawMessage) bool { return schemaOf(r) == "sitate.out/v1" }
+
+func anySecret(records []json.RawMessage) bool {
+	for _, r := range records {
+		if schemaOf(r) == SecretRecordSchema {
+			return true
 		}
-		return "ENVELOPE_INVALID", false, nil
 	}
-	if env.PhraseEmitted != hasSecret {
-		return "ENVELOPE_SECRET_MISMATCH", hasSecret, nil
+	return false
+}
+
+func anyEmitted(records []json.RawMessage) bool {
+	for _, r := range records {
+		var env struct {
+			PhraseEmitted bool `json:"phrase_emitted"`
+		}
+		if isEnvelope(r) && json.Unmarshal(r, &env) == nil && env.PhraseEmitted {
+			return true
+		}
 	}
-	return "", hasSecret, nil
+	return false
 }
 
 // ClassifyStream は行(1 行 1 レコード。最後の行は途中で切れていてもよい)と、出力の終わり方 end("complete" か "ssh_disconnected")で分ける。
-//   - ssh_disconnected: 秘密が見えていても見えていなくても SSH_DISCONNECTED(破棄。秘密は渡さない)。
-//   - complete で JSON として読めない行がある(封筒が途中で切れた): 秘密が先頭に見えていれば ENVELOPE_SECRET_MISMATCH、見えていなければ ENVELOPE_INVALID。
-//   - それ以外は ClassifyStdout と同じ。
+// 順は ClassifyStdout と同じで、先頭に SSH の切断を置く。
 func ClassifyStream(lines []string, end string) (code string, hasSecret bool, err error) {
 	var records []json.RawMessage
 	broken := false
@@ -65,18 +79,14 @@ func ClassifyStream(lines []string, end string) (code string, hasSecret bool, er
 		}
 		records = append(records, json.RawMessage(l))
 	}
-	if len(records) > 0 {
-		var head struct {
-			Schema string `json:"schema"`
-		}
-		_ = json.Unmarshal(records[0], &head)
-		hasSecret = head.Schema == SecretRecordSchema
-	}
+	hasSecret = anySecret(records)
 	switch {
 	case end == "ssh_disconnected":
 		return "SSH_DISCONNECTED", hasSecret, nil
-	case broken && hasSecret:
-		return "ENVELOPE_SECRET_MISMATCH", true, nil
+	case len(lines) > 2:
+		return "ENVELOPE_TOO_MANY_RECORDS", hasSecret, nil
+	case broken && (hasSecret || anyEmitted(records)):
+		return "ENVELOPE_SECRET_MISMATCH", hasSecret, nil
 	case broken:
 		return "ENVELOPE_INVALID", false, nil
 	}

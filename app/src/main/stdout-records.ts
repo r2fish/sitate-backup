@@ -28,13 +28,13 @@ export type StdoutRecords =
 
 /**
  * 改行区切りの標準出力を読む。1 レコード(封筒)か、2 レコード(先頭が秘密、次が封筒)を受ける。end は出力の終わり方(既定 complete)。
- * 破棄の原因コード(設計の監督の決定。どの破棄でも見えた秘密はパネルへ渡さず、結果・ログ・会話履歴に残さない):
- * - end が ssh_disconnected: 秘密が見えていても見えていなくても SSH_DISCONNECTED(次の一手は status の確認。秘密が見えていたときの戻り道は仕様に明記が無い)。
- * - ENVELOPE_INVALID は、先頭に秘密のレコードが見えていない出力に限る(封筒でない出力、先頭が封筒で次が秘密、封筒が切れた出力で秘密が無い、など)。
- * - 先頭に秘密のレコードが見えている出力は、封筒が無い・封筒でない([秘密]・[秘密, 秘密]・[秘密, 別の schema]・[秘密, null])・封筒が途中で切れた(end が complete)・
- *   phrase_emitted が true でない、のどれも ENVELOPE_SECRET_MISMATCH。schema が sitate.secret-string/v1 なのに正しく読めない秘密も同じ。
- * - phrase_emitted が true なのに秘密のレコードが無い出力は ENVELOPE_SECRET_MISMATCH。3 レコード以上は ENVELOPE_TOO_MANY_RECORDS。
- * schema が別のレコードは秘密ではなく、先頭なら ENVELOPE_INVALID。破棄の結果は {ok:false, code} だけで、秘密の値を含まない。
+ * 破棄の原因コードは spec 3.1.4 の判定の順で、最初に当たったものとする(どの破棄でも見えた秘密はパネルへ渡さず、結果・ログ・会話履歴に残さない):
+ * 1. end が ssh_disconnected: 秘密が見えていても見えていなくても SSH_DISCONNECTED(秘密が見えていたときの戻り道は ENVELOPE_SECRET_MISMATCH と同じ)。
+ * 2. 3 レコード以上: ENVELOPE_TOO_MANY_RECORDS。
+ * 3. どれかのレコードの schema が sitate.secret-string/v1 で、正しい形の [秘密, 封筒](封筒の phrase_emitted が true)でない出力(秘密だけ、[封筒, 秘密]、[秘密, 秘密]、[秘密, 別の schema]、
+ *    形の不正な秘密、封筒が途中で切れた出力)か、phrase_emitted が true で秘密のレコードが無い出力: ENVELOPE_SECRET_MISMATCH。
+ * 4. それ以外で封筒 1 レコードの形でない出力([封筒, 別の schema] を含む): ENVELOPE_INVALID。2 番目のレコードをモデルへ渡さない。
+ * 破棄の結果は {ok:false, code} だけで、秘密の値を含まない。
  */
 export function parseStdoutRecords(stdout: string, end: StreamEnd = "complete"): StdoutRecords {
   void stdout;
