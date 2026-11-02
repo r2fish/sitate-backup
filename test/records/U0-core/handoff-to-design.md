@@ -212,3 +212,12 @@ U1f-1 の途中から: `--snapshot-key-stdin` の標準入力の終わりの `RU
 
 - `storage.country` は `null` のまま。4.7 は `def show` の `storage_country` と同じとするが、`internal/keys` に価格表の入力が無い。紙の「保管先の国」の欄が空になる。
 - 手順 (5) の `<run_id>` を (3) の `$RUN` と同じ値に読んだ。
+
+## 28. U1f-1 のレビューからの裁定(2026-11-03。追認を求める)
+
+仕様書に文が無く、受入試験の環境を止めるので、製品の監督が次のとおり決めて進める。
+
+- タイマーの置き場: 雛形は `/etc/systemd/system`・`/etc/cron.d`・`User=sitate` で、`sitate` で動く `init` は書けない。spec の `timer_permission`(そのユーザーの単位を常駐、`sitate` の crontab)に合わせ、ユーザーの単位 `~/.config/systemd/user` と `crontab -` にした(`timers.json`、雛形、golden を変更)。
+- `from=` の値(`acquire` の `From`): spec に出所が無い。`SITATE_FROM` と状態のファイルをやめ、`source enroll` の接続の `SSH_CONNECTION` の先頭(元サーバーから見た核の送信元)から取る。`restore.ssh_from` の「核が観測した送信元」と揃える。
+- `RunCleanup` の呼び出し条件: 作業指示書 5.17 より広い spec 3.5、7.5 に従う(中断を記録しなかったときも呼ぶ)。
+- `SITJ` の見出しの印: spec どおりマスター鍵の鍵 ID とする。

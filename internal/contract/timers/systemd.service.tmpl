@@ -3,7 +3,6 @@ Description=Sitate-backup {{.Name}}
 
 [Service]
 Type=oneshot
-User={{.User}}
 Environment=TZ={{.TZ}}
 TimeoutStartSec={{.TimeoutStartSec}}
 {{range .Steps}}ExecStart=-{{.Systemd}}

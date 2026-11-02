@@ -2,8 +2,8 @@
  "$comment": "init が登録する定期実行の表(spec 3.1.2 の表のタイマー列、7.5 Timers、3.1.1 の規則 12、4.1 の schedule)。units が単位、steps が単位の中で前の終了を待って順に起動するサブコマンド(前の成否を問わない)。when: always=毎回、sunday=定義の timezone の日曜日だけ。trigger: daily=schedule の時刻に毎日、hourly=毎時 minute_offset 分ずらした分(schedule の分 + 30 分、60 で割った余り)、weekly=weekday の time、monthly=毎月 1 日の time(time は timezone の現地時刻で固定)。persistent は停止中に過ぎた起点を起動後に 1 回取り戻す(systemd は Persistent=true、cron は @reboot)。取り戻すのは backup と続く verify だけ(retake が true の step)。起動の引数の末尾は常に invoked_by_args。test-tick はこの表の周期どおりに子プロセスで起動する(作業指示書 3.3 の『1 模擬日』)。",
  "service_user": "sitate",
  "binary": "/usr/local/bin/sitate",
- "systemd_dir": "/etc/systemd/system",
- "cron_file": "/etc/cron.d/sitate",
+ "systemd_user_dir": ".config/systemd/user",
+ "cron_install": "crontab",
  "unit_prefix": "sitate-",
  "scheduler_choice": "systemd が動いていれば(/run/systemd/system があり systemctl が使える)systemd の timer。そうでなければ cron。両方を同時に登録しない",
  "invoked_by_args": [
