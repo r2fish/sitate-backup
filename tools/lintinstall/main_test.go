@@ -50,11 +50,14 @@ func TestValidRowsPass(t *testing.T) {
 	}
 }
 
-func TestSkeletonIsNotImplemented(t *testing.T) {
-	b, _ := os.ReadFile(filepath.Join(root(t), path))
-	_, notImpl, err := Lint(root(t), string(b))
-	if err != nil || !notImpl {
-		t.Fatalf("骨格は未実装の印で止まるはず: err=%v notImpl=%v", err, notImpl)
+func TestInstallDocPasses(t *testing.T) {
+	b, err := os.ReadFile(filepath.Join(root(t), path))
+	if err != nil {
+		t.Fatal(err)
+	}
+	ps, notImpl, err := Lint(root(t), string(b))
+	if err != nil || notImpl || len(ps) != 0 {
+		t.Fatalf("手順書が検査に通らない: err=%v notImpl=%v %v", err, notImpl, ps)
 	}
 }
 
@@ -122,24 +125,6 @@ func TestSteps1to13ShapePass(t *testing.T) {
 }
 
 // 骨格の記法の見本の表は、未実装の印を外せば合格する(U4 が見本をそのまま真似られる)。
-func TestSkeletonSampleTablePasses(t *testing.T) {
-	b, err := os.ReadFile(filepath.Join(root(t), path))
-	if err != nil {
-		t.Fatal(err)
-	}
-	var rows []string
-	for _, l := range strings.Split(string(b), "\n") {
-		if strings.HasPrefix(l, "| A") {
-			rows = append(rows, l)
-		}
-	}
-	if len(rows) < 5 {
-		t.Fatalf("見本の表の行が足りない: %d", len(rows))
-	}
-	if ps := lint(t, strings.Join(rows, "\n")+"\n"); len(ps) != 0 {
-		t.Fatalf("見本の表が不合格: %v", ps)
-	}
-}
 
 func TestCompletionCommandsAreSplitPerPointer(t *testing.T) {
 	two := "| 1 | a | 確認だけ | `sitate version` と `sitate doctor` | "
