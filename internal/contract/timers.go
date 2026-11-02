@@ -48,8 +48,8 @@ type TimerDefUnit struct {
 type TimerDefTable struct {
 	ServiceUser     string         `json:"service_user"`
 	Binary          string         `json:"binary"`
-	SystemdDir      string         `json:"systemd_dir"`
-	CronFile        string         `json:"cron_file"`
+	SystemdUserDir  string         `json:"systemd_user_dir"`
+	CronInstall     string         `json:"cron_install"`
 	UnitPrefix      string         `json:"unit_prefix"`
 	SchedulerChoice string         `json:"scheduler_choice"`
 	InvokedByArgs   []string       `json:"invoked_by_args"`

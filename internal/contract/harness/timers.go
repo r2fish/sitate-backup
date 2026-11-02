@@ -64,7 +64,7 @@ func render(name string, data any) (string, error) {
 }
 
 // RenderTimers は schedule("HH:MM")と timezone から、systemd の単位ファイルと cron の記述を描画する。
-// 戻りは ファイル名(systemd は <unit_prefix><name>.service / .timer、cron は cron_file の最後の名前)→ 内容。
+// 戻りは ファイル名(systemd は <unit_prefix><name>.service / .timer、cron は cron)→ 内容。
 func RenderTimers(t contract.TimerDefTable, schedule, tz string) (map[string]string, error) {
 	h, m, err := hhmm(schedule)
 	if err != nil {
@@ -100,9 +100,9 @@ func RenderTimers(t contract.TimerDefTable, schedule, tz string) (map[string]str
 			return nil, err
 		}
 		out[name+".service"], out[name+".timer"] = svc, tm
-		cron = append(cron, fmt.Sprintf("%s %s /bin/sh -c '%s'", cronSpec(u, h, m), t.ServiceUser, strings.Join(cronSteps, "; ")))
+		cron = append(cron, fmt.Sprintf("%s /bin/sh -c '%s'", cronSpec(u, h, m), strings.Join(cronSteps, "; ")))
 		if u.Persistent && len(retake) > 0 {
-			cron = append(cron, fmt.Sprintf("@reboot %s /bin/sh -c '%s'", t.ServiceUser, strings.Join(retake, "; ")))
+			cron = append(cron, fmt.Sprintf("@reboot /bin/sh -c '%s'", strings.Join(retake, "; ")))
 		}
 	}
 	c, err := render("cron.tmpl", map[string]any{"TZ": tz, "Lines": cron})
