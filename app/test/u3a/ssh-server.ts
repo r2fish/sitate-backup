@@ -1,4 +1,5 @@
 // 試験用の SSH サーバー(ssh2 の Server。ローカルの空きポートで待つ)。実物の sshd の代わりに、ホスト鍵の照合・認証・exec の入出力・切断を確かめる。
+import { generateReadableKeyPair } from "../../src/main/ssh/keygen.ts";
 import ssh2 from "ssh2";
 import type { AddressInfo } from "node:net";
 
@@ -21,8 +22,8 @@ export interface ServerOptions {
 }
 
 export async function startServer(opts: ServerOptions = {}): Promise<TestServer> {
-  const host = (opts.keyType === "rsa" ? utils.generateKeyPairSync("rsa", { bits: 2048 }) : utils.generateKeyPairSync("ed25519"));
-  const client = utils.generateKeyPairSync("ed25519");
+  const host = (opts.keyType === "rsa" ? utils.generateKeyPairSync("rsa", { bits: 2048 }) : generateReadableKeyPair());
+  const client = generateReadableKeyPair();
   const clientPub = utils.parseKey(client.public);
   if (clientPub instanceof Error) throw clientPub;
   const requests: string[] = [];

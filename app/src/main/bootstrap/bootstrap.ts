@@ -2,6 +2,7 @@
 // 署名を検証したバイナリだけを管理アクセスで置き、`gate` を強制コマンドとして登録し、状態ディレクトリを作り、前提を整え、
 // `sitate version` で確かめ、通ったときだけ管理アクセスを閉じて `attest --step admin_access_closed` を呼び、`admin_ref` を消す。
 // 済んだ段は確かめて飛ばす(途中で失敗してもやり直せる)。秘密(管理アクセスの資格情報)はこのファイルの外へ出ない: 戻り値・封筒・例外に載せない。
+import { generateReadableKeyPair } from "../ssh/keygen.ts";
 import { createHash } from "node:crypto";
 import ssh2 from "ssh2";
 import { DEFAULT_SSH_PORT } from "../../constants.ts";
@@ -114,7 +115,7 @@ async function steps(input: ResolvedInput, deps: BootstrapDeps, conn: SshConnect
   // (6) 管理用 SSH 鍵を作り、強制コマンド付きの行を登録する。
   const stored = await deps.loadAdminKey();
   const keyPair = !input.rekey && stored !== null ? stored : null;
-  const generated = keyPair === null ? utils.generateKeyPairSync("ed25519") : null;
+  const generated = keyPair === null ? generateReadableKeyPair() : null;
   const priv = keyPair ?? generated!.private;
   const parsed = utils.parseKey(priv);
   if (parsed instanceof Error) throw new Fail("BOOTSTRAP_NOT_DONE");
