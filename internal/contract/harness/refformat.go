@@ -197,6 +197,9 @@ func refHlen(h contract.Header) int {
 	return 9
 }
 func (c *RefCodec) Encode(kind, id string, h contract.Header, content, key []byte) ([]byte, error) {
+	if h.Kind != kind { // 実物の Codec と同じ厳しさ
+		return nil, fmt.Errorf("refcodec: 見出しの種類 %q と kind %q が違う", h.Kind, kind)
+	}
 	var head []byte
 	switch kind {
 	case "SITK":

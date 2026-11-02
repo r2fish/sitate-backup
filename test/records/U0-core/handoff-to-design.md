@@ -113,3 +113,10 @@ D-0157 の申し送り 6 件を直した。そのときに決めた形と、見�
 - `Index` に `SetRetain`・`Records`、`ObjectStore` に `RetainUntil`・`CheckSkew` を足した。チャンクの retain-until の記録が無く、4.3 の「索引の値が目標 A に足りなければ延ばしてから参照する」と `verify` の照合が実装できなかった。`VersionInfo.RetainUntil` は S3 の一覧が返さないので実物はゼロと直した。
 - 試験の直し: `StoreProbe.Try` の `extend_retention` を外した(7.5 は試さないとする)。`prune` の試験に `sealed: true` を入れた(無いときは進まない)。
 - 回答がほしいもの: 直前の応答の `Date` は、要求が途切れると古くなる。古い `Date` で計算すると `TIME_SKEW` で止まるか、retain-until が短くなる。監督の扱いは、`TIME_SKEW_MAX` の半分より古ければ `BucketConfig` で取り直す。4.2 に 1 文足してほしい。
+
+## 14. U1g のレビューから
+
+- `bin/` のアダプタの実行ファイル: `tools/sign.sh` は署名せず、`adapter.json` の `sha256` で照らす(3.2.1 の「実行ファイル 1 つ + 署名付きの adapter.json」)。
+- `bucket check` も `BUCKET_MISMATCH` を返す(Compliance でない、バージョニング無し)。`init-storage` の合格だけに頼らない。
+- `init` の Argon2id は `Crypto` を通らない(`Keys` に口が無い)。値は定数の初期値で上限の内側なので認める。開く側は `Crypto` を通す。
+- `ChunkID` などは誤りの口が無いので panic する。`cli` が `*contract.Error` の panic を受けて `INTERNAL` の封筒にする。
