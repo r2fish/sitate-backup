@@ -131,3 +131,17 @@ D-0157 の申し送り 6 件を直した。そのときに決めた形と、見�
 - 読み出し量の累計と予約の判定はイテレーション 3 なので `restore-test` から外す。
 - `SSHRequest.Argv` の引用の規則、`StoragePrefixDefault`、`LedgerAppend` の置き換えを契約に書いた。
 - `ssh_from` が無く観測の口も無いので、`ssh_from` が無ければ `DEF_INVALID`。
+
+## 16. U1d のレビューから
+
+署名なしで適用できる経路は見つからなかった。ただし次を監督の裁定で直している。違えば教えてほしい。
+
+- `def-change` の混入の判定(1944 行、A6 (12)): 7.5 と作業指示書 5.17 は `cli` の持ち分としているが、`propose` の入口にある `approval` に置く。持ち主が曖昧なまま誰も作らない形だった。定義を受ける 3 種別で同じ判定を通す。7.5 の行の修正をお願いする。
+- `notify-add` は変更前が変更後の部分集合、`restore-test-increase` は頻度が実際に上がること、も `approval` で判定する。
+- `Approval` に `TestNotifier` を足す。`notify-add`・`notify-change` の確認語は Planner に任せず核が計算する。
+- `approval_delay_hours` の上限が無く、桁あふれで遅延を約 25 分にできた(下限は 7 時間)。上限を 8760 時間(1 年)に仮置きする。値は推測で、決めてほしい。4.1 とスキーマに足すお願い。
+- 中断した適用の再開でも `verifyStored` で署名を照らす(承認鍵の変更後は 1895 行の「(a) だけ」のまま)。
+- 秘密は `--id` と一致する変更にだけ渡す。ほかの再開は `HUMAN_SECRET_REQUIRED`。仕様に 1 行足すお願い。
+- `propose restore-elsewhere`・`storage-read-extra` の `--to` もローカルへの復元の拒否を照らす(3.1.5 は `restore` だけを書く)。
+
+U1f-1 の途中から: `--snapshot-key-stdin` の標準入力の終わりの `RUN_ABORTED` の `detail.reason` に切断の値が無く、`signal` に寄せた。
