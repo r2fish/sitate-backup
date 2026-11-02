@@ -35,14 +35,15 @@ func pinnedFP(ctx context.Context, st contract.StateFiles, host string) (string,
 type enrollOut struct {
 	FP     string
 	Egress []string
+	// Observed は結果の observed_from(接続の SSH_CONNECTION の先頭。読めなければ nil)。
+	Observed *string
 }
 
-// enrollCore は復元先アダプタの enroll を呼ぶ(spec 3.2.4)。wantFP が空でなければ、返った指紋が一致することを確かめる(違えば RESTORE_HOSTKEY_MISMATCH)。
+// enrollCore は復元先アダプタの enroll を呼ぶ(spec 3.2.4)。wantFP が空でなければ、要求の host_key_fp に入れ(アダプタが初期資格情報を使う前に照らす)、
+// 返った指紋も一致することを確かめる(違えば RESTORE_HOSTKEY_MISMATCH)。空なら初回の登録で host_key_fp を省く。
+// restore.ssh_from が無ければ allow_ssh_from を省き、アダプタが同じ接続の送信元を観測する(読めなければ no_observed_from = DEF_INVALID)。
 // 状態は書かない。admin は初期資格情報(OpenSSH 形式の秘密鍵の文字列)。
 func enrollCore(ctx context.Context, ar contract.AdapterRunner, st contract.StateFiles, sec contract.Secrets, runID string, d *defDoc, admin *contract.Secret, wantFP string) (enrollOut, error) {
-	if d.Restore.SSHFrom == "" { // 受信を許す送信元を決められないので呼ばない(spec 3.2.4)
-		return enrollOut{}, defMissing("/restore/ssh_from")
-	}
 	key, err := restoreKey(ctx, sec, true)
 	if err != nil {
 		return enrollOut{}, err
@@ -51,21 +52,24 @@ func enrollCore(ctx context.Context, ar contract.AdapterRunner, st contract.Stat
 	if err != nil {
 		return enrollOut{}, err
 	}
-	allow := []string{}
-	if d.Restore.SSHFrom != "" {
-		allow = append(allow, d.Restore.SSHFrom)
-	}
 	secrets := map[string]string{}
 	if admin != nil {
 		secrets["dest_key"] = string(admin.Reveal())
 	}
-	raw, err := destCall(ctx, ar, runID, d.Restore.Adapter, map[string]any{"op": "enroll", "dest": d.Restore.Dest, "authorized_key": key.PublicKey,
-		"allow_ssh_from": allow, "egress_allow": egress, "egress_host": d.endpointHost(), "secrets": secrets})
+	req := map[string]any{"op": "enroll", "dest": d.Restore.Dest, "authorized_key": key.PublicKey, "egress_allow": egress, "egress_host": d.endpointHost(), "secrets": secrets}
+	if d.Restore.SSHFrom != "" {
+		req["allow_ssh_from"] = []string{d.Restore.SSHFrom}
+	}
+	if wantFP != "" {
+		req["host_key_fp"] = wantFP
+	}
+	raw, err := destCall(ctx, ar, runID, d.Restore.Adapter, req)
 	if err != nil {
-		return enrollOut{}, mapDestErr("enroll", err, "")
+		return enrollOut{}, mapDestErr("enroll", err, wantFP)
 	}
 	var res struct {
-		FP string `json:"host_key_fp"`
+		FP       string  `json:"host_key_fp"`
+		Observed *string `json:"observed_from"`
 	}
 	if json.Unmarshal(raw, &res) != nil || res.FP == "" {
 		return enrollOut{}, internalErr("output")
@@ -73,12 +77,12 @@ func enrollCore(ctx context.Context, ar contract.AdapterRunner, st contract.Stat
 	if wantFP != "" && wantFP != res.FP {
 		return enrollOut{}, newErr(contract.CodeRestoreHostkeyMismatch, map[string]any{"expected_fp": wantFP, "seen_fp": res.FP, "session_id": nil})
 	}
-	return enrollOut{FP: res.FP, Egress: egress}, nil
+	return enrollOut{FP: res.FP, Egress: egress, Observed: res.Observed}, nil
 }
 
-// enrollRecord は restore_dest_enrollment の値(送信を許す IP アドレスの固定値。spec 4.5)。
-func enrollRecord(egress []string) json.RawMessage {
-	b, _ := json.Marshal(map[string]any{"egress_allow": egress})
+// enrollRecord は restore_dest_enrollment の値(送信を許す IP アドレスの固定値と、観測した送信元。spec 4.5)。
+func enrollRecord(o enrollOut) json.RawMessage {
+	b, _ := json.Marshal(map[string]any{"egress_allow": o.Egress, "observed_from": o.Observed})
 	return b
 }
 
@@ -141,7 +145,7 @@ func (e *RestoreDestEnroller) Enroll(ctx context.Context, in contract.EnrollInpu
 	if err != nil {
 		return contract.EnrollResult{}, err
 	}
-	rec := enrollRecord(out.Egress)
+	rec := enrollRecord(out)
 	if in.WriteState {
 		if err := writeEnrollState(ctx, e.State, host, out.FP, rec); err != nil {
 			return contract.EnrollResult{}, err

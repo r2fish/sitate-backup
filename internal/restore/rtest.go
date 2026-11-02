@@ -29,6 +29,7 @@ type rtState struct {
 	abortErr            error
 	scratch             string
 	readStarted         bool
+	allow               []string // start の allow_ssh_from(provision が決める)
 }
 
 // abortError は取り消された文脈を RUN_ABORTED にする(deadline か signal)。
@@ -89,6 +90,9 @@ func (r *Restore) RestoreTest(ctx context.Context, c contract.Call) (contract.Re
 	}
 	recs, err := readLedger(ctx, r.State)
 	if err != nil {
+		return contract.Reply{}, err
+	}
+	if recs, err = r.retryDestroyFailed(ctx, recs); err != nil { // 前の破棄の残存は、始めに 1 回だけ呼び直す(消せれば続け、残れば下で deferred)
 		return contract.Reply{}, err
 	}
 	if reason, ws := deferral(recs); reason != "" {

@@ -101,11 +101,21 @@ func teardownSession(ctx context.Context, ar contract.AdapterRunner, sec contrac
 				Type, ID string
 			} `json:"resources"`
 		}
-		if json.Unmarshal(raw, &r) == nil && r.State == "absent" && len(r.Resources) == 0 {
+		// stop の remaining に処理(process)が残っていれば、inspect が absent でも消さない(平文を扱う処理が残ったまま記録を消さない。D-0159)。
+		if json.Unmarshal(raw, &r) == nil && r.State == "absent" && len(r.Resources) == 0 && !hasProcess(tr.Remaining) {
 			tr.Absent, tr.Done, tr.Remaining = true, true, []resRef{}
 		}
 	}
 	return tr
+}
+
+func hasProcess(rs []resRef) bool {
+	for _, r := range rs {
+		if r.Type == "process" {
+			return true
+		}
+	}
+	return false
 }
 
 func nonNilRes(r []resRef) []resRef {
@@ -145,6 +155,8 @@ func mapDestErr(op string, err error, expectedFP string) error {
 	}
 	_ = json.Unmarshal(a.Detail, &d)
 	switch a.Code {
+	case "no_observed_from": // restore.ssh_from が無く、アダプタも接続の送信元を読めなかった(spec 3.2.4。NAT の内側では restore.ssh_from に書く)
+		return defMissing("/restore/ssh_from")
 	case "hostkey_mismatch":
 		return newErr(contract.CodeRestoreHostkeyMismatch, map[string]any{"expected_fp": expectedFP, "seen_fp": a.SeenFP, "session_id": nil})
 	case "auth":

@@ -160,7 +160,6 @@
     "op",
     "dest",
     "authorized_key",
-    "allow_ssh_from",
     "egress_allow",
     "egress_host",
     "secrets"
@@ -175,6 +174,9 @@
     },
     "dest": {
      "$ref": "#/$defs/dest"
+    },
+    "host_key_fp": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/fp"
     },
     "authorized_key": {
      "$ref": "https://sitate.invalid/schema/data/state.json#/$defs/pubkey"
@@ -660,6 +662,7 @@
     "contract",
     "host_key_fp",
     "user",
+    "observed_from",
     "prereq"
    ],
    "additionalProperties": false,
@@ -672,6 +675,17 @@
     },
     "user": {
      "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+    },
+    "observed_from": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^[0-9a-fA-F:.]{1,45}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
     },
     "prereq": {
      "type": "array",
@@ -826,6 +840,7 @@
         "enroll_mismatch",
         "prereq_missing",
         "enroll_failed",
+        "no_observed_from",
         "INTERNAL",
         "NOT_IMPLEMENTED"
        ]

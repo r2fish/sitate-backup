@@ -364,6 +364,10 @@
     {
      "name": "admin-ref",
      "value": "ref"
+    },
+    {
+     "name": "host-key-fp",
+     "value": "word"
     }
    ],
    "positional": null

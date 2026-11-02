@@ -44,7 +44,7 @@ func (w *s2) definition() string {
 	d := map[string]any{"version": 1,
 		"source":  map[string]any{"host": accEnv(w.t, "SITATE_ACCEPT_SOURCE_HOST"), "targets": []any{map[string]any{"id": "t1", "files": "/srv/shopapp"}}},
 		"storage": []any{map[string]any{"endpoint": w.s3.endpoint, "bucket": w.s3.bucket, "key_ref": "storage", "prefix": "sitate/"}},
-		"restore": map[string]any{"adapter": "ssh-host", "dest": map[string]any{"at": w.destAt(), "key_ref": "restore-init"}, "ssh_from": w.backupIP},
+		"restore": map[string]any{"adapter": "ssh-host", "dest": map[string]any{"at": w.destAt(), "key_ref": "restore-init"}},
 		"notify":  map[string]any{"to": []string{"owner@example.invalid"}}}
 	b, _ := json.Marshal(d)
 	return string(b)
@@ -228,4 +228,5 @@ func (w *s2) destEnrollAndRestoreTest(ref string) {
 		t.Fatalf("restore-test の結果が期待と違う(期待: 直近の世代 %s、keyring_ok・def_copy_ok が真、送らない、保管先からの読み出し>0): %s", ref, rt.Env.Result)
 	}
 	t.Logf("restore-test: 世代 %s を dest で復元して照合(duration_s=%d、読み出し %d バイト、config_copy_ok=%v)", rr.BackupRef, rr.DurationS, rr.EgressByte, rr.ConfigOK)
+	w.recordEnrollAndRemaining(rt) // D-0159: observed_from の記録と stop の remaining の実機の確かめ(stage3_remaining_test.go)
 }

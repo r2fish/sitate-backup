@@ -58,6 +58,32 @@ func (c *RunCleanup) Cleanup(ctx context.Context, own string, interrupted string
 	return cleaned, unverified, nil
 }
 
+// retryDestroyFailed は destroy_failed の記録ごとに stop・inspect を 1 回呼び直す(spec 3.1.2.6、3.5「破棄の失敗」。D-0159)。
+// 消せたと確かめられた記録は台帳から消し、残れば destroy_failed のまま(最初に確かめられなかった時刻は変えない)。呼び直した後の台帳を返す。
+func (r *Restore) retryDestroyFailed(ctx context.Context, recs []ledgerRec) ([]ledgerRec, error) {
+	var now time.Time
+	for _, rec := range recs {
+		if rec.State != "destroy_failed" {
+			continue
+		}
+		if now.IsZero() {
+			n, err := r.Clock.Now(ctx)
+			if err != nil {
+				return nil, err
+			}
+			now = n
+		}
+		if tr := teardownSession(ctx, r.Adapters, r.Secrets, rec); tr.Absent {
+			if err := ledgerDelete(ctx, r.State, rec.RecordID); err != nil {
+				return nil, err
+			}
+		} else if _, err := markFailed(ctx, r.State, rec, tr, now); err != nil {
+			return nil, err
+		}
+	}
+	return readLedger(ctx, r.State)
+}
+
 // sweep は掃引(spec 3.2.4): inspect(session_id: null)で列挙した資源を session_id ごとに分け、台帳に記録の無い session_id だけ
 // 記録を足して破棄する。記録のある session_id には新しい記録を足さず、資源を足すだけにする。
 func sweep(ctx context.Context, ar contract.AdapterRunner, st contract.StateFiles, sec contract.Secrets, runID, adapter string, dest destRef, fp string, now time.Time) error {

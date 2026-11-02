@@ -1262,6 +1262,17 @@
           "type": "string",
           "pattern": "^[0-9a-fA-F:.]{1,45}$"
          }
+        },
+        "observed_from": {
+         "anyOf": [
+          {
+           "type": "string",
+           "pattern": "^[0-9a-fA-F:.]{1,45}$"
+          },
+          {
+           "type": "null"
+          }
+         ]
         }
        }
       },

@@ -303,18 +303,20 @@ func TestRestoreTestRestoreArgv(t *testing.T) {
 	}
 }
 
-// F13: restore.ssh_from が無い定義では、enroll も start も呼ばずに DEF_INVALID。
+// F13: restore.ssh_from が無く、登録で観測した送信元も無い定義では、start を呼ばずに DEF_INVALID(D-0159 で enroll は呼ぶ)。
 func TestSSHFromRequired(t *testing.T) {
 	w := newPass(t)
 	w.St.Def = []byte(strings.Replace(defPass, `"ssh_from":"192.0.2.10",`, "", 1))
 	w.script()
 	_, err := w.RestoreTest(ctx, rtCall(false))
 	harness.ExpectCode(t, err, contract.CodeDefInvalid)
+	if len(w.AR.Calls) != 0 {
+		t.Errorf("restore-test がアダプタを %d 回呼んだ(受信許可を決められないので start の前に止まる)", len(w.AR.Calls))
+	}
+	// 登録はアダプタに送信元を観測させる(D-0159)。読めなければ no_observed_from で DEF_INVALID。
+	w.script(fake.Step{Outcome: fake.OutcomeError, ErrCode: "no_observed_from"})
 	_, err = w.RestoreDestEnroll(ctx, contract.Call{Words: []string{"restore-dest", "enroll"}, RunID: rtRun})
 	harness.ExpectCode(t, err, contract.CodeDefInvalid)
-	if len(w.AR.Calls) != 0 {
-		t.Errorf("アダプタを %d 回呼んだ", len(w.AR.Calls))
-	}
 }
 
 // F21: 隔離の検査の段で取り消されたら RUN_ABORTED。破棄は行い、proof は無い。

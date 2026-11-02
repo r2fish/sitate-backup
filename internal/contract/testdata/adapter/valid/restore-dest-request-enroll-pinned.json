@@ -1,0 +1,20 @@
+{
+ "contract": "sitate.restore-dest/v1",
+ "op": "enroll",
+ "dest": {
+  "at": "ssh://admin@dest.example.invalid:22",
+  "key_ref": "dest-key"
+ },
+ "host_key_fp": "SHA256:abcDEF123",
+ "authorized_key": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIexample",
+ "allow_ssh_from": [
+  "192.0.2.1"
+ ],
+ "egress_allow": [
+  "198.51.100.7"
+ ],
+ "egress_host": "s3.example.invalid",
+ "secrets": {
+  "dest_key": "x"
+ }
+}

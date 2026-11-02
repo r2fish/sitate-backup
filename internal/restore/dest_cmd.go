@@ -24,6 +24,16 @@ func (r *Restore) RestoreDestEnroll(ctx context.Context, c contract.Call) (contr
 	if r == nil || r.State == nil || r.Adapters == nil {
 		return contract.Reply{}, internalErr("")
 	}
+	// seal の後の再登録は危険(復元先の変更。restore-change)で、承認の後の apply の中で行う(spec 3.1.2)。seal の判定は state.json の sealed を直接読む。
+	var sealed bool
+	if _, err := item(ctx, r.State, "sealed", &sealed); err != nil {
+		return contract.Reply{}, err
+	}
+	if sealed {
+		e := newErr(contract.CodeApprovalRequired, map[string]any{"kind": "restore-change"})
+		e.Next = []contract.Next{{Argv: []string{"sitate", "propose", "restore-change"}, RequiresApproval: true}}
+		return contract.Reply{}, e
+	}
 	d, _, err := r.readDef(ctx)
 	if err != nil {
 		return contract.Reply{}, err
@@ -46,13 +56,18 @@ func (r *Restore) RestoreDestEnroll(ctx context.Context, c contract.Call) (contr
 	if err != nil {
 		return contract.Reply{}, err
 	}
-	out, err := enrollCore(ctx, r.Adapters, r.State, r.Secrets, c.RunID, d, admin, "")
+	// 照らす指紋: 人が確かめた新しい指紋(--host-key-fp。seal の前)があれば固定値の代わりにそれ、無ければ今の固定値、どちらも無ければ初回の登録(省く)。
+	want := prev
+	if v := arg(c, "host-key-fp"); v != "" {
+		want = v
+	}
+	out, err := enrollCore(ctx, r.Adapters, r.State, r.Secrets, c.RunID, d, admin, want)
 	if err != nil {
 		return contract.Reply{}, err
 	}
 	// 固定値を書いてから検査する(spec 3.5 の「復元先の登録」)。検査の不合格は RESTORE_ISOLATION_FAILED で、固定値は残るので
 	// next の restore-dest check が同じ復元先を検査し直せる。
-	if err := writeEnrollState(ctx, r.State, host, out.FP, enrollRecord(out.Egress)); err != nil {
+	if err := writeEnrollState(ctx, r.State, host, out.FP, enrollRecord(out)); err != nil {
 		return contract.Reply{}, err
 	}
 	po, err := r.probeDest(ctx, d, out.FP)

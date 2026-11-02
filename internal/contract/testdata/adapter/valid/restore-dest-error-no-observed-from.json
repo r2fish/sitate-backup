@@ -1,0 +1,7 @@
+{
+ "contract": "sitate.restore-dest/v1",
+ "error": {
+  "code": "no_observed_from",
+  "detail": {}
+ }
+}

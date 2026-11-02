@@ -36,8 +36,8 @@ func (t *rtState) provision(ctx context.Context) error {
 	if fp == "" { // 登録の無い復元先: ホスト鍵を照らせないので、鍵を渡す前(start の前)に止める(spec 3.5 の表の 4)
 		return newErr(contract.CodeRestoreEnrollMismatch, enrollMismatchDetail("enroll_mismatch", "", ""))
 	}
-	if t.d.Restore.SSHFrom == "" { // 送信元を観測する口が無い間は、受信を許す送信元を決められないので呼ばない(spec 3.2.4)
-		return defMissing("/restore/ssh_from")
+	if t.allow, err = t.allowSSHFrom(ctx); err != nil { // 受信を許す送信元を決められなければ呼ばない(spec 3.2.4)
+		return err
 	}
 	if err := sweep(ctx, t.r.Adapters, t.r.State, t.r.Secrets, t.runID, t.d.Restore.Adapter, t.d.Restore.Dest, fp, t.start); err != nil {
 		return err
@@ -98,12 +98,8 @@ func (t *rtState) settleLeftovers(ctx context.Context) error {
 func (t *rtState) start2(ctx context.Context, fp string) error {
 	key, _ := restoreKey(ctx, t.r.Secrets, false)
 	egress, _ := t.egressFixed(ctx)
-	allow := []string{}
-	if t.d.Restore.SSHFrom != "" {
-		allow = append(allow, t.d.Restore.SSHFrom)
-	}
 	raw, err := destCall(ctx, t.r.Adapters, t.runID, t.d.Restore.Adapter, map[string]any{"op": "start", "session_id": t.runID, "dest": t.d.Restore.Dest,
-		"needs": map[string]any{"disk_gb": t.needGB()}, "host_key_fp": fp, "authorized_key": key.PublicKey, "allow_ssh_from": allow, "egress_allow": egress,
+		"needs": map[string]any{"disk_gb": t.needGB()}, "host_key_fp": fp, "authorized_key": key.PublicKey, "allow_ssh_from": t.allow, "egress_allow": egress,
 		"egress_host": t.d.endpointHost(), "secrets": map[string]string{"restore-dest-ssh": key.PrivateKey}})
 	if err != nil {
 		bg := context.WithoutCancel(ctx)
@@ -153,18 +149,42 @@ func (t *rtState) needGB() int64 {
 	return n
 }
 
-// egressFixed は登録時に固定した送信の許可先(state.json の restore_dest_enrollment)。start に渡す(解決し直さない。spec 3.2.4)。
-func (t *rtState) egressFixed(ctx context.Context) ([]string, error) {
-	var e struct {
-		EgressAllow []string `json:"egress_allow"`
-	}
+// enrollFixed は登録時に固定した値(state.json の restore_dest_enrollment)。egress_allow は start に渡す(解決し直さない。spec 3.2.4)。
+type enrollFixed struct {
+	EgressAllow  []string `json:"egress_allow"`
+	ObservedFrom *string  `json:"observed_from"`
+}
+
+func (t *rtState) enrollFixed(ctx context.Context) (enrollFixed, error) {
+	var e enrollFixed
 	if _, err := item(ctx, t.r.State, "restore_dest_enrollment", &e); err != nil {
-		return nil, err
+		return enrollFixed{}, err
 	}
 	if e.EgressAllow == nil {
 		e.EgressAllow = []string{}
 	}
-	return e.EgressAllow, nil
+	return e, nil
+}
+
+func (t *rtState) egressFixed(ctx context.Context) ([]string, error) {
+	e, err := t.enrollFixed(ctx)
+	return e.EgressAllow, err
+}
+
+// allowSSHFrom は start に渡す受信許可: 定義の restore.ssh_from があればそれ、無ければ登録で記録した observed_from、どちらも無ければ DEF_INVALID
+// (spec 3.2.4 の「値の出所」。NAT の内側では restore.ssh_from に書く)。
+func (t *rtState) allowSSHFrom(ctx context.Context) ([]string, error) {
+	if t.d.Restore.SSHFrom != "" {
+		return []string{t.d.Restore.SSHFrom}, nil
+	}
+	e, err := t.enrollFixed(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if e.ObservedFrom == nil || *e.ObservedFrom == "" {
+		return nil, defMissing("/restore/ssh_from")
+	}
+	return []string{*e.ObservedFrom}, nil
 }
 
 // remoteRestore は表の 4〜8: ホスト鍵の照合、隔離の検査、核とチェックの配置、鍵の受け渡しと復元先の restore。

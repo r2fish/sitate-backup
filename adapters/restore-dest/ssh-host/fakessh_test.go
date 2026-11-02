@@ -28,6 +28,7 @@ type fakeSSH struct {
 	userKey  ssh.PublicKey
 	auths    atomic.Int32 // 認証に進んだ回数(ホスト鍵の不一致では 0 のまま = 鍵を渡さない)
 	sessions atomic.Int32
+	sshConn  string // 空でなければ exec の環境に SSH_CONNECTION として置く(実物の sshd と同じ。sudo の下では消える偽物は stubs_test.go)
 }
 
 func startFakeSSH(t *testing.T, rsaHostKey bool) *fakeSSH {
@@ -103,6 +104,9 @@ func (f *fakeSSH) session(ch ssh.Channel, reqs <-chan *ssh.Request) {
 		f.sessions.Add(1)
 		cmd := exec.Command("bash", "-c", cmdline)
 		cmd.Env = []string{"HOME=" + f.home, "PATH=" + f.path()}
+		if f.sshConn != "" {
+			cmd.Env = append(cmd.Env, "SSH_CONNECTION="+f.sshConn)
+		}
 		cmd.Stdin, cmd.Stdout = ch, ch
 		code := 0
 		if err := cmd.Run(); err != nil {

@@ -1,0 +1,6 @@
+{
+ "contract": "sitate.restore-dest/v1",
+ "host_key_fp": "SHA256:abcDEF123",
+ "user": "sitate-restore",
+ "prereq": []
+}

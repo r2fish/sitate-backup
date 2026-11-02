@@ -7,6 +7,7 @@ package restore
 import (
 	"context"
 	"encoding/json"
+	"slices"
 	"testing"
 	"time"
 
@@ -47,6 +48,10 @@ func TestContractRestoreTestDeferredTeardownPending(t *testing.T) {
 	for _, force := range []bool{false, true} {
 		e := rtWorld(t)
 		e.St.Ledger = []json.RawMessage{ledgerSession(t, "r-20270227T000000Z-aaaa", "r-20270227T000000Z-aaaa", true)}
+		// 始めに stop・inspect を 1 回呼び直す(D-0159)。なお残るので新しい資源は作らない。
+		e.AR.Script("restore-dest",
+			okStep(json.RawMessage(`{"done":false,"verified_by":"ssh","remaining":[{"type":"workdir","id":"r-20270227T000000Z-aaaa"}]}`)),
+			okStep(json.RawMessage(`{"resources":[{"type":"workdir","id":"r-20270227T000000Z-aaaa","session_id":"r-20270227T000000Z-aaaa"}],"state":"present"}`)))
 		rep, err := e.RestoreTest(ctx, rtCall(force))
 		harness.Shape(t, []string{"restore-test"}, rep, err)
 		m := resultOf(t, rep, "restore_test")
@@ -56,8 +61,8 @@ func TestContractRestoreTestDeferredTeardownPending(t *testing.T) {
 			wantRaw(t, m, k, "null")
 		}
 		wantRaw(t, m, "checks", "[]")
-		if n := len(e.AR.Calls); n != 0 {
-			t.Errorf("force=%v: 送った実行が復元先アダプタを %d 回呼んだ", force, n)
+		if ops := opsOf(e); !slices.Equal(ops, []string{"stop", "inspect"}) {
+			t.Errorf("force=%v: 呼び直しの stop・inspect の 1 回だけのはず: %v", force, ops)
 		}
 		if len(rep.Warnings) != 1 || rep.Warnings[0].Code != contract.CodeTeardownUnverified {
 			t.Fatalf("force=%v: 警告 TEARDOWN_UNVERIFIED が 1 つのはず: %+v", force, rep.Warnings)
