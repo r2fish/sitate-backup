@@ -1,5 +1,6 @@
-// Package restore は復元と復元テスト(spec 3.5、3.1.2.3〜3.1.2.6)を実装する。
 package restore
+
+// Package restore は復元と復元テスト(spec 3.5、3.1.2.3〜3.1.2.6)を実装する。
 
 import (
 	"context"
