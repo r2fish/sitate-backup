@@ -233,3 +233,12 @@ U1f-1 の途中から: `--snapshot-key-stdin` の標準入力の終わりの `RU
 - 参照名の字種: アプリの入口は `^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$` で、契約の `ref_pattern` より広い。
 - 手書きの道: `kit confirm` は印刷の成功の後だけにした。4.7 の「刷り込むか手書き」は、紙を刷って語を手で書く意味に読んだ。
 - 登録済みの接続先と host か port が違う `bootstrap` は `SSH_HOSTKEY_MISMATCH` で拒否する。
+
+## 31. 主経路の第 2 段で見つけた仕様の穴(2026-11-03。仕様書 1.2.8 を見た時点)
+
+詳細は `test/records/mainpath/stage2-2026-11-03.md`。監督は 1.2.8 の改版履歴に該当の語が無いことだけを確かめ、本文の全文照合はしていない。
+
+- S1 `def validate` は参照名の未解決を `DEF_INVALID`(`unresolved_ref`)にするが、`storage[0].key_ref` は `init-storage`(手順 5)で、`restore.dest.key_ref` は `restore-dest enroll`(手順 9)で初めて存在する。手順 4 の `def validate` は必ず止まる。A2 の導入が止まるので、裁定が要る。案: 候補の検査では未解決を許す / 手順 4 では参照名を検査しないモードを足す。
+- S2 手順 5 の `bucket check` は引数なしと読めるが、`seal` の前は `--key-ref` の既定が無く `ARG_INVALID`(`missing`)。案: 手順書に `--key-ref` を書く / 候補の定義の `storage[0].key_ref` を既定にする。
+- S3 `secrets set` がイテレーション 3 のため、イテレーション 1 では B2 以外の保管先に鍵を置く手段が無い。A2 は B2 なので測定は止まらない。受入試験の環境の MinIO は試験用の代役のアダプタで通す方針で、仕様の変更は求めない(確認だけ)。
+- E3 の関連: 記録の journal 鍵は master から導くが、`init` の前の `init-storage` には master が無い。仕様の答えが見つからなければ、担当が最小の形を選び、次の節に足す。
