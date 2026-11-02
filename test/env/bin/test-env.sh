@@ -4,13 +4,13 @@
 # 割り当て:
 #   - 接続先は同じ名前付きネットワーク(sitate-test)の中のコンテナ名 sitate-<NAME>-s3:9000(NAME ごとに別のコンテナ)。
 #     ホストのポートは公開しない(複数インスタンスでポートが衝突しない)。開発用コンテナも同じネットワークに入る。
-#   - バケット名: sitate-<NAME>-main(Object Lock 有効)。接頭辞: sitate-<NAME>-
+#   - バケット名: sitate-<name>-main(Object Lock 有効)。接頭辞: sitate-<name>-(<name> は NAME の小文字化)
 #   - 資格情報: 起動のたびに乱数で生成し test/env/.run/<NAME>/env(git 管理外)に書く。リポジトリには置かない。
 #   - 同じ NAME の再起動: 先に同じ NAME のコンテナと .run/<NAME>/ を消してから新しく起動する(資格情報とバケットは新しくなる)。
 #   - 模擬時間の共有の値: test/env/.run/<NAME>/simtime(JSON。形は internal/contract の SimTime)。fake は毎回読む。
 set -eu
 op="${1:?up|down}"; name="${2:?NAME}"; kind="${3:-minio}"
-case "$name" in *[!a-z0-9-]*|"") echo "NAME は小文字・数字・ハイフンだけ" >&2; exit 64;; esac
+case "$name" in *[!A-Za-z0-9-]*|"") echo "NAME は英数字・ハイフンだけ" >&2; exit 64;; esac
 root="$(cd "$(dirname "$0")/../../.." && pwd)"
 run="$root/test/env/.run/$name"
 network="${SITATE_TEST_NETWORK:-sitate-test}"
@@ -30,7 +30,8 @@ mkdir -p "$run"; chmod 0777 "$run"
 rnd() { LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c "$1"; }
 ak="$(rnd 20)"; sk="$(rnd 40)"; pgpw="$(rnd 24)"
 wak="$(rnd 20)"; wsk="$(rnd 40)"; rak="$(rnd 20)"; rsk="$(rnd 40)"
-bucket="sitate-$name-main"
+lname="$(printf %s "$name" | tr A-Z a-z)"   # バケット名は小文字だけ(S3 の規則)。NAME に大文字(U1b など)を使えるようにする
+bucket="sitate-$lname-main"
 now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 printf '{"format":"sitate.simtime/v1","sim_now":"%s","real_at":"%s"}\n' "$now" "$now" > "$run/simtime"
 chmod 0666 "$run/simtime"
@@ -83,7 +84,7 @@ SITATE_TEST_S3_REGION=us-east-1
 SITATE_TEST_S3_ACCESS_KEY_ID=$ak
 SITATE_TEST_S3_SECRET_ACCESS_KEY=$sk
 SITATE_TEST_S3_BUCKET=$bucket
-SITATE_TEST_S3_BUCKET_PREFIX=sitate-$name-
+SITATE_TEST_S3_BUCKET_PREFIX=sitate-$lname-
 SITATE_SIM_TIME_FILE=$run/simtime
 SITATE_TEST_PG_HOST=$pg
 SITATE_TEST_PG_PORT=5432

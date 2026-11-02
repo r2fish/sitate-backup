@@ -1,0 +1,117 @@
+#!/bin/bash
+# 元サーバー(source)の合成データの生成器(作業指示書 5.1b、A2 と A7)。標準出力に「試験の外」の期待値の JSON(sitate.accept-expectations/v1)を書く。
+# 使い方: sitate-gen-source-data <variant> [scale]
+#   variant: base(基本) / add(基本。取れるマウントか DB は後で sitate-source-add-extra が足す) / lo(ラージオブジェクトを持つ DB を足す)
+#            / nocluster(DB の対象を持たない 2 つ目のクラスタ(ポート 5433)を足す)
+#   scale:   データ量の倍率(既定 1。SURVEY_DU_TIMEOUT_S の確かめに使う。accept-env.sh measure-du)
+# データはすべて合成。名前は架空(個人名に見える試験用の語。実在の人物とは無関係)。資格情報は作らない(ロールはパスワードなし)。
+set -eu
+variant="${1:-base}"; scale="${2:-1}"
+exec 3>&1 1>&2
+# 架空の個人名(漢字かな、ローマ字)。A7 の (ii) の検索語。
+NAMES_JA=(霧島かなえ 雲井みなと 沢渡りょう 桐生ひとし 柊木ゆうな)
+NAMES_RO=(kirishima-kanae kumoi-minato sawatari-ryo kiryu-hitoshi hiiragi-yuuna)
+pgq() { runuser -u postgres -- psql -X -q -v ON_ERROR_STOP=1 -p "${PGPORT_Q:-5432}" "$@"; }
+# 起動待ち(systemd が postgresql@17-main を起こす)
+for _ in $(seq 1 90); do runuser -u postgres -- pg_isready -q -p 5432 && break; sleep 1; done
+runuser -u postgres -- pg_isready -q -p 5432 || { echo "PostgreSQL が起動しない" >&2; exit 1; }
+
+# --- ファイル ---
+id webadmin >/dev/null 2>&1 || useradd -m -u 1100 -s /bin/bash webadmin
+id "${NAMES_RO[0]}" >/dev/null 2>&1 || useradd -m -u 1101 -s /bin/bash "${NAMES_RO[0]}"
+fill() { # fill <path> <bytes> <seed>
+  yes "sitate-test-$3" | head -c "$2" > "$1"
+}
+app=/srv/shopapp
+mkdir -p $app/config $app/uploads/invoices $app/uploads/customers $app/uploads/images $app/public
+printf '# 合成の設定(秘密を含まない)\nname=shopapp\nmode=test\n' > $app/config/app.conf
+for i in "${!NAMES_JA[@]}"; do
+  n="${NAMES_JA[$i]}"; r="${NAMES_RO[$i]}"
+  printf '請求書(合成)\n宛名: %s\n金額: %d\n' "$n" $((1000 + i * 250)) > "$app/uploads/invoices/請求書_${n}.txt"
+  mkdir -p "$app/uploads/customers/$r"
+  printf '顧客メモ(合成): %s\n' "$n" > "$app/uploads/customers/$r/memo.txt"
+done
+for i in $(seq 1 $((40 * scale))); do fill "$app/uploads/images/img-$i.bin" $((64 * 1024)) "$i"; done
+for i in 1 2 3; do fill "$app/public/asset-$i.css" 4096 "a$i"; done
+mkdir -p /srv/kumoi-minato-share
+printf '共有フォルダの合成ファイル\n' > /srv/kumoi-minato-share/readme.txt
+for i in $(seq 1 $((10 * scale))); do fill "/srv/kumoi-minato-share/doc-$i.dat" $((32 * 1024)) "k$i"; done
+mkdir -p /home/${NAMES_RO[0]}/Documents /home/webadmin/work
+printf '個人メモ(合成)\n' > /home/${NAMES_RO[0]}/Documents/note.txt
+printf 'work\n' > /home/webadmin/work/todo.txt
+chown -R webadmin:webadmin $app /srv/kumoi-minato-share /home/webadmin
+chown -R "${NAMES_RO[0]}:${NAMES_RO[0]}" /home/${NAMES_RO[0]}
+# sitate-ro を待つ ACL は source-setup が付ける。ここでは付けない。
+
+# --- DB ---
+pgq -d postgres <<SQL
+DO \$\$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='shopapp') THEN CREATE ROLE shopapp NOLOGIN; END IF; END \$\$;
+SQL
+dbs=()
+mkdb() { # mkdb <name> <port>
+  PGPORT_Q="${2:-5432}" pgq -d postgres -c "CREATE DATABASE \"$1\" OWNER shopapp" 
+}
+if ! pgq -d postgres -Atc "SELECT 1 FROM pg_database WHERE datname='shopdb'" | grep -q 1; then
+  mkdb shopdb
+  pgq -d shopdb <<SQL
+CREATE TABLE customers (id serial PRIMARY KEY, name text NOT NULL, email text, note text);
+CREATE TABLE orders (id serial PRIMARY KEY, customer_id int REFERENCES customers(id), amount int NOT NULL, placed_at timestamptz NOT NULL);
+INSERT INTO customers (name, email, note)
+  SELECT 'customer-' || g, 'c' || g || '@example.invalid', repeat('x', 40) FROM generate_series(1, $((300 * scale))) g;
+INSERT INTO customers (name, email) VALUES ('${NAMES_JA[0]}', 'kanae@example.invalid'), ('${NAMES_JA[1]}', 'minato@example.invalid');
+INSERT INTO orders (customer_id, amount, placed_at)
+  SELECT 1 + (g % 300), 100 + g, timestamptz '2026-10-01 00:00:00+09' + (g || ' minutes')::interval FROM generate_series(1, $((1000 * scale))) g;
+ALTER TABLE customers OWNER TO shopapp; ALTER TABLE orders OWNER TO shopapp;
+SQL
+  mkdb sawatari_ryo_shop
+  pgq -d sawatari_ryo_shop -c "CREATE TABLE t (id int); INSERT INTO t SELECT generate_series(1, 20); ALTER TABLE t OWNER TO shopapp"
+fi
+lo_count=0
+if [ "$variant" = lo ]; then
+  mkdb docstore
+  pgq -d docstore <<SQL
+CREATE TABLE docs (id serial PRIMARY KEY, title text, body_oid oid);
+INSERT INTO docs (title, body_oid) SELECT 'doc-' || g, lo_from_bytea(0, convert_to(repeat('合成のラージオブジェクト ' || g, 20), 'UTF8')) FROM generate_series(1, 3) g;
+ALTER TABLE docs OWNER TO shopapp;
+SQL
+  lo_count="$(pgq -d docstore -Atc 'SELECT count(*) FROM pg_largeobject_metadata')"
+fi
+second=false
+if [ "$variant" = nocluster ]; then
+  if ! pg_lsclusters -h | grep -q ' aux '; then pg_createcluster 17 aux -p 5433 --start; fi
+  for _ in $(seq 1 60); do runuser -u postgres -- pg_isready -q -p 5433 && break; sleep 1; done
+  PGPORT_Q=5433 pgq -d postgres -c "CREATE ROLE shopapp NOLOGIN" || true
+  mkdb auxtool 5433
+  PGPORT_Q=5433 pgq -d auxtool -c "CREATE TABLE t (id int); INSERT INTO t SELECT generate_series(1, 7); ALTER TABLE t OWNER TO shopapp"
+  second=true
+fi
+
+cnt() { pgq -d "$1" -p "${3:-5432}" -Atc "SELECT count(*) FROM $2"; }
+# --- 期待値(試験の外) ---
+{
+jq -n \
+  --arg variant "$variant" --argjson scale "$scale" --argjson lo "$lo_count" --argjson second "$second" \
+  --argjson customers "$(cnt shopdb customers)" --argjson orders "$(cnt shopdb orders)" \
+  --argjson names_ja "$(printf '%s\n' "${NAMES_JA[@]}" | jq -R . | jq -s .)" \
+  --argjson names_ro "$(printf '%s\n' "${NAMES_RO[@]}" | jq -R . | jq -s .)" '
+{
+ format: "sitate.accept-expectations/v1", variant: $variant, scale: $scale,
+ note: "合成データ。個人名に見える語はすべて架空。A7 の (ii) は personal_names.strings を検索語にする",
+ file_roots: ["/srv/shopapp", "/srv/kumoi-minato-share"],
+ personal_names: {
+   strings: ($names_ja + $names_ro + ["sawatari_ryo_shop"]),
+   target_file_names: [range(0; ($names_ja|length)) | {path: ("/srv/shopapp/uploads/invoices/請求書_" + $names_ja[.] + ".txt"), name: $names_ja[.]}],
+   target_dir_names:  [range(0; ($names_ro|length)) | {path: ("/srv/shopapp/uploads/customers/" + $names_ro[.]), name: $names_ro[.]}],
+   survey_dir_names:  [{parent: "/home", name: $names_ro[0]}, {parent: "/srv", name: "kumoi-minato-share"}],
+   db_names: ["sawatari_ryo_shop"]
+ },
+ clusters: ([{port: 5432, major: 17}] + (if $second then [{port: 5433, major: 17}] else [] end)),
+ databases: ([
+   {cluster_port: 5432, name: "shopdb", rows: {customers: $customers, orders: $orders}, large_objects: 0},
+   {cluster_port: 5432, name: "sawatari_ryo_shop", rows: {t: 20}, large_objects: 0}]
+   + (if $variant == "lo" then [{cluster_port: 5432, name: "docstore", rows: {docs: 3}, large_objects: $lo}] else [] end)
+   + (if $second then [{cluster_port: 5433, name: "auxtool", rows: {t: 7}, large_objects: 0}] else [] end)),
+ declined_in_q4: (if $second then [{kind: "postgresql_cluster", port: 5433}] else [] end),
+ add_extra: {mount: "/mnt/archive", db: {cluster_port: 5432, name: "newapp"}}
+}' >&3
+}

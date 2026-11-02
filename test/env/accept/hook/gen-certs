@@ -1,0 +1,12 @@
+#!/bin/sh
+# 受け手の自己署名の CA とサーバー証明書を作る(起動時に 1 回。accept-env.sh up が呼ぶ)。使い方: gen-certs <出力先>
+# 出力: ca.pem(各ホストに SITATE_EXTRA_CA_FILE で届ける)、server.pem、server.key。CA の鍵は出力に残さない。
+set -eu
+out="${1:?出力先}"; mkdir -p "$out"; cd "$out"
+openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -nodes -keyout ca.key -out ca.pem -days 3650 -subj "/CN=sitate-test-ca" >/dev/null 2>&1
+openssl req -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -nodes -keyout server.key -out server.csr -subj "/CN=hook" >/dev/null 2>&1
+printf 'subjectAltName=DNS:hook,DNS:localhost\nbasicConstraints=CA:FALSE\n' > ext.cnf
+openssl x509 -req -in server.csr -CA ca.pem -CAkey ca.key -CAcreateserial -out server.crt -days 3650 -extfile ext.cnf >/dev/null 2>&1
+cat server.crt > server.pem
+rm -f ca.key ca.srl server.csr server.crt ext.cnf
+chmod 0644 ca.pem server.pem; chmod 0644 server.key

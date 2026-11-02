@@ -1,0 +1,40 @@
+#!/bin/bash
+# 受入試験の環境のホスト(source・backup・dest)の PID 1 の前処理。作業指示書 5.1b、3.3。
+# 起動の前に docker cp で /opt/sitate-test/in/ に置かれたもの(accept-env.sh up が生成。リポジトリには置かない)から次を作ってから systemd を起こす。
+#   - SSH のホスト鍵(ssh_host_ed25519_key)と管理用アカウント(admin_user。sudo は NOPASSWD)の authorized_keys(admin.pub)
+#   - /etc/environment と systemd の既定の環境(hostenv の KEY=VALUE)。SSH のセッション(gate の強制コマンドを含む)・cron・systemd の単位に届く
+#   - ROLE=source のとき、Docker が bind mount する /etc/hosts・/etc/hostname・/etc/resolv.conf を実ファイルに置き換える
+#     (調査 source survey のマウントの一覧に試験環境の都合のマウントを出さないため)
+set -eu
+in=/opt/sitate-test/in
+role="$(cat "$in/role")"
+install -d -m 0755 /etc/ssh
+install -m 0600 "$in/ssh_host_ed25519_key" /etc/ssh/ssh_host_ed25519_key
+install -m 0644 "$in/ssh_host_ed25519_key.pub" /etc/ssh/ssh_host_ed25519_key.pub
+admin="$(cat "$in/admin_user")"
+if ! id "$admin" >/dev/null 2>&1; then useradd -m -s /bin/bash "$admin"; fi
+install -d -m 0700 -o "$admin" -g "$admin" "/home/$admin/.ssh"
+install -m 0600 -o "$admin" -g "$admin" "$in/admin.pub" "/home/$admin/.ssh/authorized_keys"
+printf '%s ALL=(ALL) NOPASSWD:ALL\n' "$admin" > /etc/sudoers.d/90-sitate-test-admin
+chmod 0440 /etc/sudoers.d/90-sitate-test-admin
+passwd -l "$admin" >/dev/null 2>&1 || true
+# 環境変数
+: > /etc/environment
+mgr=""
+while IFS= read -r line; do
+  [ -n "$line" ] || continue
+  printf '%s\n' "$line" >> /etc/environment
+  k="${line%%=*}"; v="${line#*=}"
+  mgr="$mgr \"$k=$v\""
+done < "$in/hostenv"
+install -d /etc/systemd/system.conf.d
+printf '[Manager]\nDefaultEnvironment=%s\n' "$mgr" > /etc/systemd/system.conf.d/10-sitate-test-env.conf
+if [ -f "$in/ca.pem" ]; then install -d /opt/sitate-test; install -m 0644 "$in/ca.pem" /opt/sitate-test/ca.pem; fi
+if [ "$role" = source ]; then
+  for f in /etc/hosts /etc/hostname /etc/resolv.conf; do
+    if mountpoint -q "$f" 2>/dev/null; then cp "$f" "$f.copy"; umount "$f" 2>/dev/null && mv "$f.copy" "$f" || rm -f "$f.copy"; fi
+  done
+fi
+# 生成物の中の公開してよくない値は残さない(鍵は /etc/ssh と authorized_keys に移した)。
+rm -f "$in/ssh_host_ed25519_key"
+exec /lib/systemd/systemd --system --unit=multi-user.target

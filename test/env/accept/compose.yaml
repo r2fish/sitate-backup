@@ -1,0 +1,50 @@
+# 受入試験の環境(作業指示書 3.3、5.1b)。役割名 = サービス名 = ホスト名: source(元サーバー)、backup(バックアップサーバー)、dest(復元先)、hook(Webhook の受け手)。
+# newhost(全損後の新しいホスト)はイテレーション 2 で足す。起動と停止は test/env/bin/accept-env.sh(環境変数 ACC_* はそこが決める)。
+# OS は Debian 12、init は systemd(source・backup・dest)。ホストのポートは公開しない(コンテナ間の通信だけ。元サーバーの sshd は 22)。
+name: sitate-acc-${ACC_NAME}
+x-host: &host
+  privileged: true            # systemd・loop マウント(source)・rootless の podman(backup・dest)のため
+  tmpfs: [/run, /run/lock, /tmp]
+  stop_signal: SIGRTMIN+3
+  restart: "no"
+services:
+  source:
+    <<: *host
+    image: sitate-acc-source:local
+    build: {context: ., dockerfile: Dockerfile, target: source, args: {BASE_IMAGE: "${BASE_IMAGE}"}}
+    container_name: sitate-acc-${ACC_NAME}-source
+    hostname: source
+    networks: {acc: {aliases: [source]}}
+  backup:
+    <<: *host
+    image: sitate-acc-backup:local
+    build: {context: ., dockerfile: Dockerfile, target: backup, args: {BASE_IMAGE: "${BASE_IMAGE}"}}
+    container_name: sitate-acc-${ACC_NAME}-backup
+    hostname: backup
+    volumes:
+      - ${ACC_RUN}/shared:/opt/sitate-test/shared      # 模擬時間の共有の値(simtime)
+      - ${ACC_ROOT}/dist:/opt/sitate-test/dist:ro      # make build-test の成果物(dist/test/bundle/…)。台本が配置に使う
+    networks: {acc: {aliases: [backup]}, test: {}}
+  dest:
+    <<: *host
+    image: sitate-acc-dest:local
+    build: {context: ., dockerfile: Dockerfile, target: dest, args: {BASE_IMAGE: "${BASE_IMAGE}"}}
+    container_name: sitate-acc-${ACC_NAME}-dest
+    hostname: dest
+    devices: ["/dev/fuse:/dev/fuse", "/dev/net/tun:/dev/net/tun"]
+    volumes:
+      - ${ACC_RUN}/shared:/opt/sitate-test/shared
+      - ${ACC_ROOT}/dist:/opt/sitate-test/dist:ro
+    networks: {acc: {aliases: [dest]}, test: {}}
+  hook:
+    image: sitate-acc-hook:local
+    build: {context: hook, args: {BASE_IMAGE: "${BASE_IMAGE}"}}
+    container_name: sitate-acc-${ACC_NAME}-hook
+    hostname: hook
+    volumes:
+      - ${ACC_RUN}/hook-data:/var/lib/hook
+      - ${ACC_RUN}/certs:/etc/hook/tls:ro
+    networks: {acc: {aliases: [hook]}, test: {}}
+networks:
+  acc: {name: "sitate-acc-${ACC_NAME}"}
+  test: {name: sitate-test, external: true}

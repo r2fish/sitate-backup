@@ -1,0 +1,21 @@
+#!/bin/bash
+# A2 の元サーバーの変種 (a): 手順 4 の調査の後で手順 8 の前に、取れるマウントか DB を足す(作業指示書 5.1b、spec 6.5 A2)。
+# 使い方: sitate-source-add-extra mount|db      mount: /mnt/archive に ext4 を loop でマウント / db: DB の対象を持つクラスタに DB newapp を作る
+set -eu
+case "${1:-}" in
+mount)
+  mkdir -p /mnt/archive /var/lib/sitate-test-img
+  if mountpoint -q /mnt/archive; then echo "すでにマウント済み"; exit 0; fi
+  img=/var/lib/sitate-test-img/archive.img
+  truncate -s 64M "$img"; mkfs.ext4 -q -F "$img"
+  mount -o loop,acl "$img" /mnt/archive
+  mkdir -p /mnt/archive/reports
+  printf '合成の月次レポート\n' > /mnt/archive/reports/2026-10.txt
+  chown -R webadmin:webadmin /mnt/archive
+  echo "mount: /mnt/archive (ext4)";;
+db)
+  runuser -u postgres -- psql -X -q -p 5432 -d postgres -c 'CREATE DATABASE newapp OWNER shopapp'
+  runuser -u postgres -- psql -X -q -p 5432 -d newapp -c 'CREATE TABLE t (id int); INSERT INTO t SELECT generate_series(1, 5); ALTER TABLE t OWNER TO shopapp'
+  echo "db: newapp (cluster 5432)";;
+*) echo "使い方: sitate-source-add-extra mount|db" >&2; exit 64;;
+esac
