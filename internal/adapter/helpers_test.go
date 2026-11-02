@@ -69,7 +69,7 @@ func build(t *testing.T, s spec) built {
 	if v == nil {
 		v = &fake.Verifier{Valid: true}
 	}
-	return built{r: &Runner{Root: root, Version: "1.0.0", Arch: "linux-x86_64", Verifier: v}, root: root, dir: dir, marker: marker}
+	return built{r: &Runner{allowBareAcquire: true, Root: root, Version: "1.0.0", Arch: "linux-x86_64", Verifier: v}, root: root, dir: dir, marker: marker}
 }
 
 func notifySpec(script string) spec {

@@ -12,10 +12,12 @@ import (
 // Root はアダプタの置き場(<Root>/<kind>/<name>/{adapter.json,adapter.json.sig,<exe>})、
 // Version・Arch は trusted comment の期待値(spec 3.2.1)に使う動いている核が属する配布物の版とホストの <os>-<arch>。
 type Runner struct {
-	Root     string
-	Version  string
-	Arch     string
-	Verifier contract.Verifier
+	// allowBareAcquire は試験だけが立てる(取得アダプタを Wrap なしで起動する)。
+	allowBareAcquire bool
+	Root             string
+	Version          string
+	Arch             string
+	Verifier         contract.Verifier
 	// Env は子に渡す追加の環境変数。受けるのは取得アダプタの SITATE_RECV だけ(それ以外の名前は捨てる)。
 	// 試験の切り替えと追加の CA の変数は、試験ビルドの核だけが自分の環境から渡す(製品ビルドでは渡らない)。
 	Env map[string]string

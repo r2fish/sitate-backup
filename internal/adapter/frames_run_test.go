@@ -107,3 +107,11 @@ func TestRunAcquireBadHeaders(t *testing.T) {
 		})
 	}
 }
+
+// 取得アダプタは Wrap(容器)なしでは起動しない(spec 3.4)。
+func TestAcquireWithoutWrapNotStarted(t *testing.T) {
+	b := acquireWith(t, frameBytes(t), "echo '"+acquireOK+"'")
+	b.r.allowBareAcquire = false
+	_, err := b.r.Run(ctx, contract.RunContext{}, "acquire", "files", acquireReq(), nil)
+	errDetail(t, err, contract.CodeInternal)
+}

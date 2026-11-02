@@ -183,6 +183,6 @@ func TestHelperCore(t *testing.T) {
 	if root == "" {
 		t.Skip("別プロセス用")
 	}
-	r := &Runner{Root: root, Version: "1.0.0", Arch: "linux-x86_64", Verifier: okVerifier{}}
+	r := &Runner{allowBareAcquire: true, Root: root, Version: "1.0.0", Arch: "linux-x86_64", Verifier: okVerifier{}}
 	_, _ = r.Run(ctx, contract.RunContext{PdeathSig: true}, "notify", "webhook", request("sitate.notify/v1"), nil)
 }

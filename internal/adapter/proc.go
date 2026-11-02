@@ -106,6 +106,9 @@ func (r *Runner) exec(ctx context.Context, rc contract.RunContext, l *loaded, ki
 func (r *Runner) startChild(rc contract.RunContext, l *loaded, kind, name string) (cmd *exec.Cmd, in io.WriteCloser, out, errPipe io.ReadCloser, err error) {
 	env := r.childEnv(kind)
 	argv := []string{l.exe}
+	if kind == "acquire" && rc.Wrap == nil && !r.allowBareAcquire { // 取得アダプタは容器の外で動かさない(spec 3.4。隔離が黙って外れないように)
+		return nil, nil, nil, nil, internalErr(kind, name, "request")
+	}
 	if rc.Wrap != nil {
 		// 検証(署名・sha256)は済んでいる。容器などで包んだ引数列(実行ファイルまで)を起動する
 		w, werr := rc.Wrap(l.exe, env)
