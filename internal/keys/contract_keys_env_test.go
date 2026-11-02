@@ -210,6 +210,7 @@ func newEnv() *kenv {
 	e.pr.rec = e.rec
 	e.istore = &intentStore{ObjectStore: store, rec: e.rec, dir: e.dir}
 	e.k = &Keys{Store: e.istore, Probe: e.pr, State: e.st, KeyS: e.ks, Provision: e.run, Dir: e.dir, Recorder: e.rec, Verifier: &fake.Verifier{Valid: true}, Bundle: &fake.Bundle{}, Clock: &fake.Clock{T: time.Date(2027, 3, 1, 0, 0, 0, 0, time.UTC)}}
+	e.k.Secrets, e.k.OS = issuedSecrets{}, &fake.OSProbe{} // 結線の漏れは INTERNAL で止まるので、全部を差す
 	return e
 }
 

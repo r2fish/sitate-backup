@@ -185,7 +185,11 @@ func TestContractKeysInitPhraseVerifyKeyringVersion(t *testing.T) {
 	e := newPhraseEnv(false)
 	ks := newKS()
 	e.k.KeyS, e.k.Codec = ks, &harness.RefCodec{}
-	pub := base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{0x07}, 32))
+	e.st.cand, e.st.candDef = true, candStorage // init は候補の定義を読む(spec 3.1.2.1)
+	// 承認鍵は ssh-ed25519 の公開鍵の blob の base64(spec 3.1.2.1、4.5): 長さ付きの鍵種 ∥ 長さ付きの鍵。
+	blob := append([]byte{0, 0, 0, 11}, "ssh-ed25519"...)
+	blob = append(append(blob, 0, 0, 0, 32), bytes.Repeat([]byte{0x07}, 32)...)
+	pub := base64.StdEncoding.EncodeToString(blob)
 	r, err := e.k.Init(ctx, contract.Call{Words: []string{"init"}, SecretOut: true, Args: map[string][]string{"approval-pubkey": {pub}}})
 	harness.Shape(t, []string{"init"}, r, err)
 	if r.Phrase == nil {
