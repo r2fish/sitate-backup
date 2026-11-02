@@ -21,6 +21,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/klauspost/compress/zstd"
+
 	"github.com/r2fish/sitate-backup/internal/contract"
 	"github.com/r2fish/sitate-backup/internal/contract/harness"
 )
@@ -34,6 +36,7 @@ type aeadVec struct {
 	KeyHex          string `json:"key_hex"`
 	NonceHex        string `json:"nonce_hex"`
 	PlaintextHex    string `json:"plaintext_hex"`
+	ContentHex      string `json:"content_hex"` // manifest だけ: Encode に渡し Decode が返す JSON。plaintext_hex はそれを zstd で圧縮した AEAD の層の平文(spec 4.3)
 	ObjectHex       string `json:"object_hex"`
 }
 
@@ -267,25 +270,51 @@ func TestContractCodecEncodeDecode(t *testing.T) {
 		if o.v.Magic == "SITC" || o.v.Magic == "WRPS" || o.v.Magic == "WRPC" {
 			continue // チャンクは Seal / Open、包んだ鍵は KeyService
 		}
+		content := o.plain
+		if o.v.ContentHex != "" {
+			content = unhex(t, o.v.ContentHex)
+		}
 		got, err := (&Codec{}).Decode(o.v.Magic, o.id, o.obj, o.key)
 		harness.Implemented(t, err)
-		if err != nil || !bytes.Equal(got, o.plain) {
+		if err != nil || !bytes.Equal(got, content) {
 			t.Errorf("%s: Decode %x %v", name, got, err)
 		}
 		h := contract.Header{Kind: o.v.Magic, FormatVersion: contract.FormatVersion, Mark: o.mark}
 		if o.v.Magic == "SITM" {
 			h.Wrapped = o.header[9:]
 		}
-		enc, err := (&Codec{}).Encode(o.v.Magic, o.id, h, o.plain, o.key)
-		if err != nil || !bytes.HasPrefix(enc, o.header) || len(enc) != len(o.header)+contract.NonceSize+len(o.plain)+contract.TagSize {
+		enc, err := (&Codec{}).Encode(o.v.Magic, o.id, h, content, o.key)
+		if err != nil || !bytes.HasPrefix(enc, o.header) {
 			t.Fatalf("%s: Encode の形 %x %v", name, enc, err)
 		}
-		if back, err := (&Codec{}).Decode(o.v.Magic, o.id, enc, o.key); err != nil || !bytes.Equal(back, o.plain) {
+		if o.v.ContentHex != "" {
+			checkManifestCompressed(t, enc[len(o.header):], o.key, o.aad, content)
+		} else if len(enc) != len(o.header)+contract.NonceSize+len(o.plain)+contract.TagSize {
+			t.Fatalf("%s: Encode の長さ %d", name, len(enc))
+		}
+		if back, err := (&Codec{}).Decode(o.v.Magic, o.id, enc, o.key); err != nil || !bytes.Equal(back, content) {
 			t.Errorf("%s: 往復 %v", name, err)
 		}
 		if _, err := (&Codec{}).Decode(o.v.Magic, o.id+"00", enc, o.key); err == nil {
 			t.Errorf("%s: ID が違うのに開けた", name)
 		}
+	}
+}
+
+// マニフェストの本体は AEAD の層で zstd の圧縮(spec 4.3、4.4)。圧縮を飛ばした実装を落とす。
+func checkManifestCompressed(t *testing.T, sealed, key, aad, content []byte) {
+	t.Helper()
+	body, err := (&Crypto{}).AEADOpen(sealed, key, aad)
+	if err != nil {
+		t.Fatalf("manifest: AEAD の層で開けない: %v", err)
+	}
+	d, err := zstd.NewReader(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer d.Close()
+	if plain, err := d.DecodeAll(body, nil); err != nil || !bytes.Equal(plain, content) {
+		t.Errorf("manifest: 本体が zstd で圧縮した JSON でない: %v", err)
 	}
 }
 

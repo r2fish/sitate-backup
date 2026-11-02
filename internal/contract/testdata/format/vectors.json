@@ -1,5 +1,5 @@
 {
- "$comment": "保管形式の試験ベクトル(spec 4.3)。header_hex・aad_hex は仕様の表から手で組んだ値(U1a が仕様から作った並びと突き合わせる)。object_hex = header ∥ nonce ∥ 暗号文 ∥ タグ(XChaCha20-Poly1305)で、暗号の出力は golang.org/x/crypto の実行で埋めた(go test ./internal/contract -run FormatVectors -update-format)。manifest は header_prefix_hex ∥ wrapped_from の object(nonce ∥ 暗号文 ∥ タグの 72 バイト)が header になる。整数はすべて符号なしのビッグエンディアン。",
+ "$comment": "保管形式の試験ベクトル(spec 4.3)。header_hex・aad_hex は仕様の表から手で組んだ値(U1a が仕様から作った並びと突き合わせる)。object_hex = header ∥ nonce ∥ 暗号文 ∥ タグ(XChaCha20-Poly1305)で、暗号の出力は golang.org/x/crypto の実行で埋めた(go test ./internal/contract -run FormatVectors -update-format)。manifest は header_prefix_hex ∥ wrapped_from の object(nonce ∥ 暗号文 ∥ タグの 72 バイト)が header になる。整数はすべて符号なしのビッグエンディアン。 マニフェストの本体は zstd で圧縮した JSON(spec 4.3、4.4): manifest の plaintext_hex は AEAD の層の平文(圧縮した本体)、content_hex は Encode に渡し Decode が返す JSON。",
  "aead": [
   {
    "aad_hex": "0153495443111111111111111111111111111111111111111111111111111111111111111101",
@@ -33,14 +33,15 @@
   },
   {
    "aad_hex": "015349544d4444444444444444444444444444444400000002",
+   "content_hex": "7b22666f726d6174223a227369746174652e6d616e69666573742f7631227d",
    "header_hex": "",
    "header_prefix_hex": "5349544d0100000002",
    "key_hex": "7777777777777777777777777777777777777777777777777777777777777777",
    "magic": "SITM",
    "name": "manifest",
    "nonce_hex": "888888888888888888888888888888888888888888888888",
-   "object_hex": "5349544d0100000002666666666666666666666666666666666666666666666666c0518eda01232287b29a07983d202a4e47d78e3dbcd21544c1028694530b943e828aaf69fb5b09757e86b187a81e1954888888888888888888888888888888888888888888888888ee3fd4421d3fe279a0e869bc67f644dcc1421648aad5a5f3f5bd6386cd7230bfedc31ab7bc9d6275fdcf95a9fa6d77",
-   "plaintext_hex": "7b22666f726d6174223a227369746174652e6d616e69666573742f7631227d",
+   "object_hex": "5349544d0100000002666666666666666666666666666666666666666666666666c0518eda01232287b29a07983d202a4e47d78e3dbcd21544c1028694530b943e828aaf69fb5b09757e86b187a81e1954888888888888888888888888888888888888888888888888bda89dd06b527a0d82a969a961f048c9d04e410bb7d5b7f7f2ac629d9d3e240c83645b176f546b39ce3bc2a7cb2ba8f99c7d59730ed88a5ca8013ecf",
+   "plaintext_hex": "28b52ffd0400f900007b22666f726d6174223a227369746174652e6d616e69666573742f7631227d21de89f5",
    "wrapped_from": "wrap-snapshot-key"
   },
   {
