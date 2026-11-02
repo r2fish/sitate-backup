@@ -19,6 +19,11 @@ func probeWithRun(t *testing.T, systemd bool, run func(name string, args ...stri
 		if err := os.MkdirAll(filepath.Join(p.Root, "run/systemd/system"), 0o755); err != nil {
 			t.Fatal(err)
 		}
+		bin := t.TempDir()
+		if err := os.WriteFile(filepath.Join(bin, "systemctl"), nil, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		t.Setenv("PATH", bin)
 	}
 	p.Run = func(_ context.Context, name string, args ...string) ([]byte, error) { return run(name, args...) }
 	return p
@@ -84,4 +89,21 @@ func exitErr(stderr string) error {
 		return ee
 	}
 	return errors.New(stderr)
+}
+
+// ディレクトリがあっても systemctl が無ければ、登録(state.DetectScheduler)と同じく cron の環境として crontab で判定する(D-0161)。
+func TestProbeTimerPermissionNoSystemctlIsCron(t *testing.T) {
+	p := probeWithRun(t, false, func(name string, args ...string) ([]byte, error) {
+		if name == "crontab" {
+			return nil, nil
+		}
+		return nil, errors.New("使わない")
+	})
+	if err := os.MkdirAll(filepath.Join(p.Root, "run/systemd/system"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", t.TempDir())
+	if !check(t, p, "timer_permission") {
+		t.Error("systemctl が無い環境は crontab で判定する")
+	}
 }

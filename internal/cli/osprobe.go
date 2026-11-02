@@ -18,6 +18,7 @@ import (
 	"strings"
 
 	"github.com/r2fish/sitate-backup/internal/contract"
+	"github.com/r2fish/sitate-backup/internal/state"
 )
 
 // ServiceUser は専用ユーザー名(spec 3.1.2 の service_user)。
@@ -100,7 +101,7 @@ func (p *HostProbe) serviceUser() bool {
 
 // timerPermission は sitate が OS のスケジューラにタイマーを登録できるか(spec 3.1.2 の表)。
 // systemd の環境ではそのユーザーの単位を常駐させられる(linger が有効)こと、cron の環境では sitate の crontab が許されていること。
-// どちらの環境かは state.json の timers.backend、無ければ systemd が動いているか(/run/systemd/system)で決め、片方が通れば合格にはしない。
+// どちらの環境かは state.json の timers.backend、無ければ state.DetectScheduler で決め、片方が通れば合格にはしない。
 func (p *HostProbe) timerPermission(ctx context.Context) bool {
 	if p.timerBackend(ctx) == "cron" {
 		return p.crontabAllowed(ctx)
@@ -120,10 +121,7 @@ func (p *HostProbe) timerBackend(ctx context.Context) string {
 			}
 		}
 	}
-	if fi, err := os.Stat(p.path("/run/systemd/system")); err == nil && fi.IsDir() {
-		return "systemd"
-	}
-	return "cron"
+	return state.DetectScheduler(p.path("/run/systemd/system")) // 登録(wire_parts.go)と同じ判定
 }
 
 // crontabAllowed は sitate の crontab を読める(`crontab -l`)か。crontab が空なだけ("no crontab for")は許されている。

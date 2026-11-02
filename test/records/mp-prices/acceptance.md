@@ -8,3 +8,7 @@
 - 別起動のレビューは未実施(まとめレビューで見る)。
 - 未検証: 実機の `loginctl`・`crontab` の出力と `sitate` ユーザーでの実行、実機の `adapter_dir_modes`(主経路の通しで `doctor` を呼ぶときに見る)、署名済みの配布物を経由する `estimate`。
 - 設計の監督への疑義(両論): 置き場が無いときの `adapter_dir_modes` を外れにした。`/run/systemd/system` が無い環境は cron と判定する。Storj の「API 料金なし」を規則 6 の無料に数えた。
+
+## 設計の監督の答え(D-0161)
+
+上の疑義 3 点は今の扱いのままでよい。`timerBackend` の判定が `state.DetectScheduler` と割れる点は監督が直した(`systemctl` が無い環境は cron)。試験 `TestProbeTimerPermissionNoSystemctlIsCron` は、`systemctl` を見ない変異で赤。
