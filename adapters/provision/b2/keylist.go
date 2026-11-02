@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"slices"
-	"strings"
 )
 
 const keyPageMax = 1000
@@ -61,4 +60,3 @@ func (k *listedKey) productRole(bucket, bucketID string, prefix *string) string 
 	}
 	return ""
 }
-
