@@ -1,0 +1,20 @@
+{
+  "name": "sitate_pending",
+  "description": "保留中の変更の記録を読む。 秘密の値と元サーバーのパスの実値は渡さず、参照名(secret_refs、path_ref)を使う。",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "run_id": {
+        "type": "string",
+        "description": "実行の識別子(省略可。アプリが作る)。"
+      },
+      "id": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "id"
+    ],
+    "additionalProperties": false
+  }
+}

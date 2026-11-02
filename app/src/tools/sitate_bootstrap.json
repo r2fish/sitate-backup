@@ -1,0 +1,45 @@
+{
+  "name": "sitate_bootstrap",
+  "description": "バックアップサーバーに製品を置く。署名を検証した核とアダプタを管理用 SSH で置き、gate を登録し、終わりに管理アクセスを閉じる。 秘密の値と元サーバーのパスの実値は渡さず、参照名(secret_refs、path_ref)を使う。",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "run_id": {
+        "type": "string",
+        "description": "実行の識別子(省略可。アプリが作る)。"
+      },
+      "host": {
+        "type": "string"
+      },
+      "port": {
+        "type": "integer"
+      },
+      "admin_user": {
+        "type": "string"
+      },
+      "admin_ref": {
+        "type": "string",
+        "description": "管理用の資格情報の参照名(値ではない)。",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+      },
+      "rekey": {
+        "type": "boolean"
+      },
+      "secret_refs": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+        },
+        "uniqueItems": true,
+        "description": "このコマンドが使う秘密の参照名の配列(重複なし)。値はアプリがキーチェーンから差し込む。"
+      }
+    },
+    "required": [
+      "host",
+      "admin_user",
+      "admin_ref"
+    ],
+    "additionalProperties": false
+  }
+}

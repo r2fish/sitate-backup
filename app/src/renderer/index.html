@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sitate-backup</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <section data-surface="status" aria-label="status"><h1 id="status-heading"></h1><ul id="status-rows"></ul><div id="status-ask-ai"></div><div id="target-area"></div><div id="survey-area"></div></section>
+  <section data-surface="chat" aria-label="chat"><ol id="chat-lines"></ol><form id="chat-form"><input id="chat-input" autocomplete="off"><button type="submit" id="chat-send"></button></form></section>
+</main>
+<dialog data-surface="approval-card" id="approval-card"><div id="card-body"></div><div id="card-proofs"></div><div id="card-actions"></div></dialog>
+<dialog data-surface="secret-box" id="secret-box"><label id="secret-label"></label><input id="secret-input" type="password" autocomplete="off"><button id="secret-submit"></button></dialog>
+<dialog data-surface="phrase-panel" id="phrase-panel"><ol id="phrase-words"></ol><div id="phrase-cautions"></div><div id="phrase-actions"></div></dialog>
+<script src="renderer.js"></script>
+</body>
+</html>

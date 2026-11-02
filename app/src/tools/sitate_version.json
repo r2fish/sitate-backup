@@ -1,0 +1,14 @@
+{
+  "name": "sitate_version",
+  "description": "核のバージョンと形式の版、署名鍵の指紋を返す。バックアップサーバーにつながっているかの確認にも使う。 秘密の値と元サーバーのパスの実値は渡さず、参照名(secret_refs、path_ref)を使う。",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "run_id": {
+        "type": "string",
+        "description": "実行の識別子(省略可。アプリが作る)。"
+      }
+    },
+    "additionalProperties": false
+  }
+}

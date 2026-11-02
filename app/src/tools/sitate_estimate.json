@@ -1,0 +1,44 @@
+{
+  "name": "sitate_estimate",
+  "description": "保管先ごとの月額費用の見積もりを出す。 秘密の値と元サーバーのパスの実値は渡さず、参照名(secret_refs、path_ref)を使う。",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "run_id": {
+        "type": "string",
+        "description": "実行の識別子(省略可。アプリが作る)。"
+      },
+      "size_gb": {
+        "type": "string"
+      },
+      "daily_gb": {
+        "type": "string"
+      },
+      "dump_gb": {
+        "type": "string"
+      },
+      "keep_days": {
+        "type": "integer"
+      },
+      "restore_tests_per_month": {
+        "type": "integer"
+      },
+      "providers": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "endpoint": {
+        "type": "string"
+      },
+      "hours": {
+        "type": "string"
+      },
+      "price_table": {
+        "type": "boolean"
+      }
+    },
+    "additionalProperties": false
+  }
+}

@@ -1,0 +1,162 @@
+{
+  "name": "sitate_propose",
+  "description": "危険な変更を提案する(承認は人がアプリの承認カードで行う)。kind で種類を選び、その種類の引数だけを渡す。 秘密の値と元サーバーのパスの実値は渡さず、参照名(secret_refs、path_ref)を使う。",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "run_id": {
+        "type": "string",
+        "description": "実行の識別子(省略可。アプリが作る)。"
+      },
+      "restore": {
+        "type": "object"
+      },
+      "source": {
+        "type": "object"
+      },
+      "notify": {
+        "type": "object"
+      },
+      "hours": {
+        "type": "integer"
+      },
+      "pubkey": {
+        "type": "string"
+      },
+      "key_type": {
+        "type": "string",
+        "enum": [
+          "software",
+          "fido2"
+        ]
+      },
+      "to": {
+        "type": "string"
+      },
+      "session": {
+        "type": "string"
+      },
+      "hold_hours": {
+        "type": "integer"
+      },
+      "backup": {
+        "type": "string"
+      },
+      "paths": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "パスの一覧。元サーバーのパスは path_ref(pr:…)で指す。人が言ったパスは実値のまま渡してよい。"
+      },
+      "checks": {
+        "type": "string",
+        "enum": [
+          "all",
+          "none"
+        ]
+      },
+      "force": {
+        "type": "boolean"
+      },
+      "dir": {
+        "type": "string"
+      },
+      "step": {
+        "anyOf": [
+          {
+            "enum": [
+              "R3",
+              "R7"
+            ]
+          },
+          {
+            "type": "string",
+            "pattern": "^[A-Z][0-9]{1,2}$"
+          }
+        ],
+        "description": "kind が attest のときの段。署名を要する段だけ。"
+      },
+      "note": {
+        "type": "string"
+      },
+      "endpoint": {
+        "type": "string"
+      },
+      "bucket": {
+        "type": "string"
+      },
+      "prefix": {
+        "type": "string"
+      },
+      "adapter": {
+        "type": "string"
+      },
+      "reissue": {
+        "type": "boolean"
+      },
+      "authorized_key": {
+        "type": "string"
+      },
+      "allow_from": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "with_restore_change": {
+        "type": "object"
+      },
+      "kind": {
+        "type": "string",
+        "enum": [
+          "storage-init",
+          "read-key-issue",
+          "restore-change",
+          "restore-elsewhere",
+          "restore-session-extend",
+          "restore-dest-release",
+          "source-change",
+          "notify-change",
+          "notify-add",
+          "key-rotate",
+          "key-rotate-waive",
+          "phrase-reissue",
+          "delay-change",
+          "approval-key-change",
+          "restore-test-reduce",
+          "restore-test-increase",
+          "storage-read-extra",
+          "def-change",
+          "def-change-unlisted",
+          "checks-weaken",
+          "hold-release",
+          "adapter-add",
+          "seal",
+          "attest"
+        ]
+      },
+      "definition": {
+        "type": "object",
+        "description": "構造化した定義(JSON のオブジェクト)。"
+      },
+      "secret_refs": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+        },
+        "uniqueItems": true,
+        "description": "このコマンドが使う秘密の参照名の配列(重複なし)。値はアプリがキーチェーンから差し込む。"
+      },
+      "dry_run": {
+        "type": "boolean",
+        "description": "true なら何も変えずに計画だけ返す。"
+      }
+    },
+    "required": [
+      "kind"
+    ],
+    "additionalProperties": false
+  }
+}

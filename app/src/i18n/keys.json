@@ -297,6 +297,15 @@
  "chat.secret.input_box_guide": {
   "args": {}
  },
+ "chat.secret.label.admin": {
+  "args": {}
+ },
+ "chat.secret.label.generic": {
+  "args": {}
+ },
+ "chat.secret.label.llm": {
+  "args": {}
+ },
  "chat.secret.revoke_reissue.admin_key": {
   "args": {}
  },
@@ -310,6 +319,12 @@
   "args": {}
  },
  "chat.secret.revoke_reissue.storage_key": {
+  "args": {}
+ },
+ "chat.secret.submit.label": {
+  "args": {}
+ },
+ "chat.send.label": {
   "args": {}
  },
  "chat.tool.display.call_format": {
@@ -938,10 +953,40 @@
  "core.why.UNEXPECTED_VERSION": {
   "args": {}
  },
+ "phrase.action.cancel": {
+  "args": {}
+ },
+ "phrase.action.confirm": {
+  "args": {}
+ },
+ "phrase.action.handwritten": {
+  "args": {}
+ },
+ "phrase.action.print": {
+  "args": {}
+ },
+ "phrase.action.verify": {
+  "args": {}
+ },
+ "phrase.confirm.needs_print": {
+  "args": {}
+ },
  "phrase.photo_caution": {
   "args": {}
  },
+ "phrase.print.does_not_fit": {
+  "args": {}
+ },
+ "phrase.print.failed": {
+  "args": {}
+ },
+ "phrase.print.unavailable": {
+  "args": {}
+ },
  "phrase.storage_check": {
+  "args": {}
+ },
+ "phrase.verify.input_label": {
   "args": {}
  },
  "status.app_info.heading": {
@@ -987,6 +1032,9 @@
   }
  },
  "status.model_not_first_mark": {
+  "args": {}
+ },
+ "status.panel.heading": {
   "args": {}
  },
  "status.row.checks_count_zero": {
@@ -1043,7 +1091,61 @@
  "status.stale_mark": {
   "args": {}
  },
+ "status.survey.kind.database": {
+  "args": {}
+ },
+ "status.survey.kind.dir": {
+  "args": {}
+ },
+ "status.survey.kind.mount": {
+  "args": {}
+ },
  "status.survey.result.heading": {
+  "args": {}
+ },
+ "status.survey.size.unknown": {
+  "args": {}
+ },
+ "status.survey.v1.no": {
+  "args": {}
+ },
+ "status.survey.v1.yes": {
+  "args": {}
+ },
+ "status.target.fingerprint": {
+  "args": {}
+ },
+ "status.target.heading": {
+  "args": {}
+ },
+ "status.target.host": {
+  "args": {}
+ },
+ "status.target.invalid.exists": {
+  "args": {}
+ },
+ "status.target.invalid.fingerprint": {
+  "args": {}
+ },
+ "status.target.invalid.host": {
+  "args": {}
+ },
+ "status.target.invalid.none": {
+  "args": {}
+ },
+ "status.target.invalid.port": {
+  "args": {}
+ },
+ "status.target.pinned": {
+  "args": {}
+ },
+ "status.target.port": {
+  "args": {}
+ },
+ "status.target.register": {
+  "args": {}
+ },
+ "status.target.remove": {
   "args": {}
  },
  "status.unreachable.fixed": {

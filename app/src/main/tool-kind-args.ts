@@ -19,7 +19,54 @@ export type KindArgsResult =
  * この 5 種の表の行を読んで、他の種別の引数を拒むベクトルと正の例を U3a の試験に足すこと。
  */
 export function checkKindArgs(kind: string, args: Readonly<Record<string, unknown>>): KindArgsResult {
-  void kind;
-  void args;
-  throw new Error("NOT_IMPLEMENTED: checkKindArgs (U3a。spec 3.7)");
+  const shapes = Object.hasOwn(KIND_SHAPES, kind) ? KIND_SHAPES[kind]! : null;
+  if (shapes === null) return INVALID;
+  const present = Object.keys(args).filter((k) => args[k] !== undefined && k !== "kind" && !COMMON_ARGS.includes(k));
+  const fits = shapes.some((shape) => shape.required.every((r) => present.includes(r)) && present.every((k) => shape.required.includes(k) || shape.optional.includes(k)));
+  if (!fits) return INVALID;
+  if (kind === "attest" && !isSignedStep(args.step)) return INVALID;
+  return { ok: true };
 }
+
+const INVALID: KindArgsResult = { ok: false, code: "TOOL_ARG_INVALID" };
+const COMMON_ARGS: readonly string[] = ["run_id", "dry_run", "secret_refs"];
+/** 署名を要する段: R3・R7 と付録の手順 ID(契約の change.json の attest_step_signed と同じ)。署名を要さない 3 段はこれに合わない。 */
+const SIGNED_STEP = /^(R3|R7|[A-Z][0-9]{1,2})$/;
+const isSignedStep = (v: unknown): boolean => typeof v === "string" && SIGNED_STEP.test(v);
+
+interface Shape {
+  readonly required: readonly string[];
+  readonly optional: readonly string[];
+}
+const shape = (required: readonly string[], optional: readonly string[] = []): Shape => ({ required, optional });
+/** restore の引数のうち propose に出るもの(--host-ref は apply で渡す)。 */
+const RESTORE_REQUIRED = ["backup", "to"];
+const RESTORE_OPTIONAL = ["paths", "checks"];
+
+/** spec 3.1.2.9 の種別の表の「引数」の列。選択肢が複数ある種別は配列の要素ごとに 1 つの組。 */
+const KIND_SHAPES: Readonly<Record<string, readonly Shape[]>> = {
+  "storage-init": [shape([], ["endpoint", "bucket", "prefix", "adapter", "reissue"])],
+  "read-key-issue": [shape([], ["endpoint", "bucket", "prefix", "adapter", "key_ref", "repo_id"])],
+  "restore-change": [shape(["restore"])],
+  "restore-elsewhere": [shape(RESTORE_REQUIRED, RESTORE_OPTIONAL)],
+  "restore-session-extend": [shape(["session", "hold_hours"]), shape([...RESTORE_REQUIRED, "hold_hours"], RESTORE_OPTIONAL)],
+  "restore-dest-release": [shape(["session"], ["authorized_key", "allow_from", "with_restore_change"])],
+  "source-change": [shape(["source"])],
+  "notify-change": [shape(["notify"])],
+  "notify-add": [shape(["notify"])],
+  "key-rotate": [shape([])],
+  "key-rotate-waive": [shape([])],
+  "phrase-reissue": [shape([])],
+  "delay-change": [shape(["hours"])],
+  "approval-key-change": [shape(["pubkey"], ["key_type"])],
+  "restore-test-reduce": [shape(["to"])],
+  "restore-test-increase": [shape(["to"])],
+  "storage-read-extra": [shape(RESTORE_REQUIRED, RESTORE_OPTIONAL), shape(["force"])],
+  "def-change": [shape(["definition"])],
+  "def-change-unlisted": [shape(["definition"])],
+  "checks-weaken": [shape(["definition"])],
+  "hold-release": [shape([])],
+  "adapter-add": [shape(["dir"])],
+  "seal": [shape(["definition"])],
+  "attest": [shape(["step"], ["note"])],
+};

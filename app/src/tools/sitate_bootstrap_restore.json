@@ -1,0 +1,120 @@
+{
+  "name": "sitate_bootstrap_restore",
+  "description": "全損後の新しいホストに復元の環境を整える。step で段を選ぶ。 秘密の値と元サーバーのパスの実値は渡さず、参照名(secret_refs、path_ref)を使う。",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "run_id": {
+        "type": "string",
+        "description": "実行の識別子(省略可。アプリが作る)。"
+      },
+      "step": {
+        "type": "string",
+        "enum": [
+          "place",
+          "issue-read-key",
+          "secrets-set",
+          "list",
+          "journal-verify",
+          "restore",
+          "revoke-read-key"
+        ]
+      },
+      "host": {
+        "type": "string"
+      },
+      "port": {
+        "type": "integer"
+      },
+      "initial_user": {
+        "type": "string"
+      },
+      "initial_ref": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+      },
+      "endpoint": {
+        "type": "string"
+      },
+      "bucket": {
+        "type": "string"
+      },
+      "prefix": {
+        "type": "string"
+      },
+      "adapter": {
+        "type": "string"
+      },
+      "admin_ref": {
+        "type": "string",
+        "description": "管理用の資格情報の参照名(値ではない)。",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+      },
+      "key_ref": {
+        "type": "string",
+        "description": "保管先の鍵の参照名(値ではない)。",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+      },
+      "repo_id": {
+        "type": "string"
+      },
+      "stdin": {
+        "type": "boolean"
+      },
+      "role": {
+        "type": "string",
+        "enum": [
+          "write",
+          "read"
+        ]
+      },
+      "keyring": {
+        "type": "string"
+      },
+      "anchor": {
+        "type": "string"
+      },
+      "backup": {
+        "type": "string"
+      },
+      "to": {
+        "type": "string"
+      },
+      "paths": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "パスの一覧。元サーバーのパスは path_ref(pr:…)で指す。人が言ったパスは実値のまま渡してよい。"
+      },
+      "host_ref": {
+        "type": "string",
+        "description": "宛先の資格情報の参照名(値ではない)。",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+      },
+      "hold_hours": {
+        "type": "integer"
+      },
+      "checks": {
+        "type": "string",
+        "enum": [
+          "all",
+          "none"
+        ]
+      },
+      "secret_refs": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+        },
+        "uniqueItems": true,
+        "description": "このコマンドが使う秘密の参照名の配列(重複なし)。値はアプリがキーチェーンから差し込む。"
+      }
+    },
+    "required": [
+      "step"
+    ],
+    "additionalProperties": false
+  }
+}

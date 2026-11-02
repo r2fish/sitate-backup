@@ -1,0 +1,19 @@
+{
+  "name": "sitate_bucket_check",
+  "description": "保管先の設定(バージョニング、保持、鍵の権限)を検査する。 秘密の値と元サーバーのパスの実値は渡さず、参照名(secret_refs、path_ref)を使う。",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "run_id": {
+        "type": "string",
+        "description": "実行の識別子(省略可。アプリが作る)。"
+      },
+      "key_ref": {
+        "type": "string",
+        "description": "保管先の鍵の参照名(値ではない)。",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+      }
+    },
+    "additionalProperties": false
+  }
+}

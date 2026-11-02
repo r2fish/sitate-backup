@@ -1,0 +1,18 @@
+{
+  "name": "sitate_prune",
+  "description": "保持期限を過ぎた世代を整理する。 秘密の値と元サーバーのパスの実値は渡さず、参照名(secret_refs、path_ref)を使う。",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "run_id": {
+        "type": "string",
+        "description": "実行の識別子(省略可。アプリが作る)。"
+      },
+      "dry_run": {
+        "type": "boolean",
+        "description": "true なら何も変えずに計画だけ返す。"
+      }
+    },
+    "additionalProperties": false
+  }
+}

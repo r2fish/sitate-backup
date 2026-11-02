@@ -1,0 +1,38 @@
+{
+  "name": "sitate_source_enroll",
+  "description": "元サーバーを登録する(ホスト鍵の固定と資格情報の受理の確認)。 秘密の値と元サーバーのパスの実値は渡さず、参照名(secret_refs、path_ref)を使う。",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "run_id": {
+        "type": "string",
+        "description": "実行の識別子(省略可。アプリが作る)。"
+      },
+      "host": {
+        "type": "string"
+      },
+      "admin_ref": {
+        "type": "string",
+        "description": "管理用の資格情報の参照名(値ではない)。",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+      },
+      "rotate": {
+        "type": "boolean"
+      },
+      "secret_refs": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+        },
+        "uniqueItems": true,
+        "description": "このコマンドが使う秘密の参照名の配列(重複なし)。値はアプリがキーチェーンから差し込む。"
+      },
+      "dry_run": {
+        "type": "boolean",
+        "description": "true なら何も変えずに計画だけ返す。"
+      }
+    },
+    "additionalProperties": false
+  }
+}

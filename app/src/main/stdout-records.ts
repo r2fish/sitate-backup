@@ -37,7 +37,62 @@ export type StdoutRecords =
  * 破棄の結果は {ok:false, code} だけで、秘密の値を含まない。
  */
 export function parseStdoutRecords(stdout: string, end: StreamEnd = "complete"): StdoutRecords {
-  void stdout;
-  void end;
-  throw new Error("NOT_IMPLEMENTED: parseStdoutRecords (U3a。spec 3.1.4)");
+  const discard = (code: StdoutDiscardCode): StdoutRecords => ({ ok: false, code });
+  if (end === "ssh_disconnected") return discard("SSH_DISCONNECTED");
+  const records = splitRecords(stdout);
+  if (records.length >= 3) return discard("ENVELOPE_TOO_MANY_RECORDS");
+  const secretSchema = records.some((r) => r.schema === SECRET_SCHEMA);
+  if (secretSchema) {
+    const [first, second] = records;
+    const shaped = records.length === 2 && first!.schema === SECRET_SCHEMA && isSecretRecord(first!.value) && isEnvelope(second!.value) && second!.value.phrase_emitted === true;
+    return shaped ? { ok: true, secret: first!.value as SecretStringRecord, envelope: second!.value as OutEnvelope } : discard("ENVELOPE_SECRET_MISMATCH");
+  }
+  if (records.some((r) => isEnvelope(r.value) && r.value.phrase_emitted === true)) return discard("ENVELOPE_SECRET_MISMATCH");
+  const only = records.length === 1 ? records[0]! : null;
+  if (only !== null && isEnvelope(only.value)) return { ok: true, secret: null, envelope: only.value as OutEnvelope };
+  return discard("ENVELOPE_INVALID");
+}
+
+const SECRET_SCHEMA = "sitate.secret-string/v1";
+const ENVELOPE_SCHEMA = "sitate.out/v1";
+const WORD_PATTERN = /^[a-z]{3,8}$/;
+const PHRASE_WORDS = 24;
+/** 解析できない行でも、秘密の schema の印が見えていれば秘密のレコードとして扱う(途中で切れた秘密を、秘密を含む出力として破棄するため)。 */
+const SECRET_SCHEMA_MARK = /"schema"\s*:\s*"sitate\.secret-string\/v1"/;
+
+interface RawRecord {
+  /** 解析できた JSON の値。解析できなければ undefined。 */
+  readonly value: unknown;
+  readonly schema: string | null;
+}
+
+function splitRecords(stdout: string): RawRecord[] {
+  const out: RawRecord[] = [];
+  for (const line of stdout.split("\n")) {
+    if (line.trim() === "") continue;
+    try {
+      const value: unknown = JSON.parse(line);
+      out.push({ value, schema: isObject(value) && typeof value.schema === "string" ? value.schema : null });
+    } catch {
+      out.push({ value: undefined, schema: SECRET_SCHEMA_MARK.test(line) ? SECRET_SCHEMA : null });
+    }
+  }
+  return out;
+}
+
+function isObject(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null && !Array.isArray(v);
+}
+
+function isEnvelope(v: unknown): v is Record<string, unknown> & { phrase_emitted?: unknown } {
+  return isObject(v) && v.schema === ENVELOPE_SCHEMA && Array.isArray(v.command) && typeof v.ok === "boolean";
+}
+
+function isSecretRecord(v: unknown): boolean {
+  if (!isObject(v)) return false;
+  const keys = Object.keys(v).sort().join(",");
+  if (keys !== "keyring_version,kind,schema,words") return false;
+  const words = v.words;
+  return v.kind === "recovery_phrase" && Number.isInteger(v.keyring_version) && (v.keyring_version as number) >= 1
+    && Array.isArray(words) && words.length === PHRASE_WORDS && words.every((w) => typeof w === "string" && WORD_PATTERN.test(w));
 }

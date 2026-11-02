@@ -1,0 +1,25 @@
+{
+  "name": "sitate_def_validate",
+  "description": "定義(definition)の内容を検査する。保存も適用もしない。 秘密の値と元サーバーのパスの実値は渡さず、参照名(secret_refs、path_ref)を使う。",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "run_id": {
+        "type": "string",
+        "description": "実行の識別子(省略可。アプリが作る)。"
+      },
+      "definition": {
+        "type": "object",
+        "description": "構造化した定義(JSON のオブジェクト)。"
+      },
+      "dry_run": {
+        "type": "boolean",
+        "description": "true なら何も変えずに計画だけ返す。"
+      }
+    },
+    "required": [
+      "definition"
+    ],
+    "additionalProperties": false
+  }
+}

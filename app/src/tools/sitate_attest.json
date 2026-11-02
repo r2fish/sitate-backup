@@ -1,0 +1,42 @@
+{
+  "name": "sitate_attest",
+  "description": "人の確認(署名を要する段)の記録を作る。署名は人が承認カードで行う。 秘密の値と元サーバーのパスの実値は渡さず、参照名(secret_refs、path_ref)を使う。",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "run_id": {
+        "type": "string",
+        "description": "実行の識別子(省略可。アプリが作る)。"
+      },
+      "step": {
+        "anyOf": [
+          {
+            "enum": [
+              "R3",
+              "R7"
+            ]
+          },
+          {
+            "type": "string",
+            "pattern": "^[A-Z][0-9]{1,2}$"
+          }
+        ],
+        "description": "署名を要する段(R3、R7、付録の手順 ID)だけ。"
+      },
+      "session": {
+        "type": "string"
+      },
+      "note": {
+        "type": "string"
+      },
+      "dry_run": {
+        "type": "boolean",
+        "description": "true なら何も変えずに計画だけ返す。"
+      }
+    },
+    "required": [
+      "step"
+    ],
+    "additionalProperties": false
+  }
+}

@@ -1,0 +1,160 @@
+// 承認カードの描画モデル(spec 3.7 の承認カードの書式、完了条件 5)。入力は `pending --id` の記録だけ。文はカタログの固定文だけで、
+// モデルの生成文は「AI の説明」の別枠に分けて入れる(区画 9)。署名する値はこの記録から計算した canonical_hash で、モデルを経由しない。
+import { canonicalHash } from "./approval-sign.ts";
+import type { PendingRecord } from "./approval-sign.ts";
+import { sourceRows } from "./approval-card-source.ts";
+import type { SurveySizes } from "./approval-card-source.ts";
+import type { FormatArgs } from "../i18n/format.ts";
+
+export type Translate = (key: string, args?: FormatArgs) => string;
+
+export interface CardRow { readonly label: string; readonly value: string }
+export interface CardSection {
+  /** 区画の番号(spec の書式の表: 1 見出し … 9 AI の説明)。 */
+  readonly no: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+  readonly title: string;
+  readonly rows: readonly CardRow[];
+  readonly lines: readonly string[];
+}
+
+export type DisabledReason = "unknown_op" | "unknown_field" | "hash_mismatch";
+
+export interface CardModel {
+  readonly changeId: string;
+  readonly op: string;
+  /** 署名する値(記録から計算)。 */
+  readonly canonicalHash: string;
+  readonly sections: readonly CardSection[];
+  /** 確認語の入力欄を置く宛先(proof_required[] の順)。 */
+  readonly proofRecipients: readonly string[];
+  /** 確認語の入力欄の横に出す文(受け取り手ごと。完了条件 5)。 */
+  readonly proofLabels: Readonly<Record<string, string>>;
+  readonly approveEnabled: boolean;
+  readonly disabledReason: DisabledReason | null;
+  /** 未知の op・欄のときの、アプリの更新を促す固定文。 */
+  readonly updatePrompt: string | null;
+}
+
+export interface CardContext {
+  readonly t: Translate;
+  /** エージェントの説明(モデルの文)。区画 9 の別枠にだけ入る。 */
+  readonly aiExplanation?: string | null;
+  /** 同じ会話の `source survey` の対象 id → 大きさの表記。無ければ null。 */
+  readonly surveySizes?: SurveySizes | null;
+  /** 調査で見つけて対象にも除外にも無い候補の数。 */
+  readonly undeclaredCandidates?: number;
+  readonly locale?: string;
+}
+
+/** op ごとに plan が持つ欄(spec 3.1.2.9 の表。共通の reversible・errors・estimate_delta_jpy・conflicts は別)。null は欄を列挙できない op。 */
+const COMMON_FIELDS = ["reversible", "errors", "estimate_delta_jpy", "conflicts"];
+const OP_FIELDS: Readonly<Record<string, readonly string[] | null>> = {
+  "storage-init": ["bucket", "key_ref", "reissue", "revoke_key_ids"],
+  "read-key-issue": ["bucket"],
+  "restore-change": ["before", "after", "host_key_fp", "needs_secret"],
+  "restore-elsewhere": ["backup", "to", "host_key_fp", "read_bytes"],
+  "restore-session-extend": ["session_id", "expires_at_before", "expires_at_after", "backup"],
+  "restore-dest-release": ["session_id", "backup", "authorized_key_fp", "allow_from", "restore_change"],
+  "source-change": ["before", "after", "host_key_fp", "needs_secret"],
+  "notify-change": ["before", "after", "proof_required", "machine"],
+  "notify-add": ["before", "after", "proof_required", "machine"],
+  "key-rotate": ["keyring_version", "over_ceiling"],
+  "key-rotate-waive": ["cause", "adopted_at"],
+  "phrase-reissue": ["keyring_version"],
+  "delay-change": ["before", "after", "applies_to"],
+  "approval-key-change": null,
+  "restore-test-reduce": ["from", "to"],
+  "restore-test-increase": ["from", "to"],
+  "storage-read-extra": ["read_bytes", "month_read_bytes", "reserved_bytes", "planned_bytes", "backup"],
+  "def-change": ["diff", "def_hash_after", "estimate_after_jpy", "cost_ceiling_yen", "over_ceiling"],
+  "def-change-unlisted": ["diff", "def_hash_after", "estimate_after_jpy", "cost_ceiling_yen", "over_ceiling"],
+  "checks-weaken": ["diff", "def_hash_after", "estimate_after_jpy", "cost_ceiling_yen", "over_ceiling"],
+  "hold-release": ["causes", "since", "days_since_last_ok"],
+  "adapter-add": ["kind", "name", "version", "sha256", "signature_ok", "replaces"],
+  seal: null,
+  attest: null,
+};
+const PROOF_OPS = ["seal", "notify-add", "notify-change"];
+
+const isRec = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
+const show = (v: unknown): string => (typeof v === "string" ? v : typeof v === "number" || typeof v === "boolean" ? String(v) : JSON.stringify(v));
+const strs = (v: unknown): string[] => (Array.isArray(v) ? v.map(show) : []);
+
+function unknownReason(op: string, plan: Record<string, unknown>, tHas: boolean): DisabledReason | null {
+  if (!tHas || !Object.hasOwn(OP_FIELDS, op)) return "unknown_op";
+  const known = OP_FIELDS[op];
+  if (known === null || known === undefined) return null;
+  return Object.keys(plan).some((k) => !COMMON_FIELDS.includes(k) && !known.includes(k)) ? "unknown_field" : null;
+}
+
+export function buildCard(record: PendingRecord, ctx: CardContext): CardModel {
+  const t = ctx.t;
+  const op = typeof record.op === "string" ? record.op : "";
+  const plan = isRec(record.plan) ? record.plan : {};
+  const hash = canonicalHash(record);
+  const titleKey = `card.op.${op}.title`;
+  const hasTitle = ((): boolean => { try { t(titleKey); return true; } catch { return false; } })();
+  const reason: DisabledReason | null = typeof record.canonical_hash === "string" && record.canonical_hash !== hash
+    ? "hash_mismatch" : unknownReason(op, plan, hasTitle);
+  const sections: CardSection[] = [];
+  const delay = typeof record.delay_hours === "number" ? record.delay_hours : 0;
+  const heading = hasTitle ? t(titleKey) : op;
+  sections.push({ no: 1, title: heading, rows: [], lines: [delay > 0 ? t("card.delay.hours", { hours: delay }) : t("card.delay.none")] });
+  const target = record.target === null || record.target === undefined ? [] : [{ label: t("card.section.target"), value: show(record.target) }];
+  sections.push({ no: 2, title: t("card.section.target"), rows: [...target, ...fieldRows(plan, ["backup", "host_key_fp", "bucket", "session_id", "to"])], lines: op === "restore-change" || plan.host_key_fp !== undefined ? [t("card.host_key_fp.verify_note")] : [] });
+  sections.push({ no: 3, title: t("card.section.change"), rows: [...changeRows(op, plan), ...sourceRows(op, plan, ctx.surveySizes ?? null, ctx.undeclaredCandidates ?? 0, t)], lines: [] });
+  sections.push({ no: 4, title: t("card.section.reversible"), rows: [], lines: plan.reversible === false ? [t("card.mark.irreversible")] : [] });
+  if (typeof plan.estimate_delta_jpy === "number") {
+    const lines = [t("card.cost.delta", { delta_jpy: plan.estimate_delta_jpy })];
+    const after = plan.estimate_after_jpy;
+    if (typeof after === "number" && typeof plan.cost_ceiling_yen === "number") lines.push(t("card.cost.after", { monthly_jpy: after, ceiling_jpy: plan.cost_ceiling_yen }));
+    sections.push({ no: 5, title: t("card.section.cost"), rows: [], lines });
+  }
+  sections.push(timingSection(record, delay, plan, t));
+  const proofs = PROOF_OPS.includes(op) ? strs(plan.proof_required) : [];
+  sections.push(opSection(op, record, plan, proofs, t));
+  if (ctx.aiExplanation !== undefined && ctx.aiExplanation !== null) sections.push({ no: 9, title: t("card.ai_explanation.heading"), rows: [], lines: [ctx.aiExplanation] });
+  else if (op === "attest" && isRec(record.args) && typeof record.args.note === "string") sections.push({ no: 9, title: t("card.ai_explanation.heading"), rows: [], lines: [record.args.note] });
+  return {
+    changeId: typeof record.change_id === "string" ? record.change_id : "", op, canonicalHash: hash, sections, proofRecipients: proofs, proofLabels: Object.fromEntries(proofs.map((r) => [r, t("card.confirm_word.label", { recipient: r })])),
+    approveEnabled: reason === null, disabledReason: reason, updatePrompt: reason === "unknown_op" || reason === "unknown_field" ? t("card.unknown.update_prompt") : null,
+  };
+}
+
+function fieldRows(plan: Record<string, unknown>, names: readonly string[]): CardRow[] {
+  return names.filter((n) => plan[n] !== undefined).map((n) => ({ label: n, value: show(plan[n]) }));
+}
+
+function changeRows(op: string, plan: Record<string, unknown>): CardRow[] {
+  const rows: CardRow[] = [];
+  for (const [k, v] of Object.entries(plan)) {
+    if (["reversible", "errors", "estimate_delta_jpy", "conflicts", "proof_required", "machine", "backup", "host_key_fp", "bucket", "session_id", "to", "source", "definition"].includes(k)) continue;
+    if (op === "source-change" && (k === "before" || k === "after")) continue; // source 節は sourceRows が描く
+    if (k === "diff" && Array.isArray(v)) { for (const d of v) if (isRec(d)) rows.push({ label: show(d.pointer), value: `${show(d.before)} → ${show(d.after)}` }); continue; }
+    rows.push({ label: k, value: show(v) });
+  }
+  return rows;
+}
+
+function timingSection(record: PendingRecord, delay: number, plan: Record<string, unknown>, t: Translate): CardSection {
+  const lines = [delay > 0 ? t("card.timing.after_delay", { hours: delay }) : t("card.timing.immediate")];
+  if (typeof record.expires_at === "string") lines.push(t("card.timing.expires", { expires_at: new Date(record.expires_at) }));
+  const conflicts = strs(plan.conflicts);
+  if (conflicts.length > 0) lines.push(t("card.conflicts.note"), ...conflicts);
+  return { no: 6, title: t("card.section.timing"), rows: [], lines };
+}
+
+function opSection(op: string, record: PendingRecord, plan: Record<string, unknown>, proofs: readonly string[], t: Translate): CardSection {
+  const lines: string[] = [];
+  const rows: CardRow[] = [];
+  for (const r of proofs) lines.push(t("card.confirm_word.label", { recipient: r }));
+  if (proofs.length > 0) lines.push(t("card.confirm_word.note"));
+  const machine = strs(plan.machine);
+  if (machine.length > 0) lines.push(t("card.proof.machine_heading"), ...machine);
+  if (op === "attest" && isRec(record.args)) {
+    if (record.args.step === "R3") lines.push(t("card.attest.r3.body", { old_key_ids: strs(plan.old_key_ids).join(", ") }));
+    if (record.args.step === "R7") lines.push(t("card.attest.r7.body", { secret_refs: strs(plan.secret_refs).join(", ") }));
+  }
+  if (op === "hold-release") rows.push(...fieldRows(plan, ["causes", "since", "days_since_last_ok"]));
+  return { no: 7, title: t("card.section.op_specific"), rows, lines };
+}

@@ -1,0 +1,69 @@
+{
+  "name": "sitate_init",
+  "description": "リカバリーフレーズと鍵を作り、保管先に初期化する。フレーズはアプリのパネルにだけ出て、あなたには見えない。 秘密の値と元サーバーのパスの実値は渡さず、参照名(secret_refs、path_ref)を使う。",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "run_id": {
+        "type": "string",
+        "description": "実行の識別子(省略可。アプリが作る)。"
+      },
+      "approval_pubkey": {
+        "type": "string"
+      },
+      "adopt": {
+        "type": "boolean"
+      },
+      "cause": {
+        "type": "string",
+        "enum": [
+          "compromise",
+          "unknown",
+          "benign"
+        ]
+      },
+      "admin_ref": {
+        "type": "string",
+        "description": "管理用の資格情報の参照名(値ではない)。",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+      },
+      "backup": {
+        "type": "string"
+      },
+      "endpoint": {
+        "type": "string"
+      },
+      "bucket": {
+        "type": "string"
+      },
+      "prefix": {
+        "type": "string"
+      },
+      "keyring": {
+        "type": "string"
+      },
+      "key_ref": {
+        "type": "string",
+        "description": "保管先の鍵の参照名(値ではない)。",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+      },
+      "repo_id": {
+        "type": "string"
+      },
+      "secret_refs": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+        },
+        "uniqueItems": true,
+        "description": "このコマンドが使う秘密の参照名の配列(重複なし)。値はアプリがキーチェーンから差し込む。"
+      },
+      "dry_run": {
+        "type": "boolean",
+        "description": "true なら何も変えずに計画だけ返す。"
+      }
+    },
+    "additionalProperties": false
+  }
+}
