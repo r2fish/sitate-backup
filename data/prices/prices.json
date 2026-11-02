@@ -1,0 +1,1974 @@
+{
+ "schema": "sitate.prices/v1",
+ "generated_at": "2026-11-02T20:42:12Z",
+ "source": {
+  "file": "pricing-2026-11.yaml",
+  "sha256": "950cb9d43435996e5e9811aa6dd7b45fa467608ffe23d0cc753e53008fac3cd8"
+ },
+ "fx_jpy": {
+  "USD": "150"
+ },
+ "rows": [
+  {
+   "row_id": "aws-s3-standard-apne1",
+   "kind": "storage",
+   "provider": "Amazon-Web-Services",
+   "plan": "S3 Standard(東京 ap-northeast-1)",
+   "country": "JP",
+   "region_country": {},
+   "endpoint_patterns": [
+    "s3.<region>.amazonaws.com",
+    "<bucket>.s3.<region>.amazonaws.com",
+    "s3.dualstack.<region>.amazonaws.com"
+   ],
+   "endpoint_default": true,
+   "tax": "excluded",
+   "checked_on": "2026-11-02",
+   "source_url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonS3/current/ap-northeast-1/index.json",
+   "src": {
+    "section": "storage",
+    "index": 0
+   },
+   "minimums": {
+    "storage_quantity": null,
+    "storage_days": null,
+    "object_size_kb": null
+   },
+   "charges": [
+    {
+     "item": "storage",
+     "amount": "0.025",
+     "currency": "USD",
+     "unit": "gb_month",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": {
+      "quantity": "50",
+      "unit": "tb"
+     },
+     "free": null,
+     "condition": null,
+     "src_field": "storage_price_per_gb_month",
+     "src_text": "0.025 USD(最初の 50 TB)"
+    },
+    {
+     "item": "storage",
+     "amount": "0.024",
+     "currency": "USD",
+     "unit": "gb_month",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": {
+      "quantity": "450",
+      "unit": "tb"
+     },
+     "free": null,
+     "condition": null,
+     "src_field": "storage_price_per_gb_month",
+     "src_text": "0.024 USD(次の 450 TB)"
+    },
+    {
+     "item": "storage",
+     "amount": "0.023",
+     "currency": "USD",
+     "unit": "gb_month",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "storage_price_per_gb_month",
+     "src_text": "0.023 USD(500 TB 超)"
+    },
+    {
+     "item": "egress",
+     "amount": "0.114",
+     "currency": "USD",
+     "unit": "gb",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": {
+      "quantity": "10",
+      "unit": "tb"
+     },
+     "free": {
+      "quantity": "100",
+      "unit": "gb",
+      "period": "month",
+      "basis": "absolute"
+     },
+     "condition": null,
+     "src_field": "egress_price_per_gb",
+     "src_text": "0.114 USD(最初の 10 TB/月。全世界合計 100 GB/月の無料枠の超過分)"
+    },
+    {
+     "item": "egress",
+     "amount": "0.089",
+     "currency": "USD",
+     "unit": "gb",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": {
+      "quantity": "40",
+      "unit": "tb"
+     },
+     "free": null,
+     "condition": null,
+     "src_field": "egress_price_per_gb",
+     "src_text": "0.089 USD(次の 40 TB)"
+    },
+    {
+     "item": "egress",
+     "amount": "0.086",
+     "currency": "USD",
+     "unit": "gb",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": {
+      "quantity": "100",
+      "unit": "tb"
+     },
+     "free": null,
+     "condition": null,
+     "src_field": "egress_price_per_gb",
+     "src_text": "0.086 USD(次の 100 TB)"
+    },
+    {
+     "item": "egress",
+     "amount": "0.084",
+     "currency": "USD",
+     "unit": "gb",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "egress_price_per_gb",
+     "src_text": "0.084 USD(150 TB 超)"
+    },
+    {
+     "item": "request",
+     "ops": [
+      "PUT",
+      "COPY",
+      "POST",
+      "LIST"
+     ],
+     "amount": "0.0047",
+     "currency": "USD",
+     "unit": "request",
+     "per": "1000",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "request_price",
+     "src_text": "PUT・COPY・POST・LIST 0.0047 USD/1,000 件"
+    },
+    {
+     "item": "request",
+     "ops": [
+      "GET"
+     ],
+     "amount": "0.0037",
+     "currency": "USD",
+     "unit": "request",
+     "per": "10000",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "request_price",
+     "src_text": "GET ほか 0.0037 USD/10,000 件"
+    }
+   ]
+  },
+  {
+   "row_id": "aws-s3-standard-ia-apne1",
+   "kind": "storage",
+   "provider": "Amazon-Web-Services",
+   "plan": "S3 Standard-IA(東京)",
+   "country": "JP",
+   "region_country": {},
+   "endpoint_patterns": [
+    "s3.<region>.amazonaws.com",
+    "<bucket>.s3.<region>.amazonaws.com",
+    "s3.dualstack.<region>.amazonaws.com"
+   ],
+   "endpoint_default": false,
+   "tax": "excluded",
+   "checked_on": "2026-11-02",
+   "source_url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonS3/current/ap-northeast-1/index.json",
+   "src": {
+    "section": "storage",
+    "index": 1
+   },
+   "minimums": {
+    "storage_quantity": null,
+    "storage_days": 30,
+    "object_size_kb": 128
+   },
+   "charges": [
+    {
+     "item": "storage",
+     "amount": "0.0138",
+     "currency": "USD",
+     "unit": "gb_month",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "storage_price_per_gb_month",
+     "src_text": "0.0138 USD"
+    },
+    {
+     "item": "egress",
+     "amount": "0.114",
+     "currency": "USD",
+     "unit": "gb",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": {
+      "quantity": "10",
+      "unit": "tb"
+     },
+     "free": {
+      "quantity": "100",
+      "unit": "gb",
+      "period": "month",
+      "basis": "absolute"
+     },
+     "condition": null,
+     "src_field": "egress_price_per_gb",
+     "src_text": "0.114 USD(最初の 10 TB/月。全世界合計 100 GB/月の無料枠の超過分)"
+    },
+    {
+     "item": "egress",
+     "amount": "0.089",
+     "currency": "USD",
+     "unit": "gb",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": {
+      "quantity": "40",
+      "unit": "tb"
+     },
+     "free": null,
+     "condition": null,
+     "src_field": "egress_price_per_gb",
+     "src_text": "0.089 USD(次の 40 TB)"
+    },
+    {
+     "item": "egress",
+     "amount": "0.086",
+     "currency": "USD",
+     "unit": "gb",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": {
+      "quantity": "100",
+      "unit": "tb"
+     },
+     "free": null,
+     "condition": null,
+     "src_field": "egress_price_per_gb",
+     "src_text": "0.086 USD(次の 100 TB)"
+    },
+    {
+     "item": "egress",
+     "amount": "0.084",
+     "currency": "USD",
+     "unit": "gb",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "egress_price_per_gb",
+     "src_text": "0.084 USD(150 TB 超)"
+    },
+    {
+     "item": "retrieval",
+     "amount": "0.01",
+     "currency": "USD",
+     "unit": "gb",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "egress_price_per_gb",
+     "src_text": "別に取り出し料 0.01 USD/GB"
+    },
+    {
+     "item": "request",
+     "ops": [
+      "PUT",
+      "COPY",
+      "POST",
+      "LIST"
+     ],
+     "amount": "0.01",
+     "currency": "USD",
+     "unit": "request",
+     "per": "1000",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "request_price",
+     "src_text": "PUT・COPY・POST・LIST 0.01 USD/1,000 件"
+    },
+    {
+     "item": "request",
+     "ops": [
+      "GET"
+     ],
+     "amount": "0.01",
+     "currency": "USD",
+     "unit": "request",
+     "per": "10000",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "request_price",
+     "src_text": "GET ほか 0.01 USD/10,000 件"
+    }
+   ]
+  },
+  {
+   "row_id": "aws-s3-glacier-ir-apne1",
+   "kind": "storage",
+   "provider": "Amazon-Web-Services",
+   "plan": "S3 Glacier Instant Retrieval(東京)",
+   "country": "JP",
+   "region_country": {},
+   "endpoint_patterns": [
+    "s3.<region>.amazonaws.com",
+    "<bucket>.s3.<region>.amazonaws.com",
+    "s3.dualstack.<region>.amazonaws.com"
+   ],
+   "endpoint_default": false,
+   "tax": "excluded",
+   "checked_on": "2026-11-02",
+   "source_url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonS3/current/ap-northeast-1/index.json",
+   "src": {
+    "section": "storage",
+    "index": 2
+   },
+   "minimums": {
+    "storage_quantity": null,
+    "storage_days": 90,
+    "object_size_kb": 128
+   },
+   "charges": [
+    {
+     "item": "storage",
+     "amount": "0.005",
+     "currency": "USD",
+     "unit": "gb_month",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "storage_price_per_gb_month",
+     "src_text": "0.005 USD"
+    },
+    {
+     "item": "egress",
+     "amount": "0.114",
+     "currency": "USD",
+     "unit": "gb",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": {
+      "quantity": "10",
+      "unit": "tb"
+     },
+     "free": {
+      "quantity": "100",
+      "unit": "gb",
+      "period": "month",
+      "basis": "absolute"
+     },
+     "condition": null,
+     "src_field": "egress_price_per_gb",
+     "src_text": "0.114 USD(最初の 10 TB/月。全世界合計 100 GB/月の無料枠の超過分)"
+    },
+    {
+     "item": "egress",
+     "amount": "0.089",
+     "currency": "USD",
+     "unit": "gb",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": {
+      "quantity": "40",
+      "unit": "tb"
+     },
+     "free": null,
+     "condition": null,
+     "src_field": "egress_price_per_gb",
+     "src_text": "0.089 USD(次の 40 TB)"
+    },
+    {
+     "item": "egress",
+     "amount": "0.086",
+     "currency": "USD",
+     "unit": "gb",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": {
+      "quantity": "100",
+      "unit": "tb"
+     },
+     "free": null,
+     "condition": null,
+     "src_field": "egress_price_per_gb",
+     "src_text": "0.086 USD(次の 100 TB)"
+    },
+    {
+     "item": "egress",
+     "amount": "0.084",
+     "currency": "USD",
+     "unit": "gb",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "egress_price_per_gb",
+     "src_text": "0.084 USD(150 TB 超)"
+    },
+    {
+     "item": "retrieval",
+     "amount": "0.03",
+     "currency": "USD",
+     "unit": "gb",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "egress_price_per_gb",
+     "src_text": "別に取り出し料 0.03 USD/GB"
+    },
+    {
+     "item": "request",
+     "ops": [
+      "PUT",
+      "COPY",
+      "POST",
+      "LIST"
+     ],
+     "amount": "0.02",
+     "currency": "USD",
+     "unit": "request",
+     "per": "1000",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "request_price",
+     "src_text": "PUT・COPY・POST・LIST 0.02 USD/1,000 件"
+    },
+    {
+     "item": "request",
+     "ops": [
+      "GET"
+     ],
+     "amount": "0.1",
+     "currency": "USD",
+     "unit": "request",
+     "per": "10000",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "request_price",
+     "src_text": "GET ほか 0.1 USD/10,000 件"
+    }
+   ]
+  },
+  {
+   "row_id": "gcp-gcs-standard-asne1",
+   "kind": "storage",
+   "provider": "Google-Cloud",
+   "plan": "Cloud Storage Standard(東京 asia-northeast1、単一リージョン)",
+   "country": "JP",
+   "region_country": {},
+   "endpoint_patterns": [
+    "storage.googleapis.com",
+    "<bucket>.storage.googleapis.com"
+   ],
+   "endpoint_default": true,
+   "tax": "excluded",
+   "checked_on": "2026-11-02",
+   "source_url": "https://cloud.google.com/storage/pricing",
+   "src": {
+    "section": "storage",
+    "index": 3
+   },
+   "minimums": {
+    "storage_quantity": null,
+    "storage_days": null,
+    "object_size_kb": null
+   },
+   "charges": [
+    {
+     "item": "storage",
+     "amount": "0.023",
+     "currency": "USD",
+     "unit": "gb_month",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "storage_price_per_gb_month",
+     "src_text": "0.023 USD/GiB"
+    },
+    {
+     "item": "egress",
+     "amount": "0.12",
+     "currency": "USD",
+     "unit": "gb",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": {
+      "quantity": "10",
+      "unit": "tb"
+     },
+     "free": null,
+     "condition": "アジア向け(中国を除く)",
+     "src_field": "egress_price_per_gb",
+     "src_text": "0.12 USD/GiB(0〜10 TiB)"
+    },
+    {
+     "item": "egress",
+     "amount": "0.11",
+     "currency": "USD",
+     "unit": "gb",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": {
+      "quantity": "150",
+      "unit": "tb"
+     },
+     "free": null,
+     "condition": "アジア向け(中国を除く)",
+     "src_field": "egress_price_per_gb",
+     "src_text": "0.11 USD/GiB(10〜150 TiB)"
+    },
+    {
+     "item": "egress",
+     "amount": "0.08",
+     "currency": "USD",
+     "unit": "gb",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": "アジア向け(中国を除く)",
+     "src_field": "egress_price_per_gb",
+     "src_text": "0.08 USD/GiB(150 TiB 超)"
+    },
+    {
+     "item": "request",
+     "ops": [
+      "class_a"
+     ],
+     "amount": "0.005",
+     "currency": "USD",
+     "unit": "request",
+     "per": "1000",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "request_price",
+     "src_text": "Class A 0.005 USD/1,000 件"
+    },
+    {
+     "item": "request",
+     "ops": [
+      "class_b"
+     ],
+     "amount": "0.0004",
+     "currency": "USD",
+     "unit": "request",
+     "per": "1000",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "request_price",
+     "src_text": "Class B 0.0004 USD/1,000 件"
+    }
+   ]
+  },
+  {
+   "row_id": "gcp-gcs-coldline-asne1",
+   "kind": "storage",
+   "provider": "Google-Cloud",
+   "plan": "Cloud Storage Coldline(東京)",
+   "country": "JP",
+   "region_country": {},
+   "endpoint_patterns": [
+    "storage.googleapis.com",
+    "<bucket>.storage.googleapis.com"
+   ],
+   "endpoint_default": false,
+   "tax": "excluded",
+   "checked_on": "2026-11-02",
+   "source_url": "https://cloud.google.com/storage/pricing",
+   "src": {
+    "section": "storage",
+    "index": 4
+   },
+   "minimums": {
+    "storage_quantity": null,
+    "storage_days": 90,
+    "object_size_kb": null
+   },
+   "charges": [
+    {
+     "item": "storage",
+     "amount": "0.006",
+     "currency": "USD",
+     "unit": "gb_month",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "storage_price_per_gb_month",
+     "src_text": "0.006 USD/GiB"
+    },
+    {
+     "item": "egress",
+     "amount": "0.12",
+     "currency": "USD",
+     "unit": "gb",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": {
+      "quantity": "10",
+      "unit": "tb"
+     },
+     "free": null,
+     "condition": "アジア向け(中国を除く)",
+     "src_field": "egress_price_per_gb",
+     "src_text": "0.12 USD/GiB(0〜10 TiB)"
+    },
+    {
+     "item": "egress",
+     "amount": "0.11",
+     "currency": "USD",
+     "unit": "gb",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": {
+      "quantity": "150",
+      "unit": "tb"
+     },
+     "free": null,
+     "condition": "アジア向け(中国を除く)",
+     "src_field": "egress_price_per_gb",
+     "src_text": "0.11 USD/GiB(10〜150 TiB)"
+    },
+    {
+     "item": "egress",
+     "amount": "0.08",
+     "currency": "USD",
+     "unit": "gb",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": "アジア向け(中国を除く)",
+     "src_field": "egress_price_per_gb",
+     "src_text": "0.08 USD/GiB(150 TiB 超)"
+    },
+    {
+     "item": "retrieval",
+     "amount": "0.02",
+     "currency": "USD",
+     "unit": "gb",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "egress_price_per_gb",
+     "src_text": "別に取り出し料 0.02 USD/GiB"
+    },
+    {
+     "item": "request",
+     "ops": [
+      "class_a"
+     ],
+     "amount": "0.02",
+     "currency": "USD",
+     "unit": "request",
+     "per": "1000",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "request_price",
+     "src_text": "Class A 0.02 USD/1,000 件"
+    },
+    {
+     "item": "request",
+     "ops": [
+      "class_b"
+     ],
+     "amount": "0.01",
+     "currency": "USD",
+     "unit": "request",
+     "per": "1000",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "request_price",
+     "src_text": "Class B 0.01 USD/1,000 件"
+    }
+   ]
+  },
+  {
+   "row_id": "azure-blob-hot-japaneast",
+   "kind": "storage",
+   "provider": "Microsoft-Azure",
+   "plan": "Blob Storage Hot LRS(Japan East)",
+   "country": "JP",
+   "region_country": {},
+   "endpoint_patterns": [
+    "<storage-account>.blob.core.windows.net"
+   ],
+   "endpoint_default": true,
+   "tax": "none",
+   "checked_on": "2026-11-02",
+   "source_url": "https://prices.azure.com/api/retail/prices?$filter=serviceName%20eq%20'Storage'%20and%20armRegionName%20eq%20'japaneast'%20and%20skuName%20eq%20'Hot%20LRS'",
+   "src": {
+    "section": "storage",
+    "index": 5
+   },
+   "minimums": {
+    "storage_quantity": null,
+    "storage_days": null,
+    "object_size_kb": null
+   },
+   "charges": [
+    {
+     "item": "storage",
+     "amount": "0.02",
+     "currency": "USD",
+     "unit": "gb_month",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": {
+      "quantity": "50",
+      "unit": "tb"
+     },
+     "free": null,
+     "condition": null,
+     "src_field": "storage_price_per_gb_month",
+     "src_text": "0.02 USD(最初の 50 TB)"
+    },
+    {
+     "item": "storage",
+     "amount": "0.0192",
+     "currency": "USD",
+     "unit": "gb_month",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": {
+      "quantity": "450",
+      "unit": "tb"
+     },
+     "free": null,
+     "condition": null,
+     "src_field": "storage_price_per_gb_month",
+     "src_text": "0.0192 USD(次の 450 TB)"
+    },
+    {
+     "item": "storage",
+     "amount": "0.0184",
+     "currency": "USD",
+     "unit": "gb_month",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "storage_price_per_gb_month",
+     "src_text": "0.0184 USD(500 TB 超)"
+    },
+    {
+     "item": "egress",
+     "amount": "0.12",
+     "currency": "USD",
+     "unit": "gb",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": {
+      "quantity": "10",
+      "unit": "tb"
+     },
+     "free": {
+      "quantity": "100",
+      "unit": "gb",
+      "period": "month",
+      "basis": "absolute"
+     },
+     "condition": "Microsoft ネットワーク経由",
+     "src_field": "egress_price_per_gb",
+     "src_text": "最初の 100 GB/月は無料。Microsoft ネットワーク経由 0.12 USD(〜約 10 TB)"
+    },
+    {
+     "item": "egress",
+     "amount": "0.085",
+     "currency": "USD",
+     "unit": "gb",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": {
+      "quantity": "50",
+      "unit": "tb"
+     },
+     "free": null,
+     "condition": "Microsoft ネットワーク経由",
+     "src_field": "egress_price_per_gb",
+     "src_text": "0.085 USD(〜約 50 TB)"
+    },
+    {
+     "item": "egress",
+     "amount": "0.082",
+     "currency": "USD",
+     "unit": "gb",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": {
+      "quantity": "150",
+      "unit": "tb"
+     },
+     "free": null,
+     "condition": "Microsoft ネットワーク経由",
+     "src_field": "egress_price_per_gb",
+     "src_text": "0.082 USD(〜約 150 TB)"
+    },
+    {
+     "item": "egress",
+     "amount": "0.08",
+     "currency": "USD",
+     "unit": "gb",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": "Microsoft ネットワーク経由",
+     "src_field": "egress_price_per_gb",
+     "src_text": "0.08 USD(以降)"
+    },
+    {
+     "item": "request",
+     "ops": [
+      "write"
+     ],
+     "amount": "0.05",
+     "currency": "USD",
+     "unit": "request",
+     "per": "10000",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "request_price",
+     "src_text": "書き込み 0.05 USD/10,000 件"
+    },
+    {
+     "item": "request",
+     "ops": [
+      "read"
+     ],
+     "amount": "0.004",
+     "currency": "USD",
+     "unit": "request",
+     "per": "10000",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "request_price",
+     "src_text": "読み取り 0.004 USD/10,000 件"
+    },
+    {
+     "item": "request",
+     "ops": [
+      "list"
+     ],
+     "amount": "0.05",
+     "currency": "USD",
+     "unit": "request",
+     "per": "10000",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "request_price",
+     "src_text": "一覧とコンテナ作成 0.05 USD/10,000 件"
+    },
+    {
+     "item": "request",
+     "ops": [
+      "other"
+     ],
+     "amount": "0.004",
+     "currency": "USD",
+     "unit": "request",
+     "per": "10000",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "request_price",
+     "src_text": "その他 0.004 USD/10,000 件"
+    }
+   ]
+  },
+  {
+   "row_id": "azure-blob-cool-japaneast",
+   "kind": "storage",
+   "provider": "Microsoft-Azure",
+   "plan": "Blob Storage Cool LRS(Japan East)",
+   "country": "JP",
+   "region_country": {},
+   "endpoint_patterns": [
+    "<storage-account>.blob.core.windows.net"
+   ],
+   "endpoint_default": false,
+   "tax": "none",
+   "checked_on": "2026-11-02",
+   "source_url": "https://prices.azure.com/api/retail/prices?$filter=serviceName%20eq%20'Storage'%20and%20armRegionName%20eq%20'japaneast'%20and%20skuName%20eq%20'Cool%20LRS'",
+   "src": {
+    "section": "storage",
+    "index": 6
+   },
+   "minimums": {
+    "storage_quantity": null,
+    "storage_days": 30,
+    "object_size_kb": null
+   },
+   "charges": [
+    {
+     "item": "storage",
+     "amount": "0.011",
+     "currency": "USD",
+     "unit": "gb_month",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "storage_price_per_gb_month",
+     "src_text": "Cool 0.011 USD"
+    },
+    {
+     "item": "egress",
+     "amount": "0.12",
+     "currency": "USD",
+     "unit": "gb",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": {
+      "quantity": "10",
+      "unit": "tb"
+     },
+     "free": {
+      "quantity": "100",
+      "unit": "gb",
+      "period": "month",
+      "basis": "absolute"
+     },
+     "condition": "Microsoft ネットワーク経由",
+     "src_field": "egress_price_per_gb",
+     "src_text": "最初の 100 GB/月は無料。Microsoft ネットワーク経由 0.12 USD(〜約 10 TB)"
+    },
+    {
+     "item": "egress",
+     "amount": "0.085",
+     "currency": "USD",
+     "unit": "gb",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": {
+      "quantity": "50",
+      "unit": "tb"
+     },
+     "free": null,
+     "condition": "Microsoft ネットワーク経由",
+     "src_field": "egress_price_per_gb",
+     "src_text": "0.085 USD(〜約 50 TB)"
+    },
+    {
+     "item": "egress",
+     "amount": "0.082",
+     "currency": "USD",
+     "unit": "gb",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": {
+      "quantity": "150",
+      "unit": "tb"
+     },
+     "free": null,
+     "condition": "Microsoft ネットワーク経由",
+     "src_field": "egress_price_per_gb",
+     "src_text": "0.082 USD(〜約 150 TB)"
+    },
+    {
+     "item": "egress",
+     "amount": "0.08",
+     "currency": "USD",
+     "unit": "gb",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": "Microsoft ネットワーク経由",
+     "src_field": "egress_price_per_gb",
+     "src_text": "0.08 USD(以降)"
+    },
+    {
+     "item": "retrieval",
+     "amount": "0.01",
+     "currency": "USD",
+     "unit": "gb",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "egress_price_per_gb",
+     "src_text": "取り出し料 Cool 0.01 USD/GB"
+    },
+    {
+     "item": "request",
+     "ops": [
+      "write"
+     ],
+     "amount": "0.1",
+     "currency": "USD",
+     "unit": "request",
+     "per": "10000",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "request_price",
+     "src_text": "Cool: 書き込み 0.1 USD/10,000 件"
+    },
+    {
+     "item": "request",
+     "ops": [
+      "read"
+     ],
+     "amount": "0.01",
+     "currency": "USD",
+     "unit": "request",
+     "per": "10000",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "request_price",
+     "src_text": "読み取り 0.01 USD/10,000 件"
+    }
+   ]
+  },
+  {
+   "row_id": "azure-blob-cold-japaneast",
+   "kind": "storage",
+   "provider": "Microsoft-Azure",
+   "plan": "Blob Storage Cold LRS(Japan East)",
+   "country": "JP",
+   "region_country": {},
+   "endpoint_patterns": [
+    "<storage-account>.blob.core.windows.net"
+   ],
+   "endpoint_default": false,
+   "tax": "none",
+   "checked_on": "2026-11-02",
+   "source_url": "https://prices.azure.com/api/retail/prices?$filter=serviceName%20eq%20'Storage'%20and%20armRegionName%20eq%20'japaneast'%20and%20skuName%20eq%20'Cool%20LRS'",
+   "src": {
+    "section": "storage",
+    "index": 6
+   },
+   "minimums": {
+    "storage_quantity": null,
+    "storage_days": 90,
+    "object_size_kb": null
+   },
+   "charges": [
+    {
+     "item": "storage",
+     "amount": "0.0045",
+     "currency": "USD",
+     "unit": "gb_month",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "storage_price_per_gb_month",
+     "src_text": "Cold 0.0045 USD"
+    },
+    {
+     "item": "egress",
+     "amount": "0.12",
+     "currency": "USD",
+     "unit": "gb",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": {
+      "quantity": "10",
+      "unit": "tb"
+     },
+     "free": {
+      "quantity": "100",
+      "unit": "gb",
+      "period": "month",
+      "basis": "absolute"
+     },
+     "condition": "Microsoft ネットワーク経由",
+     "src_field": "egress_price_per_gb",
+     "src_text": "最初の 100 GB/月は無料。Microsoft ネットワーク経由 0.12 USD(〜約 10 TB)"
+    },
+    {
+     "item": "egress",
+     "amount": "0.085",
+     "currency": "USD",
+     "unit": "gb",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": {
+      "quantity": "50",
+      "unit": "tb"
+     },
+     "free": null,
+     "condition": "Microsoft ネットワーク経由",
+     "src_field": "egress_price_per_gb",
+     "src_text": "0.085 USD(〜約 50 TB)"
+    },
+    {
+     "item": "egress",
+     "amount": "0.082",
+     "currency": "USD",
+     "unit": "gb",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": {
+      "quantity": "150",
+      "unit": "tb"
+     },
+     "free": null,
+     "condition": "Microsoft ネットワーク経由",
+     "src_field": "egress_price_per_gb",
+     "src_text": "0.082 USD(〜約 150 TB)"
+    },
+    {
+     "item": "egress",
+     "amount": "0.08",
+     "currency": "USD",
+     "unit": "gb",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": "Microsoft ネットワーク経由",
+     "src_field": "egress_price_per_gb",
+     "src_text": "0.08 USD(以降)"
+    },
+    {
+     "item": "retrieval",
+     "amount": "0.03",
+     "currency": "USD",
+     "unit": "gb",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "egress_price_per_gb",
+     "src_text": "Cold 0.03 USD/GB"
+    },
+    {
+     "item": "request",
+     "ops": [
+      "write"
+     ],
+     "amount": "0.18",
+     "currency": "USD",
+     "unit": "request",
+     "per": "10000",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "request_price",
+     "src_text": "Cold: 書き込み 0.18 USD/10,000 件"
+    },
+    {
+     "item": "request",
+     "ops": [
+      "read"
+     ],
+     "amount": "0.1",
+     "currency": "USD",
+     "unit": "request",
+     "per": "10000",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "request_price",
+     "src_text": "読み取り 0.1 USD/10,000 件"
+    }
+   ]
+  },
+  {
+   "row_id": "b2-payg",
+   "kind": "storage",
+   "provider": "Backblaze",
+   "plan": "B2 Cloud Storage(Pay-as-you-go)",
+   "country": null,
+   "region_country": {},
+   "endpoint_patterns": [
+    "s3.<region>.backblazeb2.com",
+    "<bucket>.s3.<region>.backblazeb2.com"
+   ],
+   "endpoint_default": false,
+   "tax": "none",
+   "checked_on": "2026-11-02",
+   "source_url": "https://www.backblaze.com/cloud-storage/pricing",
+   "src": {
+    "section": "storage",
+    "index": 7
+   },
+   "minimums": {
+    "storage_quantity": null,
+    "storage_days": null,
+    "object_size_kb": null
+   },
+   "charges": [
+    {
+     "item": "storage",
+     "amount": "6.95",
+     "currency": "USD",
+     "unit": "tb_month",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": {
+      "quantity": "10",
+      "unit": "gb",
+      "period": null,
+      "basis": "absolute"
+     },
+     "condition": null,
+     "src_field": "storage_price_per_gb_month",
+     "src_text": "6.95 USD/TB/月、1 TB = 1,000 GB として。最初の 10 GB は無料"
+    },
+    {
+     "item": "egress",
+     "amount": "0.01",
+     "currency": "USD",
+     "unit": "gb",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": {
+      "quantity": "3",
+      "unit": "gb",
+      "period": "month",
+      "basis": "stored_ratio"
+     },
+     "condition": null,
+     "src_field": "egress_price_per_gb",
+     "src_text": "平均保管量の 3 倍/月まで無料、超過 0.01 USD"
+    },
+    {
+     "item": "request",
+     "ops": [
+      "class_d"
+     ],
+     "amount": "0.004",
+     "currency": "USD",
+     "unit": "request",
+     "per": "10000",
+     "per_src": null,
+     "tier_upto": null,
+     "free": {
+      "quantity": "2500",
+      "unit": "request",
+      "period": "day",
+      "basis": "absolute"
+     },
+     "condition": null,
+     "src_field": "request_price",
+     "src_text": "Class D 0.004 USD/10,000 件(1 日 2,500 件まで無料)"
+    }
+   ]
+  },
+  {
+   "row_id": "wasabi-hot-payg",
+   "kind": "storage",
+   "provider": "Wasabi",
+   "plan": "Hot Cloud Storage Pay as You Go(東京 ap-northeast-1 / 大阪 ap-northeast-2)",
+   "country": "JP",
+   "region_country": {},
+   "endpoint_patterns": [
+    "s3.<region>.wasabisys.com"
+   ],
+   "endpoint_default": false,
+   "tax": "none",
+   "checked_on": "2026-11-02",
+   "source_url": "https://wasabi.com/pricing",
+   "src": {
+    "section": "storage",
+    "index": 8
+   },
+   "minimums": {
+    "storage_quantity": {
+     "quantity": "1",
+     "unit": "tb"
+    },
+    "storage_days": 90,
+    "object_size_kb": null
+   },
+   "charges": [
+    {
+     "item": "storage",
+     "amount": "7.99",
+     "currency": "USD",
+     "unit": "tb_month",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "storage_price_per_gb_month",
+     "src_text": "7.99 USD/TB/月"
+    },
+    {
+     "item": "egress",
+     "amount": "0",
+     "currency": "USD",
+     "unit": "gb",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "egress_price_per_gb",
+     "src_text": "0 USD"
+    },
+    {
+     "item": "request",
+     "ops": [
+      "all"
+     ],
+     "amount": "0",
+     "currency": "USD",
+     "unit": "request",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "request_price",
+     "src_text": "API 料金 0 USD"
+    }
+   ]
+  },
+  {
+   "row_id": "r2-standard",
+   "kind": "storage",
+   "provider": "Cloudflare",
+   "plan": "R2 Standard",
+   "country": null,
+   "region_country": {},
+   "endpoint_patterns": [
+    "<account-id>.r2.cloudflarestorage.com"
+   ],
+   "endpoint_default": true,
+   "tax": "excluded",
+   "checked_on": "2026-11-02",
+   "source_url": "https://developers.cloudflare.com/r2/pricing/",
+   "src": {
+    "section": "storage",
+    "index": 9
+   },
+   "minimums": {
+    "storage_quantity": null,
+    "storage_days": null,
+    "object_size_kb": null
+   },
+   "charges": [
+    {
+     "item": "storage",
+     "amount": "0.015",
+     "currency": "USD",
+     "unit": "gb_month",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": {
+      "quantity": "10",
+      "unit": "gb",
+      "period": "month",
+      "basis": "absolute"
+     },
+     "condition": null,
+     "src_field": "storage_price_per_gb_month",
+     "src_text": "0.015 USD(毎月 10 GB は無料)"
+    },
+    {
+     "item": "egress",
+     "amount": "0",
+     "currency": "USD",
+     "unit": "gb",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "egress_price_per_gb",
+     "src_text": "0 USD"
+    },
+    {
+     "item": "request",
+     "ops": [
+      "class_a"
+     ],
+     "amount": "4.50",
+     "currency": "USD",
+     "unit": "request",
+     "per": "1000000",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": "毎月 Class A 100 万件、Class B 1,000 万件は無料",
+     "src_field": "request_price",
+     "src_text": "Class A 4.50 USD/1,000,000 件"
+    },
+    {
+     "item": "request",
+     "ops": [
+      "class_b"
+     ],
+     "amount": "0.36",
+     "currency": "USD",
+     "unit": "request",
+     "per": "1000000",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": "毎月 Class A 100 万件、Class B 1,000 万件は無料",
+     "src_field": "request_price",
+     "src_text": "Class B 0.36 USD/1,000,000 件"
+    }
+   ]
+  },
+  {
+   "row_id": "scaleway-os-standard-par",
+   "kind": "storage",
+   "provider": "Scaleway",
+   "plan": "Object Storage Standard Multi-AZ(パリ)",
+   "country": "FR",
+   "region_country": {},
+   "endpoint_patterns": [
+    "s3.<region>.scw.cloud",
+    "<bucket>.s3.<region>.scw.cloud"
+   ],
+   "endpoint_default": true,
+   "tax": "excluded",
+   "checked_on": "2026-11-02",
+   "source_url": "https://api.scaleway.com/product-catalog/v2alpha1/public-catalog/products?page_size=1000&product_types=object_storage",
+   "src": {
+    "section": "storage",
+    "index": 10
+   },
+   "minimums": {
+    "storage_quantity": null,
+    "storage_days": null,
+    "object_size_kb": null
+   },
+   "charges": [
+    {
+     "item": "storage",
+     "amount": "0.01606",
+     "currency": "EUR",
+     "unit": "gb_month",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "storage_price_per_gb_month",
+     "src_text": "0.01606 EUR"
+    },
+    {
+     "item": "egress",
+     "amount": "0.01",
+     "currency": "EUR",
+     "unit": "gb",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": {
+      "quantity": "75",
+      "unit": "gb",
+      "period": "month",
+      "basis": "absolute"
+     },
+     "condition": null,
+     "src_field": "egress_price_per_gb",
+     "src_text": "0.01 EUR(料金ページの表示では最初の 75 GB/月は無料)"
+    }
+   ]
+  },
+  {
+   "row_id": "hetzner-os",
+   "kind": "storage",
+   "provider": "Hetzner",
+   "plan": "Object Storage(FSN1 / NBG1 / HEL1)",
+   "country": null,
+   "region_country": {},
+   "endpoint_patterns": [
+    "<location>.your-objectstorage.com",
+    "<bucket>.<location>.your-objectstorage.com"
+   ],
+   "endpoint_default": false,
+   "tax": "excluded",
+   "checked_on": "2026-11-02",
+   "source_url": "https://www.hetzner.com/storage/object-storage/",
+   "src": {
+    "section": "storage",
+    "index": 11
+   },
+   "minimums": {
+    "storage_quantity": null,
+    "storage_days": null,
+    "object_size_kb": 64
+   },
+   "charges": [
+    {
+     "item": "egress",
+     "amount": "1.00",
+     "currency": "EUR",
+     "unit": "tb_month",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": {
+      "quantity": "1",
+      "unit": "tb",
+      "period": "month",
+      "basis": "absolute"
+     },
+     "condition": null,
+     "src_field": "egress_price_per_gb",
+     "src_text": "基本料金に 1 TB/月を含む。超過 1.00 EUR/TB"
+    }
+   ]
+  },
+  {
+   "row_id": "idrive-e2-payg",
+   "kind": "storage",
+   "provider": "IDrive",
+   "plan": "IDrive e2(Pay-as-you-go)",
+   "country": null,
+   "region_country": {},
+   "endpoint_patterns": [
+    "s3.<region>.idrivee2.com",
+    "s3.tyo-1.idrivee2.com"
+   ],
+   "endpoint_default": false,
+   "tax": "none",
+   "checked_on": "2026-11-02",
+   "source_url": "https://www.idrive.com/s3-storage-e2/pricing",
+   "src": {
+    "section": "storage",
+    "index": 12
+   },
+   "minimums": {
+    "storage_quantity": {
+     "quantity": "1",
+     "unit": "tb"
+    },
+    "storage_days": null,
+    "object_size_kb": null
+   },
+   "charges": [
+    {
+     "item": "storage",
+     "amount": "0.006",
+     "currency": "USD",
+     "unit": "gb_month",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "storage_price_per_gb_month",
+     "src_text": "0.006 USD"
+    },
+    {
+     "item": "egress",
+     "amount": "0.01",
+     "currency": "USD",
+     "unit": "gb",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": {
+      "quantity": "3",
+      "unit": "gb",
+      "period": "month",
+      "basis": "stored_ratio"
+     },
+     "condition": null,
+     "src_field": "egress_price_per_gb",
+     "src_text": "有効保管量の 3 倍/月まで無料、超過 0.01 USD"
+    }
+   ]
+  },
+  {
+   "row_id": "storj-standard",
+   "kind": "storage",
+   "provider": "Storj",
+   "plan": "Object Storage Standard",
+   "country": null,
+   "region_country": {},
+   "endpoint_patterns": [
+    "gateway.storjshare.io"
+   ],
+   "endpoint_default": true,
+   "tax": "excluded",
+   "checked_on": "2026-11-02",
+   "source_url": "https://storj.dev/dcs/pricing/simplified",
+   "src": {
+    "section": "storage",
+    "index": 13
+   },
+   "minimums": {
+    "storage_quantity": null,
+    "storage_days": 30,
+    "object_size_kb": 50
+   },
+   "charges": [
+    {
+     "item": "storage",
+     "amount": "7",
+     "currency": "USD",
+     "unit": "tb_month",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "storage_price_per_gb_month",
+     "src_text": "7 USD/TB/月"
+    },
+    {
+     "item": "egress",
+     "amount": "7",
+     "currency": "USD",
+     "unit": "tb_month",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "egress_price_per_gb",
+     "src_text": "7 USD/TB"
+    }
+   ]
+  },
+  {
+   "row_id": "sakura-os-basic",
+   "kind": "storage",
+   "provider": "sakura-internet",
+   "plan": "さくらのクラウド オブジェクトストレージ(基本料金プラン)",
+   "country": "JP",
+   "region_country": {},
+   "endpoint_patterns": [
+    "s3.isk01.sakurastorage.jp",
+    "s3.tky01.sakurastorage.jp"
+   ],
+   "endpoint_default": false,
+   "tax": "included",
+   "checked_on": "2026-11-02",
+   "source_url": "https://cloud.sakura.ad.jp/products/object-storage/",
+   "src": {
+    "section": "storage",
+    "index": 14
+   },
+   "minimums": {
+    "storage_quantity": null,
+    "storage_days": null,
+    "object_size_kb": null
+   },
+   "charges": [
+    {
+     "item": "storage",
+     "amount": "49.5",
+     "currency": "JPY",
+     "unit": "gb_month",
+     "per": "10",
+     "per_src": null,
+     "tier_upto": null,
+     "free": {
+      "quantity": "100",
+      "unit": "gb",
+      "period": null,
+      "basis": "absolute"
+     },
+     "condition": null,
+     "src_field": "storage_price_per_gb_month",
+     "src_text": "基本料金に 100 GiB を含む。超過 49.5 円/10 GiB"
+    },
+    {
+     "item": "egress",
+     "amount": "88",
+     "currency": "JPY",
+     "unit": "gb",
+     "per": "10",
+     "per_src": null,
+     "tier_upto": null,
+     "free": {
+      "quantity": "10",
+      "unit": "gb",
+      "period": "month",
+      "basis": "absolute"
+     },
+     "condition": "さくらインターネットの IP 以外からの GET にだけ発生",
+     "src_field": "egress_price_per_gb",
+     "src_text": "基本料金に 10 GiB を含む。超過 88 円/10 GiB"
+    },
+    {
+     "item": "request",
+     "ops": [
+      "all"
+     ],
+     "amount": "55",
+     "currency": "JPY",
+     "unit": "request",
+     "per": "100000",
+     "per_src": null,
+     "tier_upto": null,
+     "free": {
+      "quantity": "100000",
+      "unit": "request",
+      "period": "month",
+      "basis": "absolute"
+     },
+     "condition": null,
+     "src_field": "request_price",
+     "src_text": "基本料金に 100,000 件を含む。超過 55 円/100,000 件"
+    }
+   ]
+  },
+  {
+   "row_id": "oci-os-standard",
+   "kind": "storage",
+   "provider": "Oracle-Cloud-Infrastructure",
+   "plan": "Object Storage Standard(東京・大阪リージョンあり)",
+   "country": "JP",
+   "region_country": {},
+   "endpoint_patterns": [
+    "<namespace>.compat.objectstorage.<region>.oci.customer-oci.com",
+    "vhcompat.objectstorage.<region>.oci.customer-oci.com",
+    "<bucket>.vhcompat.objectstorage.<region>.oci.customer-oci.com"
+   ],
+   "endpoint_default": true,
+   "tax": "none",
+   "checked_on": "2026-11-02",
+   "source_url": "https://apexapps.oracle.com/pls/apex/cetools/api/v1/products/?currencyCode=USD",
+   "src": {
+    "section": "storage",
+    "index": 15
+   },
+   "minimums": {
+    "storage_quantity": null,
+    "storage_days": null,
+    "object_size_kb": null
+   },
+   "charges": [
+    {
+     "item": "storage",
+     "amount": "0.0255",
+     "currency": "USD",
+     "unit": "gb_month",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": {
+      "quantity": "10",
+      "unit": "gb",
+      "period": "month",
+      "basis": "absolute"
+     },
+     "condition": null,
+     "src_field": "storage_price_per_gb_month",
+     "src_text": "0.0255 USD(最初の 10 GB/月は 0 USD)"
+    },
+    {
+     "item": "egress",
+     "amount": "0.025",
+     "currency": "USD",
+     "unit": "gb",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": {
+      "quantity": "10240",
+      "unit": "gb",
+      "period": "month",
+      "basis": "absolute"
+     },
+     "condition": "APAC・日本発",
+     "src_field": "egress_price_per_gb",
+     "src_text": "最初の 10,240 GB/月は 0 USD、超過 0.025 USD"
+    },
+    {
+     "item": "request",
+     "ops": [
+      "all"
+     ],
+     "amount": "0.0034",
+     "currency": "USD",
+     "unit": "request",
+     "per": "10000",
+     "per_src": null,
+     "tier_upto": null,
+     "free": {
+      "quantity": "50000",
+      "unit": "request",
+      "period": "month",
+      "basis": "absolute"
+     },
+     "condition": null,
+     "src_field": "request_price",
+     "src_text": "0.0034 USD/10,000 件(最初の 50,000 件/月は無料。区分なし)"
+    }
+   ]
+  }
+ ],
+ "combos": [],
+ "restore_dests": [],
+ "skipped": [
+  {
+   "src": {
+    "section": "storage",
+    "index": 10
+   },
+   "src_field": "request_price",
+   "reason": "unconfirmed"
+  },
+  {
+   "src": {
+    "section": "storage",
+    "index": 10
+   },
+   "src_field": "minimums",
+   "reason": "unconfirmed"
+  },
+  {
+   "src": {
+    "section": "storage",
+    "index": 11
+   },
+   "src_field": "storage_price_per_gb_month",
+   "reason": "unmapped"
+  },
+  {
+   "src": {
+    "section": "storage",
+    "index": 11
+   },
+   "src_field": "storage_price_per_gb_month",
+   "reason": "computed"
+  },
+  {
+   "src": {
+    "section": "storage",
+    "index": 11
+   },
+   "src_field": "request_price",
+   "reason": "not_applicable"
+  },
+  {
+   "src": {
+    "section": "storage",
+    "index": 11
+   },
+   "src_field": "minimums",
+   "reason": "unmapped"
+  },
+  {
+   "src": {
+    "section": "storage",
+    "index": 12
+   },
+   "src_field": "request_price",
+   "reason": "not_applicable"
+  },
+  {
+   "src": {
+    "section": "storage",
+    "index": 12
+   },
+   "src_field": "minimums",
+   "reason": "unmapped"
+  },
+  {
+   "src": {
+    "section": "storage",
+    "index": 13
+   },
+   "src_field": "request_price",
+   "reason": "not_applicable"
+  },
+  {
+   "src": {
+    "section": "storage",
+    "index": 13
+   },
+   "src_field": "minimums",
+   "reason": "unmapped"
+  },
+  {
+   "src": {
+    "section": "storage",
+    "index": 14
+   },
+   "src_field": "request_price",
+   "reason": "unmapped"
+  },
+  {
+   "src": {
+    "section": "storage",
+    "index": 14
+   },
+   "src_field": "minimums",
+   "reason": "unmapped"
+  }
+ ]
+}
