@@ -874,10 +874,10 @@
      "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
     },
     "provider": {
-     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/data"
     },
     "plan": {
-     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/data"
     },
     "monthly_jpy": {
      "anyOf": [
@@ -1938,6 +1938,7 @@
          "time_skew",
          "timers_registered",
          "file_modes",
+         "adapter_dir_modes",
          "disk_encryption",
          "swap_disabled"
         ]

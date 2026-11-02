@@ -116,7 +116,7 @@ func (d *Deps) estimateNow(ctx context.Context, c contract.Call, pt priceTable) 
 	var warns []contract.Warning
 	m := monthlyOf(pt, row, in, 365)
 	m3 := monthlyOf(pt, row, in, 1095)
-	if row == nil || m.storage == nil {
+	if row == nil || m.total == nil || m3.total == nil { // 行が無い・要る区分の費目が無い・基本料金か最低料金がある行(3.1.2.8 の分岐 1。missing は storage)
 		warns = append(warns, contract.Warning{Code: contract.CodePriceUnknown, Detail: mustMarshal(map[string]any{"missing": []string{"storage"}}), Next: []contract.Next{}})
 	}
 	ceil, over := ceilingState(haveDef, def.CostCeilingYen, row, m.total, server)
@@ -187,13 +187,27 @@ func hostOf(endpoint string) string {
 	return strings.ToLower(e)
 }
 
-// endpointRe は endpoint_patterns の 1 つ(<bucket>・<region> などの角括弧の語は 1 つのラベル列)を照合する式にする。
+var placeholderRe = regexp.MustCompile(`<[a-z0-9_-]+>`)
+
+// endpointRe は endpoint_patterns の 1 つをホスト名の全体の一致で照合する式にする(spec 7.2 の「照合」)。
+// <region>・<bucket> は英小文字・数字・- の 1 文字以上、それ以外のプレースホルダは 1 ラベルの任意(. を含まない)。
 func endpointRe(p string) *regexp.Regexp {
-	parts := regexp.MustCompile(`<[a-z0-9-]+>`).Split(p, -1)
-	for i := range parts {
-		parts[i] = regexp.QuoteMeta(parts[i])
+	parts := placeholderRe.Split(p, -1)
+	holders := placeholderRe.FindAllString(p, -1)
+	var b strings.Builder
+	b.WriteString("^")
+	for i, part := range parts {
+		b.WriteString(regexp.QuoteMeta(part))
+		if i < len(holders) {
+			if holders[i] == "<region>" || holders[i] == "<bucket>" {
+				b.WriteString(`[a-z0-9-]+`)
+			} else {
+				b.WriteString(`[^.]+`)
+			}
+		}
 	}
-	return regexp.MustCompile("^" + strings.Join(parts, `[a-z0-9-]+`) + "$")
+	b.WriteString("$")
+	return regexp.MustCompile(b.String())
 }
 
 // matchStorageRow は保管先の事業者の行(kind: storage)を endpoint_patterns と照合して引く。複数に当たれば endpoint_default の行、無ければ先頭。

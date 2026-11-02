@@ -64,7 +64,7 @@ func TestContractKeysDoctorSealed(t *testing.T) {
 	if stage != "sealed" {
 		t.Errorf("stage = %q (seal 済みは sealed)", stage)
 	}
-	want := append(slices.Clone(bootstrapChecks), "storage_reachable", "time_skew", "timers_registered", "file_modes", "disk_encryption", "swap_disabled")
+	want := append(slices.Clone(bootstrapChecks), "storage_reachable", "time_skew", "timers_registered", "file_modes", "adapter_dir_modes", "disk_encryption", "swap_disabled")
 	if !slices.Equal(names(cs), want) {
 		t.Errorf("checks[] = %v", names(cs))
 	}

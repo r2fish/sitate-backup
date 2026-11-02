@@ -287,7 +287,9 @@
      ]
     },
     "provider": {
-     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+     "type": "string",
+     "maxLength": 2048,
+     "x-sitate-data": true
     },
     "plan": {
      "type": "string",
@@ -314,7 +316,7 @@
      "type": "array",
      "items": {
       "type": "string",
-      "pattern": "^[a-z0-9.<>-]{1,255}$"
+      "pattern": "^[a-z0-9._<>-]{1,255}$"
      }
     },
     "endpoint_default": {

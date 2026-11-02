@@ -13,12 +13,16 @@ const testPrices = `{"schema":"sitate.prices/v1","fx_jpy":{"USD":"150"},"rows":[
  {"row_id":"b2-payg","kind":"storage","provider":"example-b2","plan":"Pay-as-you-go","endpoint_patterns":["s3.<region>.example-b2.test"],"endpoint_default":true,"checked_on":"2026-11-02",
   "charges":[
    {"item":"storage","amount":"0.006","currency":"USD","unit":"gb_month","per":"1","tier_upto":null,"free":{"quantity":"10","unit":"gb","period":"month","basis":"absolute"}},
-   {"item":"egress","amount":"0.01","currency":"USD","unit":"gb","per":"1","tier_upto":null,"free":{"quantity":"3","unit":"gb","period":"month","basis":"stored_ratio"}}]},
+   {"item":"egress","amount":"0.01","currency":"USD","unit":"gb","per":"1","tier_upto":null,"free":{"quantity":"3","unit":"gb","period":"month","basis":"stored_ratio"}},
+   {"item":"request","ops":["class_a"],"amount":"0","currency":"USD","unit":"request","per":"1","tier_upto":null,"free":null},
+   {"item":"request","ops":["class_b"],"amount":"0","currency":"USD","unit":"request","per":"1","tier_upto":null,"free":null}]},
  {"row_id":"s3-std","kind":"storage","provider":"example-s3","plan":"Standard","endpoint_patterns":["s3.<region>.example-s3.test"],"endpoint_default":true,"checked_on":"2026-10-17",
   "charges":[
    {"item":"storage","amount":"0.025","currency":"USD","unit":"gb_month","per":"1","tier_upto":{"quantity":"500","unit":"gb"},"free":null},
    {"item":"storage","amount":"0.020","currency":"USD","unit":"gb_month","per":"1","tier_upto":null,"free":null},
-   {"item":"request","ops":["PUT","LIST"],"amount":"0.0047","currency":"USD","unit":"request","per":"1000","tier_upto":null,"free":null}]},
+   {"item":"egress","amount":"0.114","currency":"USD","unit":"gb","per":"1","tier_upto":null,"free":null},
+   {"item":"request","ops":["PUT","LIST"],"amount":"0.0047","currency":"USD","unit":"request","per":"1000","tier_upto":null,"free":null},
+   {"item":"request","ops":["GET"],"amount":"0.0037","currency":"USD","unit":"request","per":"10000","tier_upto":null,"free":null}]},
  {"row_id":"vps-2g","kind":"compute","provider":"example-vps","plan":"2GB","endpoint_patterns":[],"endpoint_default":false,"checked_on":"2026-10-17",
   "charges":[{"item":"instance","amount":"770","currency":"JPY","unit":"month","per":"1","tier_upto":null,"free":null}]}]}`
 
@@ -140,6 +144,7 @@ const gcsPrices = `{"schema":"sitate.prices/v1","fx_jpy":{"USD":"150"},"rows":[
    {"item":"storage","amount":"0.02","currency":"USD","unit":"gb_month","per":"1","tier_upto":null,"free":null},
    {"item":"request","ops":["class_a"],"amount":"0.005","currency":"USD","unit":"request","per":"1000","tier_upto":null,"free":null},
    {"item":"request","ops":["class_b"],"amount":"0.0004","currency":"USD","unit":"request","per":"1000","tier_upto":null,"free":null},
+   {"item":"egress","amount":"0.12","currency":"USD","unit":"gb","per":"1","tier_upto":null,"free":null},
    {"item":"request","ops":["class_d"],"amount":"0.0","currency":"USD","unit":"request","per":"1000","tier_upto":null,"free":null}]}]}`
 
 // 価格表の review: GCS の class_a・class_b が核の操作の区分(書き込み・一覧 / 読み出し)に当たり、要求の月額が 0 円にならない(spec 6.1.1 の (3))。

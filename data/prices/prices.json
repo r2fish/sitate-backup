@@ -1,6 +1,6 @@
 {
  "schema": "sitate.prices/v1",
- "generated_at": "2026-11-02T20:42:12Z",
+ "generated_at": "2026-11-02T22:59:32Z",
  "source": {
   "file": "pricing-2026-11.yaml",
   "sha256": "950cb9d43435996e5e9811aa6dd7b45fa467608ffe23d0cc753e53008fac3cd8"
@@ -12,7 +12,7 @@
   {
    "row_id": "aws-s3-standard-apne1",
    "kind": "storage",
-   "provider": "Amazon-Web-Services",
+   "provider": "Amazon Web Services",
    "plan": "S3 Standard(東京 ap-northeast-1)",
    "country": "JP",
    "region_country": {},
@@ -59,7 +59,7 @@
      "per": "1",
      "per_src": null,
      "tier_upto": {
-      "quantity": "450",
+      "quantity": "500",
       "unit": "tb"
      },
      "free": null,
@@ -109,7 +109,7 @@
      "per": "1",
      "per_src": null,
      "tier_upto": {
-      "quantity": "40",
+      "quantity": "50",
       "unit": "tb"
      },
      "free": null,
@@ -125,7 +125,7 @@
      "per": "1",
      "per_src": null,
      "tier_upto": {
-      "quantity": "100",
+      "quantity": "150",
       "unit": "tb"
      },
      "free": null,
@@ -186,7 +186,7 @@
   {
    "row_id": "aws-s3-standard-ia-apne1",
    "kind": "storage",
-   "provider": "Amazon-Web-Services",
+   "provider": "Amazon Web Services",
    "plan": "S3 Standard-IA(東京)",
    "country": "JP",
    "region_country": {},
@@ -251,7 +251,7 @@
      "per": "1",
      "per_src": null,
      "tier_upto": {
-      "quantity": "40",
+      "quantity": "50",
       "unit": "tb"
      },
      "free": null,
@@ -267,7 +267,7 @@
      "per": "1",
      "per_src": null,
      "tier_upto": {
-      "quantity": "100",
+      "quantity": "150",
       "unit": "tb"
      },
      "free": null,
@@ -341,7 +341,7 @@
   {
    "row_id": "aws-s3-glacier-ir-apne1",
    "kind": "storage",
-   "provider": "Amazon-Web-Services",
+   "provider": "Amazon Web Services",
    "plan": "S3 Glacier Instant Retrieval(東京)",
    "country": "JP",
    "region_country": {},
@@ -406,7 +406,7 @@
      "per": "1",
      "per_src": null,
      "tier_upto": {
-      "quantity": "40",
+      "quantity": "50",
       "unit": "tb"
      },
      "free": null,
@@ -422,7 +422,7 @@
      "per": "1",
      "per_src": null,
      "tier_upto": {
-      "quantity": "100",
+      "quantity": "150",
       "unit": "tb"
      },
      "free": null,
@@ -496,7 +496,7 @@
   {
    "row_id": "gcp-gcs-standard-asne1",
    "kind": "storage",
-   "provider": "Google-Cloud",
+   "provider": "Google Cloud",
    "plan": "Cloud Storage Standard(東京 asia-northeast1、単一リージョン)",
    "country": "JP",
    "region_country": {},
@@ -613,7 +613,7 @@
   {
    "row_id": "gcp-gcs-coldline-asne1",
    "kind": "storage",
-   "provider": "Google-Cloud",
+   "provider": "Google Cloud",
    "plan": "Cloud Storage Coldline(東京)",
    "country": "JP",
    "region_country": {},
@@ -743,7 +743,7 @@
   {
    "row_id": "azure-blob-hot-japaneast",
    "kind": "storage",
-   "provider": "Microsoft-Azure",
+   "provider": "Microsoft Azure",
    "plan": "Blob Storage Hot LRS(Japan East)",
    "country": "JP",
    "region_country": {},
@@ -788,7 +788,7 @@
      "per": "1",
      "per_src": null,
      "tier_upto": {
-      "quantity": "450",
+      "quantity": "500",
       "unit": "tb"
      },
      "free": null,
@@ -944,7 +944,7 @@
   {
    "row_id": "azure-blob-cool-japaneast",
    "kind": "storage",
-   "provider": "Microsoft-Azure",
+   "provider": "Microsoft Azure",
    "plan": "Blob Storage Cool LRS(Japan East)",
    "country": "JP",
    "region_country": {},
@@ -1094,7 +1094,7 @@
   {
    "row_id": "azure-blob-cold-japaneast",
    "kind": "storage",
-   "provider": "Microsoft-Azure",
+   "provider": "Microsoft Azure",
    "plan": "Blob Storage Cold LRS(Japan East)",
    "country": "JP",
    "region_country": {},
@@ -1305,6 +1305,54 @@
     {
      "item": "request",
      "ops": [
+      "class_a"
+     ],
+     "amount": "0",
+     "currency": "USD",
+     "unit": "request",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "request_price",
+     "src_text": "Class A・B・C 無料"
+    },
+    {
+     "item": "request",
+     "ops": [
+      "class_b"
+     ],
+     "amount": "0",
+     "currency": "USD",
+     "unit": "request",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "request_price",
+     "src_text": "Class A・B・C 無料"
+    },
+    {
+     "item": "request",
+     "ops": [
+      "class_c"
+     ],
+     "amount": "0",
+     "currency": "USD",
+     "unit": "request",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "request_price",
+     "src_text": "Class A・B・C 無料"
+    },
+    {
+     "item": "request",
+     "ops": [
       "class_d"
      ],
      "amount": "0.004",
@@ -1404,7 +1452,7 @@
    "country": null,
    "region_country": {},
    "endpoint_patterns": [
-    "<account-id>.r2.cloudflarestorage.com"
+    "<account_id>.r2.cloudflarestorage.com"
    ],
    "endpoint_default": true,
    "tax": "excluded",
@@ -1585,6 +1633,22 @@
      "condition": null,
      "src_field": "egress_price_per_gb",
      "src_text": "基本料金に 1 TB/月を含む。超過 1.00 EUR/TB"
+    },
+    {
+     "item": "request",
+     "ops": [
+      "all"
+     ],
+     "amount": "0",
+     "currency": "EUR",
+     "unit": "request",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "request_price",
+     "src_text": "S3 API 呼び出し(PUT・GET・DELETE など)は無料"
     }
    ]
   },
@@ -1646,6 +1710,22 @@
      "condition": null,
      "src_field": "egress_price_per_gb",
      "src_text": "有効保管量の 3 倍/月まで無料、超過 0.01 USD"
+    },
+    {
+     "item": "request",
+     "ops": [
+      "all"
+     ],
+     "amount": "0",
+     "currency": "USD",
+     "unit": "request",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "request_price",
+     "src_text": "API 呼び出しは無料"
     }
    ]
   },
@@ -1698,13 +1778,29 @@
      "condition": null,
      "src_field": "egress_price_per_gb",
      "src_text": "7 USD/TB"
+    },
+    {
+     "item": "request",
+     "ops": [
+      "all"
+     ],
+     "amount": "0",
+     "currency": "USD",
+     "unit": "request",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "request_price",
+     "src_text": "API 料金なし"
     }
    ]
   },
   {
    "row_id": "sakura-os-basic",
    "kind": "storage",
-   "provider": "sakura-internet",
+   "provider": "さくらインターネット",
    "plan": "さくらのクラウド オブジェクトストレージ(基本料金プラン)",
    "country": "JP",
    "region_country": {},
@@ -1788,7 +1884,7 @@
   {
    "row_id": "oci-os-standard",
    "kind": "storage",
-   "provider": "Oracle-Cloud-Infrastructure",
+   "provider": "Oracle Cloud Infrastructure",
    "plan": "Object Storage Standard(東京・大阪リージョンあり)",
    "country": "JP",
    "region_country": {},
@@ -1877,6 +1973,14 @@
   {
    "src": {
     "section": "storage",
+    "index": 8
+   },
+   "src_field": "minimums",
+   "reason": "unmapped"
+  },
+  {
+   "src": {
+    "section": "storage",
     "index": 10
    },
    "src_field": "request_price",
@@ -1911,14 +2015,6 @@
     "section": "storage",
     "index": 11
    },
-   "src_field": "request_price",
-   "reason": "not_applicable"
-  },
-  {
-   "src": {
-    "section": "storage",
-    "index": 11
-   },
    "src_field": "minimums",
    "reason": "unmapped"
   },
@@ -1927,24 +2023,8 @@
     "section": "storage",
     "index": 12
    },
-   "src_field": "request_price",
-   "reason": "not_applicable"
-  },
-  {
-   "src": {
-    "section": "storage",
-    "index": 12
-   },
    "src_field": "minimums",
    "reason": "unmapped"
-  },
-  {
-   "src": {
-    "section": "storage",
-    "index": 13
-   },
-   "src_field": "request_price",
-   "reason": "not_applicable"
   },
   {
    "src": {

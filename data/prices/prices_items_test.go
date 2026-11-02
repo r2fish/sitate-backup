@@ -102,12 +102,29 @@ func checkOps(t *testing.T, id string, c charge) {
 	}
 }
 
+// 無料の費目(規則 6)の ops: 「Class A・B・C」は 3 区分、区分の語が無ければ all。
+func checkFreeOps(t *testing.T, id string, c charge) {
+	want := []string{"all"}
+	if strings.Contains(c.SrcText, "Class A・B・C") {
+		want = []string{"class_a", "class_b", "class_c"}
+	}
+	for _, o := range c.Ops {
+		ok := false
+		for _, w := range want {
+			ok = ok || o == w
+		}
+		if !ok || len(c.Ops) != 1 {
+			t.Errorf("%s: 無料の費目の ops %v が %v の 1 つでない: %q", id, c.Ops, want, c.SrcText)
+		}
+	}
+}
+
 var unitWords = map[string]string{"gb": `(GB|GiB)`, "tb": `(TB|TiB)`, "request": `件`}
 
 // tier_upto の直後は TB / TiB。free の直後の語が unit と合い、「倍」があるときだけ stored_ratio。
 func checkTierFree(t *testing.T, id string, c charge) {
 	s := noComma(c.SrcText)
-	if c.TierUpto != nil {
+	if c.TierUpto != nil && !nextTierRe.MatchString(s) { // 幅の段は TestPricesCharges が累積を確かめる
 		re := regexp.MustCompile(`(^|[^0-9.])` + c.TierUpto.Quantity + `\s*(TB|TiB)`)
 		if c.TierUpto.Unit != "tb" || !re.MatchString(s) {
 			t.Errorf("%s: tier_upto %v の直後が TB / TiB でない: %q", id, *c.TierUpto, c.SrcText)
@@ -134,6 +151,10 @@ func TestPricesChargeUnitsAndCurrency(t *testing.T) {
 	src := loadSrc(t)
 	for _, r := range loadTable(t).Rows {
 		for _, c := range r.Charges {
+			if isFreeCharge(c) {
+				checkFreeOps(t, r.RowID, c)
+				continue
+			}
 			checkCurrency(t, r.RowID, c)
 			checkUnitPer(t, r.RowID, c)
 			checkRetrieval(t, r.RowID, inputText(t, src, r, c.SrcField), c)
@@ -191,6 +212,9 @@ func TestPricesEveryNumberUsed(t *testing.T) {
 			own := map[string]bool{c.Amount: true, c.Per: true}
 			if c.TierUpto != nil {
 				own[c.TierUpto.Quantity] = true
+				if m := nextTierRe.FindStringSubmatch(c.SrcText); m != nil {
+					own[noComma(m[1])] = true // 幅で書く段は累積にした値と幅の両方が使われた数
+				}
 			}
 			if c.Free != nil {
 				own[c.Free.Quantity] = true
@@ -303,15 +327,78 @@ func inComputedSentence(text string, pos int) bool {
 	return strings.Contains(text[start:end], "算定")
 }
 
+// 規則 6(D-0159): 入力が無料と明記する区分は amount 0 の費目。B2 は class_a・class_b・class_c が 0 で class_d と無料枠が残り、
+// Wasabi(区分なし)・Hetzner・IDrive・Storj は ops all が 0。
+func TestPricesFreeRequestCharges(t *testing.T) {
+	byID := map[string]row{}
+	for _, r := range loadTable(t).Rows {
+		byID[r.RowID] = r
+	}
+	zeroOps := func(id string) map[string]bool {
+		m := map[string]bool{}
+		for _, c := range byID[id].Charges {
+			if c.Item == "request" && c.Amount == "0" {
+				for _, o := range c.Ops {
+					m[o] = true
+				}
+			}
+		}
+		return m
+	}
+	b2 := zeroOps("b2-payg")
+	for _, o := range []string{"class_a", "class_b", "class_c"} {
+		if !b2[o] {
+			t.Errorf("b2-payg に %s の amount 0 の費目が無い", o)
+		}
+	}
+	d := 0
+	for _, c := range byID["b2-payg"].Charges {
+		if c.Item == "request" && len(c.Ops) == 1 && c.Ops[0] == "class_d" && c.Amount == "0.004" && c.Free != nil && c.Free.Quantity == "2500" {
+			d++
+		}
+	}
+	if d != 1 {
+		t.Errorf("b2-payg の class_d の費目と無料枠が残っていない(%d)", d)
+	}
+	for _, id := range []string{"wasabi-hot-payg", "hetzner-os", "idrive-e2-payg", "storj-standard"} {
+		if !zeroOps(id)["all"] && id != "wasabi-hot-payg" {
+			t.Errorf("%s に ops all の amount 0 の費目が無い", id)
+		}
+	}
+	if !zeroOps("wasabi-hot-payg")["all"] {
+		t.Error("wasabi-hot-payg に ops all の amount 0 の費目が無い")
+	}
+}
+
+// 規則 7(D-0159): 月額の基本料金か最低料金がある 5 行(Wasabi・Hetzner・IDrive・Storj・さくら)だけが minimums を skipped[](unmapped)に置く。
+func TestPricesMinimumFeeRowsSkipped(t *testing.T) {
+	tb := loadTable(t)
+	got := map[int]bool{}
+	for _, s := range tb.Skipped {
+		if s.SrcField == "minimums" && s.Reason == "unmapped" {
+			got[s.Src.Index] = true
+		}
+	}
+	want := map[int]bool{8: true, 11: true, 12: true, 13: true, 14: true}
+	for i := range want {
+		if !got[i] {
+			t.Errorf("storage[%d] の minimums が skipped[](unmapped)に無い", i)
+		}
+	}
+	for i := range got {
+		if !want[i] {
+			t.Errorf("storage[%d] は最低料金の行でないのに minimums が unmapped", i)
+		}
+	}
+}
+
 // skipped[] の全件(入力の欄ごとの写していない理由)。増減は設計の確認が要る。
 func TestPricesSkippedExact(t *testing.T) {
 	want := map[string]bool{
 		"10 request_price unconfirmed": true, "10 minimums unconfirmed": true,
 		"11 storage_price_per_gb_month unmapped": true, "11 storage_price_per_gb_month computed": true,
-		"11 request_price not_applicable": true, "11 minimums unmapped": true,
-		"12 request_price not_applicable": true, "12 minimums unmapped": true,
-		"13 request_price not_applicable": true, "13 minimums unmapped": true,
-		"14 request_price unmapped": true, "14 minimums unmapped": true,
+		"8 minimums unmapped": true, "11 minimums unmapped": true, "12 minimums unmapped": true,
+		"13 minimums unmapped": true, "14 request_price unmapped": true, "14 minimums unmapped": true,
 	}
 	got := map[string]bool{}
 	for _, s := range loadTable(t).Skipped {

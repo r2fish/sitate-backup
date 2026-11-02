@@ -185,7 +185,7 @@ func TestContractKeysDoctorBootstrap(t *testing.T) {
 	if stage != "bootstrap" {
 		t.Errorf("stage = %q (候補が無いので bootstrap)", stage)
 	}
-	want := append(slices.Clone(bootstrapChecks), "disk_encryption", "swap_disabled")
+	want := append(slices.Clone(bootstrapChecks), "adapter_dir_modes", "disk_encryption", "swap_disabled")
 	if !slices.Equal(names(cs), want) {
 		t.Errorf("checks[] = %v (表の順で bootstrap までと advisory)", names(cs))
 	}
@@ -244,7 +244,7 @@ func TestContractKeysDoctorTimeSkew(t *testing.T) {
 		if stage != "defined" {
 			t.Errorf("%s: stage = %q (候補があるので defined)", c.name, stage)
 		}
-		want := append(slices.Clone(bootstrapChecks), "storage_reachable", "time_skew", "disk_encryption", "swap_disabled")
+		want := append(slices.Clone(bootstrapChecks), "storage_reachable", "time_skew", "adapter_dir_modes", "disk_encryption", "swap_disabled")
 		if !slices.Equal(names(cs), want) {
 			t.Errorf("%s: checks[] = %v", c.name, names(cs))
 		}

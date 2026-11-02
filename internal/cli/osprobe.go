@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -30,6 +31,8 @@ type HostProbe struct {
 	TimersDir string
 	State     contract.StateFiles
 	Run       func(ctx context.Context, name string, args ...string) ([]byte, error)
+	// LibexecUID は /usr/libexec/sitate/ の下の期待する所有者の uid(実機は 0 = root。試験だけが差し替える)。
+	LibexecUID int
 }
 
 var _ contract.OSProbe = (*HostProbe)(nil)
@@ -64,6 +67,8 @@ func (p *HostProbe) Check(ctx context.Context, name string) (bool, json.RawMessa
 		ok, detail = true, map[string]any{"count": contract.DoctorCheckImagesCount}
 	case "timer_permission":
 		ok = p.timerPermission(ctx)
+	case "adapter_dir_modes":
+		ok = p.adapterDirModes()
 	case "listening_ports":
 		ok, detail = p.listeningPorts()
 	case "directory_join":
@@ -93,27 +98,70 @@ func (p *HostProbe) serviceUser() bool {
 	return err == nil && strconv.Itoa(os.Getuid()) == u.Uid
 }
 
+// timerPermission は sitate が OS のスケジューラにタイマーを登録できるか(spec 3.1.2 の表)。
+// systemd の環境ではそのユーザーの単位を常駐させられる(linger が有効)こと、cron の環境では sitate の crontab が許されていること。
+// どちらの環境かは state.json の timers.backend、無ければ systemd が動いているか(/run/systemd/system)で決め、片方が通れば合格にはしない。
 func (p *HostProbe) timerPermission(ctx context.Context) bool {
-	if out, err := p.run(ctx, "loginctl", "show-user", ServiceUser, "-p", "Linger"); err == nil && strings.TrimSpace(string(out)) == "Linger=yes" {
-		return true
+	if p.timerBackend(ctx) == "cron" {
+		return p.crontabAllowed(ctx)
 	}
-	// cron: cron.allow があれば載っていること、無ければ cron.deny に載っていないこと。
-	if b, err := os.ReadFile(p.path("/etc/cron.allow")); err == nil {
-		return hasLine(b, ServiceUser)
-	}
-	if b, err := os.ReadFile(p.path("/etc/cron.deny")); err == nil {
-		return !hasLine(b, ServiceUser)
-	}
-	return false
+	out, err := p.run(ctx, "loginctl", "show-user", ServiceUser, "-p", "Linger")
+	return err == nil && strings.TrimSpace(string(out)) == "Linger=yes"
 }
 
-func hasLine(b []byte, want string) bool {
-	for _, l := range strings.Split(string(b), "\n") {
-		if strings.TrimSpace(l) == want {
-			return true
+func (p *HostProbe) timerBackend(ctx context.Context) string {
+	if p.State != nil {
+		if raw, err := p.State.Get(ctx, "timers"); err == nil {
+			var t struct {
+				Backend string `json:"backend"`
+			}
+			if json.Unmarshal(raw, &t) == nil && t.Backend != "" {
+				return t.Backend
+			}
 		}
 	}
-	return false
+	if fi, err := os.Stat(p.path("/run/systemd/system")); err == nil && fi.IsDir() {
+		return "systemd"
+	}
+	return "cron"
+}
+
+// crontabAllowed は sitate の crontab を読める(`crontab -l`)か。crontab が空なだけ("no crontab for")は許されている。
+func (p *HostProbe) crontabAllowed(ctx context.Context) bool {
+	out, err := p.run(ctx, "crontab", "-l")
+	if err == nil {
+		return true
+	}
+	msg := string(out)
+	var ee *exec.ExitError
+	if errors.As(err, &ee) {
+		msg += string(ee.Stderr)
+	}
+	return strings.Contains(msg, "no crontab for")
+}
+
+// adapterDirModes は /usr/libexec/sitate/ の下が spec 3.2.1 のとおりか: 所有者 root、ディレクトリは 0755、ファイルは root 以外が書けない(0o022 が立たない)。
+// 置き場が無い、シンボリックリンクがある、読めないときは外れ。
+func (p *HostProbe) adapterDirModes() bool {
+	root := p.path("/usr/libexec/sitate")
+	if fi, err := os.Lstat(root); err != nil || !fi.IsDir() {
+		return false
+	}
+	good := true
+	_ = filepath.Walk(root, func(path string, fi os.FileInfo, err error) error {
+		switch {
+		case err != nil || fileOwner(fi) != p.LibexecUID:
+			good = false
+		case fi.IsDir():
+			good = good && fi.Mode().Perm() == 0o755
+		case !fi.Mode().IsRegular():
+			good = false
+		default:
+			good = good && fi.Mode().Perm()&0o022 == 0
+		}
+		return nil
+	})
+	return good
 }
 
 // listeningPorts は /proc/net/tcp{,6} の LISTEN のうち、ループバック以外のアドレスのポートが sshd の Port だけか。

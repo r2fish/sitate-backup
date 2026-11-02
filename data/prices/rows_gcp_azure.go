@@ -51,7 +51,7 @@ func azReq(w, wt, r, rt string) []charge {
 func azureSpecs() []rowSpec {
 	hot := append([]charge{
 		mk("storage", "0.02", "USD", "gb_month", "1", fStore, "0.02 USD(最初の 50 TB)", tier("50", "tb")),
-		mk("storage", "0.0192", "USD", "gb_month", "1", fStore, "0.0192 USD(次の 450 TB)", tier("450", "tb")),
+		mk("storage", "0.0192", "USD", "gb_month", "1", fStore, "0.0192 USD(次の 450 TB)", tier("500", "tb")),
 		mk("storage", "0.0184", "USD", "gb_month", "1", fStore, "0.0184 USD(500 TB 超)"),
 	}, azEgress()...)
 	hot = append(hot, azReq("0.05", "書き込み 0.05 USD/10,000 件", "0.004", "読み取り 0.004 USD/10,000 件")...)

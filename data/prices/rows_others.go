@@ -6,6 +6,9 @@ func b2Spec() rowSpec {
 	return rowSpec{ID: "b2-payg", Src: 7, Charges: []charge{
 		mk("storage", "6.95", "USD", "tb_month", "1", fStore, "6.95 USD/TB/月、1 TB = 1,000 GB として。最初の 10 GB は無料", fr("10", "gb", "", "absolute")),
 		mk("egress", "0.01", "USD", "gb", "1", fEgress, "平均保管量の 3 倍/月まで無料、超過 0.01 USD", fr("3", "gb", "month", "stored_ratio")),
+		mk("request", "0", "USD", "request", "1", fReq, "Class A・B・C 無料", ops("class_a")),
+		mk("request", "0", "USD", "request", "1", fReq, "Class A・B・C 無料", ops("class_b")),
+		mk("request", "0", "USD", "request", "1", fReq, "Class A・B・C 無料", ops("class_c")),
 		mk("request", "0.004", "USD", "request", "10000", fReq, "Class D 0.004 USD/10,000 件(1 日 2,500 件まで無料)", ops("class_d"), fr("2500", "request", "day", "absolute")),
 	}}
 }
@@ -15,7 +18,7 @@ func wasabiSpec() rowSpec {
 		mk("storage", "7.99", "USD", "tb_month", "1", fStore, "7.99 USD/TB/月"),
 		mk("egress", "0", "USD", "gb", "1", fEgress, "0 USD"),
 		mk("request", "0", "USD", "request", "1", fReq, "API 料金 0 USD", ops("all")),
-	}}
+	}, Skipped: []skipped{sk(8, "minimums", "unmapped")}}
 }
 
 func r2Spec() rowSpec {
@@ -38,8 +41,9 @@ func scalewaySpec() rowSpec {
 func hetznerSpec() rowSpec {
 	return rowSpec{ID: "hetzner-os", Src: 11, Min: minimums{ObjectSizeKB: days(64)}, Charges: []charge{
 		mk("egress", "1.00", "EUR", "tb_month", "1", fEgress, "基本料金に 1 TB/月を含む。超過 1.00 EUR/TB", fr("1", "tb", "month", "absolute")),
+		mk("request", "0", "EUR", "request", "1", fReq, "S3 API 呼び出し(PUT・GET・DELETE など)は無料", ops("all")),
 	}, Skipped: []skipped{
-		sk(11, fStore, "unmapped"), sk(11, fStore, "computed"), sk(11, fReq, "not_applicable"), sk(11, "minimums", "unmapped"),
+		sk(11, fStore, "unmapped"), sk(11, fStore, "computed"), sk(11, "minimums", "unmapped"),
 	}}
 }
 
@@ -47,14 +51,16 @@ func idriveSpec() rowSpec {
 	return rowSpec{ID: "idrive-e2-payg", Src: 12, Min: minimums{StorageQuantity: tb1()}, Charges: []charge{
 		mk("storage", "0.006", "USD", "gb_month", "1", fStore, "0.006 USD"),
 		mk("egress", "0.01", "USD", "gb", "1", fEgress, "有効保管量の 3 倍/月まで無料、超過 0.01 USD", fr("3", "gb", "month", "stored_ratio")),
-	}, Skipped: []skipped{sk(12, fReq, "not_applicable"), sk(12, "minimums", "unmapped")}}
+		mk("request", "0", "USD", "request", "1", fReq, "API 呼び出しは無料", ops("all")),
+	}, Skipped: []skipped{sk(12, "minimums", "unmapped")}}
 }
 
 func storjSpec() rowSpec {
 	return rowSpec{ID: "storj-standard", Src: 13, Default: true, Min: minimums{StorageDays: days(30), ObjectSizeKB: days(50)}, Charges: []charge{
 		mk("storage", "7", "USD", "tb_month", "1", fStore, "7 USD/TB/月"),
 		mk("egress", "7", "USD", "tb_month", "1", fEgress, "7 USD/TB"),
-	}, Skipped: []skipped{sk(13, fReq, "not_applicable"), sk(13, "minimums", "unmapped")}}
+		mk("request", "0", "USD", "request", "1", fReq, "API 料金なし", ops("all")),
+	}, Skipped: []skipped{sk(13, "minimums", "unmapped")}}
 }
 
 func sakuraSpec() rowSpec {

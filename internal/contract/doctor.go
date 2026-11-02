@@ -23,6 +23,7 @@ var DoctorChecks = []DoctorCheck{
 	{"time_skew", "defined", "required"},
 	{"timers_registered", "sealed", "required"},
 	{"file_modes", "sealed", "required"},
+	{"adapter_dir_modes", "bootstrap", "required"},
 	{"disk_encryption", "all", "advisory"},
 	{"swap_disabled", "all", "advisory"},
 }

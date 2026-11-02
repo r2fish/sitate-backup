@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -99,13 +100,22 @@ func inputText(t *testing.T, src []map[string]any, r row, field string) string {
 func TestPricesCharges(t *testing.T) {
 	src := loadSrc(t)
 	for _, r := range loadTable(t).Rows {
-		for _, c := range r.Charges {
+		for i, c := range r.Charges {
 			field := inputText(t, src, r, c.SrcField)
 			if !strings.Contains(field, c.SrcText) {
 				t.Errorf("(a) %s: src_text %q が %s の部分文字列でない", r.RowID, c.SrcText, c.SrcField)
 			}
 			if c.PerSrc != nil && !strings.Contains(field, *c.PerSrc) {
 				t.Errorf("(a) %s: per_src %q が部分文字列でない", r.RowID, *c.PerSrc)
+			}
+			if c.Item == "request" && len(c.Ops) == 0 {
+				t.Errorf("%s: request の ops が空", r.RowID)
+			}
+			if isFreeCharge(c) { // 規則 6: amount 0 は無料を言う語が src_text にあること。per は 1
+				if c.Per != "1" {
+					t.Errorf("(b) %s: 無料の費目の per %q が 1 でない", r.RowID, c.Per)
+				}
+				continue
 			}
 			n := nums(c.SrcText)
 			if !n[c.Amount] {
@@ -114,16 +124,53 @@ func TestPricesCharges(t *testing.T) {
 			if c.PerSrc == nil && !n[c.Per] && !(c.Per == "1" && !slashDigit.MatchString(c.SrcText)) {
 				t.Errorf("(b) %s: per %q が src_text %q に無い", r.RowID, c.Per, c.SrcText)
 			}
-			if c.TierUpto != nil && !n[c.TierUpto.Quantity] {
-				t.Errorf("(b) %s: tier_upto %q が src_text %q に無い", r.RowID, c.TierUpto.Quantity, c.SrcText)
+			if c.TierUpto != nil {
+				checkTierQty(t, r, i, n)
 			}
 			if c.Free != nil && !n[c.Free.Quantity] {
 				t.Errorf("(b) %s: free.quantity %q が src_text %q に無い", r.RowID, c.Free.Quantity, c.SrcText)
 			}
-			if c.Item == "request" && len(c.Ops) == 0 {
-				t.Errorf("%s: request の ops が空", r.RowID)
-			}
 		}
+	}
+}
+
+var freeWords = []string{"無料", "No Charges", "料金なし", "No API fees"}
+
+// isFreeCharge は規則 6 の費目(入力が無料と明記する区分の amount 0)。
+func isFreeCharge(c charge) bool {
+	if c.Item != "request" || c.Amount != "0" {
+		return false
+	}
+	for _, w := range freeWords {
+		if strings.Contains(c.SrcText, w) {
+			return true
+		}
+	}
+	return false
+}
+
+var nextTierRe = regexp.MustCompile(`次の\s*([0-9,]+)\s*(TB|TiB)`)
+
+// checkTierQty は tier_upto.quantity。入力が幅で書く段(「次の N」)は累積(前の段の上限 + N)、それ以外は src_text に現れる数と等しい(spec 7.2 の (b) の例外)。
+func checkTierQty(t *testing.T, r row, i int, n map[string]bool) {
+	c := r.Charges[i]
+	m := nextTierRe.FindStringSubmatch(c.SrcText)
+	if m == nil {
+		if !n[c.TierUpto.Quantity] {
+			t.Errorf("(b) %s: tier_upto %q が src_text %q に無い", r.RowID, c.TierUpto.Quantity, c.SrcText)
+		}
+		return
+	}
+	prev := 0.0
+	for j := i - 1; j >= 0; j-- {
+		if p := r.Charges[j]; p.Item == c.Item && p.TierUpto != nil {
+			prev, _ = strconv.ParseFloat(p.TierUpto.Quantity, 64)
+			break
+		}
+	}
+	w, _ := strconv.ParseFloat(strings.ReplaceAll(m[1], ",", ""), 64)
+	if got, _ := strconv.ParseFloat(c.TierUpto.Quantity, 64); got != prev+w {
+		t.Errorf("(b) %s: 幅の段 %q の tier_upto %q が累積 %v でない", r.RowID, c.SrcText, c.TierUpto.Quantity, prev+w)
 	}
 }
 
@@ -206,7 +253,7 @@ func TestPricesSkippedReasons(t *testing.T) {
 }
 
 // (d) provider・endpoint_patterns・checked_on・source_url と分けていない行の plan は入力と等しい。
-// 例外は 4 つ(報告の契約の不足): provider の空白は「-」、さくらは sakura-internet、endpoint_patterns の「_」は「-」(スキーマの字種)、source_url の空白は %20。
+// 例外は source_url の空白の %20 だけ(spec 7.2。D-0159)。provider と endpoint_patterns は文字列として等しい。
 func TestPricesRowFieldsMatchInput(t *testing.T) {
 	src := loadSrc(t)
 	split := map[int]int{}
@@ -221,12 +268,8 @@ func TestPricesRowFieldsMatchInput(t *testing.T) {
 			t.Errorf("row_id が重複: %s", r.RowID)
 		}
 		ids[r.RowID] = true
-		wantProv := strings.ReplaceAll(str(in, "provider"), " ", "-")
-		if str(in, "provider") == "さくらインターネット" {
-			wantProv = "sakura-internet"
-		}
-		if r.Provider != wantProv {
-			t.Errorf("(d) %s: provider %q != %q", r.RowID, r.Provider, wantProv)
+		if r.Provider != str(in, "provider") {
+			t.Errorf("(d) %s: provider %q != %q", r.RowID, r.Provider, str(in, "provider"))
 		}
 		if r.CheckedOn != str(in, "price_date") || r.SourceURL != strings.ReplaceAll(str(in, "source_url"), " ", "%20") {
 			t.Errorf("(d) %s: checked_on / source_url が入力と違う", r.RowID)
@@ -236,7 +279,7 @@ func TestPricesRowFieldsMatchInput(t *testing.T) {
 		}
 		var pats []string
 		for _, p := range in["endpoint_patterns"].([]any) {
-			pats = append(pats, strings.ReplaceAll(p.(string), "_", "-"))
+			pats = append(pats, p.(string))
 		}
 		if strings.Join(pats, "|") != strings.Join(r.EndpointPatterns, "|") {
 			t.Errorf("(d) %s: endpoint_patterns が入力と違う: %v", r.RowID, r.EndpointPatterns)

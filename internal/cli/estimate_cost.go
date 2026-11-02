@@ -5,6 +5,7 @@ package cli
 import (
 	"math"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -26,7 +27,19 @@ type priceCharge struct {
 	} `json:"free"`
 }
 
+type priceSrc struct {
+	Section string `json:"section"`
+	Index   int    `json:"index"`
+}
+
+type priceSkipped struct {
+	Src      priceSrc `json:"src"`
+	SrcField string   `json:"src_field"`
+	Reason   string   `json:"reason"`
+}
+
 type priceRow struct {
+	Src              priceSrc      `json:"src"`
 	RowID            string        `json:"row_id"`
 	Kind             string        `json:"kind"`
 	Provider         string        `json:"provider"`
@@ -38,8 +51,20 @@ type priceRow struct {
 }
 
 type priceTable struct {
-	FX   map[string]string `json:"fx_jpy"`
-	Rows []priceRow        `json:"rows"`
+	FX      map[string]string `json:"fx_jpy"`
+	Rows    []priceRow        `json:"rows"`
+	Skipped []priceSkipped    `json:"skipped"`
+}
+
+// hasMinimumFee は行が月額の基本料金か最低料金を持つか(spec 7.2 の規則 7)。同じ src で src_field が minimums、reason が unmapped の項目が skipped[] にある行。
+// 最低保管期間と最小オブジェクトだけの行は当たらない。
+func (pt priceTable) hasMinimumFee(r *priceRow) bool {
+	for _, s := range pt.Skipped {
+		if s.Src == r.Src && s.SrcField == "minimums" && s.Reason == "unmapped" {
+			return true
+		}
+	}
+	return false
 }
 
 // estInputs は算定の入力(GB)。
@@ -77,7 +102,7 @@ func ptr(p *float64) any {
 
 // monthlyOf は t 日目の月額(保管先の費目だけ)。行が無いとき・費目を円にできないときは null。
 func monthlyOf(pt priceTable, row *priceRow, in estInputs, t float64) monthly {
-	if row == nil {
+	if row == nil || pt.hasMinimumFee(row) { // 基本料金・最低料金のある行は月額を出さない(PRICE_UNKNOWN。over_ceiling は偽のまま上限を超えないため)
 		return monthly{}
 	}
 	stored := capacityAt(in, t)
@@ -108,10 +133,10 @@ func sumPtr(a, b *float64) *float64 {
 }
 
 var (
-	// 核の操作の区分への当てはめ(spec 6.1.1 の (3))。価格表の ops[] の語: class_a は書き込み・一覧、class_b は読み出し(GCS)。
-	// B2 の class_d は 0 のまま。all・R2 の無料枠・基本料金は設計の判断待ち。
-	writeOps = []string{"put", "post", "copy", "list", "class_a", "write"}
-	readOps  = []string{"get", "head", "select", "class_b", "read"}
+	// 核の操作の区分への当てはめ(spec 6.1.1 の (3)。小文字で比べる)。all はどちらの側にも当たる。
+	// 写像に無い語(class_c・class_d・other など)の費目は使わない。
+	writeOps = []string{"put", "post", "copy", "list", "class_a", "write", "all"}
+	readOps  = []string{"get", "head", "select", "class_b", "read", "all"}
 )
 
 func opsMatch(ch priceCharge, want []string) bool {
@@ -128,14 +153,24 @@ func opsMatch(ch priceCharge, want []string) bool {
 	return false
 }
 
-// itemCost は費目 item の月額(円)。該当する費用が無ければ 0、円にできない通貨があれば null。
-// 階層(tier_upto)は小さい順に使用量を割り当て、無料枠(free)は先に引く。
+// parseQty は数だけの量(桁区切りのカンマは除く)。「100 万件」のように桁が文字の量は読まない。
+func parseQty(s string) (float64, bool) {
+	f, err := strconv.ParseFloat(strings.ReplaceAll(s, ",", ""), 64)
+	return f, err == nil && !math.IsNaN(f) && !math.IsInf(f, 0) && f >= 0
+}
+
+// itemCost は費目 item の月額(円)。次のときは 0 にせず null(PRICE_UNKNOWN): 当てはまる費目が行に無い、fx_jpy に無い通貨、
+// 量が最後の段の tier_upto を超える(spec 7.2 の規則 3)。階層(tier_upto)は小さい順に使用量を割り当て、無料枠(free)は先に引く。
+// 数でない無料枠は使わない(過大の側に倒す)。
 func itemCost(pt priceTable, row *priceRow, item string, ops []string, usage, stored float64) *float64 {
 	var cs []priceCharge
 	for _, ch := range row.Charges {
 		if ch.Item == item && opsMatch(ch, ops) {
 			cs = append(cs, ch)
 		}
+	}
+	if len(cs) == 0 {
+		return nil
 	}
 	sort.SliceStable(cs, func(i, j int) bool { return tierBound(cs[i]) < tierBound(cs[j]) })
 	total, used := 0.0, 0.0
@@ -153,14 +188,16 @@ func itemCost(pt priceTable, row *priceRow, item string, ops []string, usage, st
 		amount := math.Max(0, math.Min(usage, tierBound(ch))-used)
 		used += amount
 		if ch.Free != nil {
-			free := toGB(num(ch.Free.Quantity), ch.Free.Unit)
-			if ch.Unit == "request" || ch.Free.Unit == "request" {
-				free = num(ch.Free.Quantity)
+			if q, ok := parseQty(ch.Free.Quantity); ok {
+				free := toGB(q, ch.Free.Unit)
+				if ch.Unit == "request" || ch.Free.Unit == "request" {
+					free = q
+				}
+				if ch.Free.Basis == "stored_ratio" {
+					free *= stored
+				}
+				amount = math.Max(0, amount-free)
 			}
-			if ch.Free.Basis == "stored_ratio" {
-				free *= stored
-			}
-			amount = math.Max(0, amount-free)
 		}
 		per := num(ch.Per)
 		if per <= 0 {
@@ -170,6 +207,9 @@ func itemCost(pt priceTable, row *priceRow, item string, ops []string, usage, st
 			amount /= 1000
 		}
 		total += num(ch.Amount) / per * amount * fx
+	}
+	if last := cs[len(cs)-1]; last.TierUpto != nil && usage > tierBound(last) {
+		return nil // 最後の段の上限を超える量は価格が分からない
 	}
 	return &total
 }

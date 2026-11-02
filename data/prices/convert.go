@@ -125,18 +125,7 @@ type rowSpec struct {
 
 var countryRe = regexp.MustCompile(`^[A-Z]{2}$`)
 
-// identProvider は provider を価格表のスキーマ(ident)に合う形にする。入力は空白と日本語を含み、スキーマの字種に合わない(報告の契約の不足)。
-func identProvider(p string) string {
-	if p == "さくらインターネット" {
-		return "sakura-internet"
-	}
-	return strings.ReplaceAll(p, " ", "-")
-}
-
-// 入力の source_url の空白は %20 にする(スキーマの url は空白を許さない。報告の契約の不足)。
-
-// identPattern は endpoint_patterns をスキーマの字種(英小文字・数字・. < > -)に合わせる。入力の <account_id> の _ だけが外れる(報告の契約の不足)。
-func identPattern(p string) string { return strings.ReplaceAll(p, "_", "-") }
+// 入力の source_url の空白は %20 にする(スキーマの url は空白を許さない。spec 7.2 の (d) の例外)。
 
 func taxOf(s string) (string, error) {
 	switch {
@@ -160,16 +149,13 @@ func buildRow(sr srcRow, sp rowSpec) (row, error) {
 		c := sr.Country
 		country = &c
 	}
-	pats := []string{}
-	for _, p := range sr.EndpointPatterns {
-		pats = append(pats, identPattern(p))
-	}
+	pats := append([]string{}, sr.EndpointPatterns...)
 	plan := sp.Plan
 	if plan == "" {
 		plan = sr.Product
 	}
 	return row{
-		RowID: sp.ID, Kind: "storage", Provider: identProvider(sr.Provider), Plan: plan,
+		RowID: sp.ID, Kind: "storage", Provider: sr.Provider, Plan: plan,
 		Country: country, RegionCountry: map[string]string{}, EndpointPatterns: pats, EndpointDefault: sp.Default,
 		Tax: tax, CheckedOn: sr.PriceDate, SourceURL: strings.ReplaceAll(sr.SourceURL, " ", "%20"), Src: srcRef{"storage", sp.Src},
 		Minimums: sp.Min, Charges: sp.Charges,

@@ -1,6 +1,7 @@
 package prices
 
 // AWS の S3 3 行(入力の storage の 0〜2 番目)。
+// 「最初の N」「次の N」は幅で書かれた段で、tier_upto は累積の上限にする(spec 7.2。D-0159)。
 
 const (
 	awsEgress0 = "0.114 USD(最初の 10 TB/月。全世界合計 100 GB/月の無料枠の超過分)"
@@ -12,8 +13,8 @@ const (
 func awsEgress() []charge {
 	return []charge{
 		mk("egress", "0.114", "USD", "gb", "1", fEgress, awsEgress0, tier("10", "tb"), fr("100", "gb", "month", "absolute")),
-		mk("egress", "0.089", "USD", "gb", "1", fEgress, awsEgress1, tier("40", "tb")),
-		mk("egress", "0.086", "USD", "gb", "1", fEgress, awsEgress2, tier("100", "tb")),
+		mk("egress", "0.089", "USD", "gb", "1", fEgress, awsEgress1, tier("50", "tb")),
+		mk("egress", "0.086", "USD", "gb", "1", fEgress, awsEgress2, tier("150", "tb")),
 		mk("egress", "0.084", "USD", "gb", "1", fEgress, awsEgress3),
 	}
 }
@@ -28,7 +29,7 @@ func awsReq(w, wText, r, rText string) []charge {
 func awsSpecs() []rowSpec {
 	std := append([]charge{
 		mk("storage", "0.025", "USD", "gb_month", "1", fStore, "0.025 USD(最初の 50 TB)", tier("50", "tb")),
-		mk("storage", "0.024", "USD", "gb_month", "1", fStore, "0.024 USD(次の 450 TB)", tier("450", "tb")),
+		mk("storage", "0.024", "USD", "gb_month", "1", fStore, "0.024 USD(次の 450 TB)", tier("500", "tb")),
 		mk("storage", "0.023", "USD", "gb_month", "1", fStore, "0.023 USD(500 TB 超)"),
 	}, awsEgress()...)
 	std = append(std, awsReq("0.0047", "PUT・COPY・POST・LIST 0.0047 USD/1,000 件", "0.0037", "GET ほか 0.0037 USD/10,000 件")...)
