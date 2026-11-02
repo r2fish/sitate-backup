@@ -3,7 +3,8 @@
 /build/
 node_modules/
 /app/out/
-/test/env/state-snapshots/
+/test/env/state-snapshots/*
+!/test/env/state-snapshots/.gitignore
 /test/env/.run/
 /.claude/worktrees/
 *.test
