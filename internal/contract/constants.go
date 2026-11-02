@@ -102,6 +102,8 @@ const (
 	// 保持(spec 4.2。日次 90 日・月次 12 か月の固定の定数)。
 	RetentionDailyDays     = 90
 	RetentionMonthlyMonths = 12
+	// RetentionExtendPeriodDays は延長周期(spec 4.2)。月次のマニフェストの retain-until に足す。
+	RetentionExtendPeriodDays = 7
 
 	// StreamFragmentMax は sitate.stream/v1 の data 断片の最大長(形式の版 1。spec 3.2.2 が U0 に委ねた値)。
 	// 1 MiB: 断片は本体をためずに流す単位で、チャンク長の最小(ChunkMin)と同じ桁。大きくするとメモリの先読みが増え、

@@ -8,9 +8,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"unicode/utf8"
 
 	"github.com/klauspost/compress/zstd"
+	"github.com/zeebo/blake3"
 
 	"github.com/r2fish/sitate-backup/internal/contract"
 )
@@ -217,6 +219,15 @@ func (c *Codec) Decode(kind, id string, sealed, key []byte) ([]byte, error) {
 		}
 	}
 	return plain, nil
+}
+
+// HashStream は Hash と同じ値を、全体をメモリに載せずに計算する。
+func (*Codec) HashStream(r io.Reader) (string, error) {
+	h := blake3.New()
+	if _, err := io.Copy(h, r); err != nil {
+		return "", err
+	}
+	return "blake3:" + hex.EncodeToString(h.Sum(nil)), nil
 }
 
 // Hash は content の BLAKE3 を "blake3:" ∥ 小文字の 16 進 64 文字で返す。

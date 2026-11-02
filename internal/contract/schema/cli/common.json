@@ -67,7 +67,7 @@
   },
   "acode": {
    "type": "string",
-   "pattern": "^[A-Z][A-Z0-9_]{0,63}$"
+   "pattern": "^([A-Z][A-Z0-9_]{0,63}|[a-z][a-z0-9_]{0,63}|adapter:[a-z0-9][a-z0-9_-]{0,63}:[A-Z0-9_]{1,64})$"
   },
   "feature": {
    "type": "string",

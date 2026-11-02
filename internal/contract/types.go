@@ -27,6 +27,9 @@ type Error struct {
 	Retryable bool            `json:"retryable"`
 	Detail    json.RawMessage `json:"detail"`
 	Next      []Next          `json:"next"`
+	// Adapter はアダプタの終了 1 の error の全体(spec 3.2.1)。AdapterRunner.Run が ADAPTER_ERROR に載せ、呼び出し側が
+	// 写す先の原因コードへ写す(3.1.3 の写像の表)。resources[]・seen_fp・orphaned_key_ids はここにある。封筒には出ない。
+	Adapter *AdapterError `json:"-"`
 }
 
 func (e *Error) Error() string { return string(e.Code) }
@@ -90,6 +93,9 @@ type RunContext struct {
 	ProcessGroup bool // 子を自分のプロセスグループで起動する
 	PdeathSig    bool // PR_SET_PDEATHSIG を掛ける
 	Deadline     time.Time
+	// Wrap は取得アダプタを容器で起動するときの口(提供: acquire。spec 3.4、7.5)。Runner は署名と sha256 を検証した後、
+	// 実行ファイルを直接起動せず、Wrap が返す引数列を起動する(標準入出力とプロセスグループと時限は同じ)。nil なら直接起動する。
+	Wrap func(exe string, env []string) (argv []string, err error)
 }
 
 // ChunkRef はチャンクの参照(索引の問い合わせの結果)。

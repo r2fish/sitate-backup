@@ -145,7 +145,7 @@ func TestMonthlyRetainUntilClamped(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := time.Date(2029, 2, 28, 3, 0, 0, 0, time.UTC); !r.RetainUntil.Equal(want) {
+	if want := time.Date(2029, 3, 7, 3, 0, 0, 0, time.UTC); !r.RetainUntil.Equal(want) { // 末日に丸めた 2029-02-28 + 7 日
 		t.Errorf("retain-until = %s, want %s", r.RetainUntil, want)
 	}
 }

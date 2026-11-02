@@ -11,6 +11,7 @@ import (
 	"io"
 	"strings"
 	"testing"
+	"testing/iotest"
 
 	"github.com/r2fish/sitate-backup/internal/contract"
 )
@@ -205,5 +206,17 @@ func TestArgon2idParamOverflow(t *testing.T) {
 	}
 	if _, err := c.Argon2id(key(1), key(2)[:16], 64, 1<<32, 1); err == nil {
 		t.Error("uint32 を超える反復を受けた")
+	}
+}
+
+func TestHashStreamMatchesHash(t *testing.T) {
+	c := &Codec{}
+	data := bytes.Repeat([]byte("sitate"), 1<<18)
+	got, err := c.HashStream(bytes.NewReader(data))
+	if err != nil || got != c.Hash(data) {
+		t.Errorf("HashStream %q %v", got, err)
+	}
+	if _, err := c.HashStream(iotest.ErrReader(io.ErrUnexpectedEOF)); err == nil {
+		t.Error("読み取りの誤りを成功にした")
 	}
 }

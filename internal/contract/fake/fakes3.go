@@ -110,6 +110,15 @@ func (Codec) AAD(kind, id string, _ contract.Header) ([]byte, error) {
 // Hash は contract.Codec を満たす。
 func (Codec) Hash(c []byte) string { h := sha256.Sum256(c); return hex.EncodeToString(h[:]) }
 
+// HashStream は contract.Codec を満たす。
+func (Codec) HashStream(r io.Reader) (string, error) {
+	h := sha256.New()
+	if _, err := io.Copy(h, r); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(h.Sum(nil)), nil
+}
+
 // KeyService は contract.KeyService の偽物(決定的な値を返す)。
 type KeyService struct{}
 

@@ -39,7 +39,7 @@ func (s *ObjectStore) Put(_ context.Context, key string, body io.Reader, class c
 	days, months := s.Params.DailyDays(), s.Params.MonthlyMonths()
 	until := now.Add(time.Duration(days) * 24 * time.Hour)
 	if class == contract.RetentionMonthly {
-		until = contract.AddMonthsUTC(now, months)
+		until = contract.AddMonthsUTC(now, months).AddDate(0, 0, contract.RetentionExtendPeriodDays) // spec 4.2: 月次のマニフェストは + 12 か月 + 7 日
 	}
 	o, err := s.Core.Put(s.Bucket, s.Prefix+key, b, PutOptions{RetainUntil: until})
 	if err != nil {

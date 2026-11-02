@@ -109,6 +109,8 @@ type Codec interface {
 	// SITJ=seq(8 バイトのビッグエンディアン = 16 桁)、SITK=keyring_id の "kr-" を除いた乱数部(16 バイト)。
 	AAD(kind, id string, h Header) ([]byte, error)
 	Hash(content []byte) string // BLAKE3
+	// HashStream は Hash と同じ値を、全体をメモリに載せずに計算する(大きなファイルの照合)。
+	HashStream(r io.Reader) (string, error)
 }
 
 // Chunk はチャンク化の出力。

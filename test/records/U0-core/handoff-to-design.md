@@ -84,3 +84,11 @@ D-0157 の申し送り 6 件を直した。そのときに決めた形と、見�
 
 - `test-tick` の戻す指定: 注釈の `reason: range` は `detail.json` の値域に無かった。`mismatch`(値が今の状態と合わない)に揃えた。
 - 回答待ち: 通知の再試行で、アダプタの出力の契約違反(`INTERNAL`)も再試行するか。実装は再試行せず、時限切れ・`delivered: false`・`ADAPTER_ERROR` だけ再試行する。契約違反は同じ物を起動し直しても直らない、という読みで今はこの形。
+
+## 10. U1 の結合に向けて監督が決めたもの(7.5 の表と 3.2.1 に足すお願い)
+
+- アダプタの終了 1: kind 固有の `error.code` も `Run` は誤りで返す(`ADAPTER_ERROR` の `*Error`、`detail.adapter_code` にその値)。`Error.Adapter` に error の全体(`resources[]`、`seen_fp`、`orphaned_key_ids`)を載せ、呼び出し側が 3.1.3 の表で写す。実行器と呼び出し側の前提が違い、結合すると失敗が成功に見えるところだった。
+- `detail.adapter_code` のスキーマは `adapter:<name>:<CODE>` を通さなかった(3.1.3 と不一致)。小文字のコードとともに通るように広げた。
+- `RunContext.Wrap`: 取得アダプタの容器の起動の口。検証は `adapter`、容器の組み立ては `acquire`(7.5)。
+- `Codec.HashStream`: 大きなファイルの照合をメモリに載せない。
+- 試験の誤りを直した: 月次のマニフェストの retain-until(+ 12 か月 + 7 日。4.2)、`UNEXPECTED_VERSION`(記録した版 ID のあるキーだけ。3.1.3、4.2)、受け口の `survey` の応答。

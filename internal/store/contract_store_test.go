@@ -67,7 +67,7 @@ func TestContractObjectStorePut(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	near(t, "月次の retain-until", m.RetainUntil, contract.AddMonthsUTC(time.Now().UTC(), contract.RetentionMonthlyMonths))
+	near(t, "月次の retain-until", m.RetainUntil, contract.AddMonthsUTC(time.Now().UTC(), contract.RetentionMonthlyMonths).AddDate(0, 0, contract.RetentionExtendPeriodDays))
 }
 
 func TestContractObjectStoreGetList(t *testing.T) {
@@ -145,7 +145,8 @@ func TestContractRetentionVerify(t *testing.T) {
 	short := putRef(t, st, "chunks/short")
 	short.RetainUntil = short.RetainUntil.Add(10 * 24 * time.Hour) // 記録した値が実際より長い = 保管先の保持が短い
 	gone := contract.VersionRef{Key: "chunks/gone", VersionID: "v-none"}
-	_ = putRef(t, st, "chunks/unrecorded")
+	_ = putRef(t, st, "chunks/unrecorded") // 記録の無い新しいキーは UNEXPECTED_VERSION の対象外で、量の比で見つける(spec 4.2)
+	extra := putRef(t, st, "chunks/ok")    // 記録した版 ID のあるキーに現れた記録の無い版
 	res, err := r.Verify(ctx, []contract.VersionRef{ok, short, gone})
 	harness.Implemented(t, err)
 	if err != nil {
@@ -157,7 +158,7 @@ func TestContractRetentionVerify(t *testing.T) {
 	if len(res.RetentionShort) != 1 || res.RetentionShort[0].Key != "chunks/short" || !res.RetentionShort[0].Actual.Before(res.RetentionShort[0].Recorded) {
 		t.Errorf("RetentionShort: %+v", res.RetentionShort)
 	}
-	if len(res.UnexpectedVersions) != 1 || res.UnexpectedVersions[0].Key != "chunks/unrecorded" {
+	if len(res.UnexpectedVersions) != 1 || res.UnexpectedVersions[0].Key != "chunks/ok" || res.UnexpectedVersions[0].VersionID != extra.VersionID {
 		t.Errorf("UnexpectedVersions: %+v", res.UnexpectedVersions)
 	}
 	if res.BytesWrittenVsBucket <= 1.0 {

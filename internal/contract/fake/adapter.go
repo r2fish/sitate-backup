@@ -29,6 +29,8 @@ type Step struct {
 	Frames  []contract.Frame
 	// ErrCode は OutcomeError のアダプタの error.code(ADAPTER_ERROR の detail.adapter_code に入る。空なら ADAPTER_FAILED)。
 	ErrCode string
+	// ErrAdapter は OutcomeError の error の全体(resources[] など。Error.Adapter に載る)。空なら ErrCode だけ。
+	ErrAdapter *contract.AdapterError
 	// ErrorsOmitted・WarningsOmitted は OutcomeOmitted で stats に載せる件数。
 	ErrorsOmitted, WarningsOmitted int
 }
@@ -107,7 +109,12 @@ func (a *AdapterRunner) Run(ctx context.Context, rc contract.RunContext, kind, n
 		if ac == "" {
 			ac = "ADAPTER_FAILED"
 		}
-		return nil, adapterErr(contract.CodeAdapterError, fmt.Sprintf(`{"kind":%q,"name":%q,"adapter_code":%q}`, kind, name, ac))
+		e := adapterErr(contract.CodeAdapterError, fmt.Sprintf(`{"kind":%q,"name":%q,"adapter_code":%q}`, kind, name, ac))
+		e.Adapter = st.ErrAdapter
+		if e.Adapter == nil {
+			e.Adapter = &contract.AdapterError{Code: ac, Detail: json.RawMessage(`{}`)}
+		}
+		return nil, e
 	case OutcomeTimeout:
 		return nil, adapterErr(contract.CodeAdapterTimeout, fmt.Sprintf(`{"kind":%q,"name":%q}`, kind, name))
 	case OutcomeLostResponse:

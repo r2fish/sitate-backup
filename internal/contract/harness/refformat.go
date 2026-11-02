@@ -105,6 +105,14 @@ func (*RefCodec) Hash(c []byte) string {
 	return "blake3:" + hex.EncodeToString(s[:])
 }
 
+func (*RefCodec) HashStream(r io.Reader) (string, error) {
+	h := blake3.New()
+	if _, err := io.Copy(h, r); err != nil {
+		return "", err
+	}
+	return "blake3:" + hex.EncodeToString(h.Sum(nil)), nil
+}
+
 func refSeal(head []byte, kind, id string, h contract.Header, plain, key []byte) ([]byte, error) {
 	aad, err := refAAD(kind, id, h)
 	if err != nil {

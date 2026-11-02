@@ -49,6 +49,9 @@ func replySelftest(doc string) func(execRec) (string, int) {
 		if strings.Contains(r.Cmd, "selftest") {
 			return doc, 0
 		}
+		if strings.Contains(r.Cmd, "survey") {
+			return `{"format":"sitate.recv-survey/v1","mounts":[],"clusters":[]}`, 0
+		}
 		return "{}", 0
 	}
 }
