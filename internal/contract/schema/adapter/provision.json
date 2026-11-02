@@ -545,7 +545,9 @@
         "INTERNAL",
         "NOT_IMPLEMENTED",
         "STORAGE_UNREACHABLE",
-        "STORAGE_DENIED"
+        "STORAGE_DENIED",
+        "KEY_MISSING_PERMISSION",
+        "TIME_SKEW"
        ]
       },
       {

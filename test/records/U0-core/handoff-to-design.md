@@ -167,3 +167,12 @@ U1f-1 の途中から: `--snapshot-key-stdin` の標準入力の終わりの `RU
 - `SOURCE_SETUP_FAILED` の `reason` に `from_missing` を足した(`SITATE_FROM` が空か不正)。3.1.3 と 3.3 に足すお願い。
 - 名前に `\001` を含むファイル 1 つで受け口の `list` が止まり、対象全体が毎回 `failed` になる。3.3 の `list` の形に報告の形が無い。そのファイルを取らずに報告する形か、今の形かを決めてほしい。
 - 全対象が `failed` のときの結果の `targets[]`: 3.2.2 は `error_code` を結果に置くが、失敗の封筒は `result: null`。今は `run_end` にだけ載る。
+
+## 20. U2d、U2e、U2g、U1f-1 から
+
+- `provision` の `error.code` の列挙に `KEY_MISSING_PERMISSION`、`TIME_SKEW` を足した(3.2.1 の表のとおり。無いと実行器が `INTERNAL` にする)。
+- 回答がほしいもの: `revoke-keys` の要求に `prefix` が無いのに「別のプレフィクスの印を拒否」を求める(3.2.6。今は鍵の `namePrefix` から名前を作って照らす)。`provision` の `TIME_SKEW` の判定の持ち主。
+- 回答がほしいもの: 通知の送信の全体の時限(今は 30 秒で、核の打ち切りと同じ値)。追加の CA のファイルが壊れているときの `reason`(今は `tls`)。
+- 回答がほしいもの: `enroll` の初回のホスト鍵(固定値が無く、初期資格情報が未検証の相手に渡りうる。T-63)。`stop` の残存の判定(セッションごとか、切れた SSH の処理の扱い)。
+- 回答がほしいもの: `estimate` の「記録から」の入力の形、`--daily-gb` を省いたときの引き方、価格表の `request` の `ops` の語彙、`hold-release` を停止していないときに提案できるか。事業者の管理用鍵を「キーチェーンから消す」記述と no-save の併存(今は no-save)。
+- B2 の API の形は実物で未検証。利用者の鍵で確かめる。
