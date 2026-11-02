@@ -120,3 +120,14 @@ D-0157 の申し送り 6 件を直した。そのときに決めた形と、見�
 - `bucket check` も `BUCKET_MISMATCH` を返す(Compliance でない、バージョニング無し)。`init-storage` の合格だけに頼らない。
 - `init` の Argon2id は `Crypto` を通らない(`Keys` に口が無い)。値は定数の初期値で上限の内側なので認める。開く側は `Crypto` を通す。
 - `ChunkID` などは誤りの口が無いので panic する。`cli` が `*contract.Error` の panic を受けて `INTERNAL` の封筒にする。
+
+## 15. U1e のレビューから
+
+監督の今の扱い。違えば教えてほしい。
+
+- 復元先の自己申告(3.5 の表の 9): 照合の実行場所が仕様に無い。核はマニフェストの `targets` の `files`・`bytes` の和を期待値にし、復元先の報告と違えば `RESTORE_MISMATCH`。0 件の報告で合格にしない。内容ハッシュの照合は復元先の核に任せる(乗っ取られた復元先の偽りは T-68 の範囲と読む)。
+- 3.5 の表の 1 の矛盾: 「egress はキーリング 1 個分」と「保持中のマニフェストの鍵 ID がすべて含まれる」。`snapshots[]` に `key_id` が無い。今は見出しだけを読み(`Codec.Header`)、読んだ量を `egress_bytes` に足す。`snapshots[].key_id` を足す案を検討してほしい。
+- `restore_failed` を同じチャンクを参照する世代に広げるのは見送り(全世代の鍵表を読むので読み出しが増える)。3.5 の文と違う。削除停止は掛かるので失われない。イテレーション 3 へ送るか決めてほしい。
+- 読み出し量の累計と予約の判定はイテレーション 3 なので `restore-test` から外す。
+- `SSHRequest.Argv` の引用の規則、`StoragePrefixDefault`、`LedgerAppend` の置き換えを契約に書いた。
+- `ssh_from` が無く観測の口も無いので、`ssh_from` が無ければ `DEF_INVALID`。

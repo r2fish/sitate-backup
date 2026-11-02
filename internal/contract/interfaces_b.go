@@ -19,6 +19,7 @@ type StateFiles interface {
 	Get(ctx context.Context, item string) (json.RawMessage, error)
 	Update(ctx context.Context, held StateLockHandle, item string, v json.RawMessage) error
 	SwitchDef(ctx context.Context, in SwitchInput) error
+	// LedgerAppend は台帳の記録を書く。同じ record_id は原子的に置き換える(spec 4.5 の 1 記録 1 ファイル)。
 	LedgerAppend(ctx context.Context, held StateLockHandle, rec json.RawMessage) error
 	LedgerList(ctx context.Context) ([]json.RawMessage, error)
 	RecordReadStart(ctx context.Context, s ReadStart) error

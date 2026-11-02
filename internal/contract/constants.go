@@ -102,6 +102,8 @@ const (
 	// 保持(spec 4.2。日次 90 日・月次 12 か月の固定の定数)。
 	RetentionDailyDays     = 90
 	RetentionMonthlyMonths = 12
+	// StoragePrefixDefault は storage[0].prefix を書かないときの <p>(spec 4.1)。
+	StoragePrefixDefault = "sitate/"
 	// RetentionExtendPeriodDays は延長周期(spec 4.2)。月次のマニフェストの retain-until に足す。
 	RetentionExtendPeriodDays = 7
 

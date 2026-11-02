@@ -29,7 +29,8 @@ func shaOfBytes(b []byte) string { h := sha256.Sum256(b); return "sha256:" + hex
 
 // manifestBody は世代のマニフェストの本体(fake の Codec で包んだもの。最小の項目だけ: def_hash・key_id・definition)。
 func manifestBody(ref, defHash, keyID string, def []byte) string {
-	c, _ := json.Marshal(map[string]any{"format": "sitate.manifest/v1", "manifest_id": ref, "def_hash": defHash, "key_id": keyID, "definition": json.RawMessage(def)})
+	c, _ := json.Marshal(map[string]any{"format": "sitate.manifest/v1", "manifest_id": ref, "def_hash": defHash, "key_id": keyID, "definition": json.RawMessage(def),
+		"targets": []map[string]any{{"id": "t1", "kind": "files", "status": "ok", "files": 3, "bytes": 30}}})
 	b, _ := fake.Codec{}.Encode(contract.MagicManifest, strings.TrimPrefix(ref, "m-"), contract.Header{}, c, nil)
 	return string(b)
 }
