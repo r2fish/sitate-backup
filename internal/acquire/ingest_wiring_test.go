@@ -110,15 +110,15 @@ func TestIngestWithContainerNeedsPullKey(t *testing.T) {
 	}
 }
 
-// from= が空のまま source-setup の台本を流さない。
+// from= が空で、元サーバーの接続からも観測できないとき source-setup の台本を流さない(観測の台本は流す)。
 func TestEnrollRequiresFrom(t *testing.T) {
 	w := newEnrollWorld(t)
 	a, st := newSrcAcquire(enrollItems(map[string]json.RawMessage{"source_seen": seenItem("127.0.0.1", w.src.FP)}))
 	a.Secrets = &fake.SecretStore{M: map[string]json.RawMessage{}}
 	a.From = ""
 	_, err := a.SourceEnroll(ctx, sourceCall(enrollWords, w.src.URL("root"), newAdminKey(t)))
-	harness.ExpectCode(t, err, contract.CodeInternal)
-	if ex := w.src.Execs(); len(ex) != 1 { // 調査 (db_only) だけ
+	harness.ExpectCode(t, err, contract.CodeSourceSetupFailed)
+	if ex := w.src.Execs(); len(ex) != 2 { // 調査 (db_only) と送信元の観測だけ
 		t.Errorf("台本を流した: %d 回", len(ex))
 	}
 	if len(st.Items["host_keys"]) != 0 {

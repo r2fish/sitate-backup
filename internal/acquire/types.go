@@ -25,7 +25,7 @@ type Acquire struct {
 	WorkDir string
 	// Container は取得アダプタの容器の設定(spec 3.4)。nil なら実行器が直接起動する(試験用)。
 	Container *Container
-	// From は source enroll が authorized_keys の from= に書くバックアップサーバーのアドレス(元サーバーから見えるもの)。空なら source-setup が SSH_CLIENT から取る
+	// From は source enroll が authorized_keys の from= に書くバックアップサーバーのアドレス(元サーバーから見えるもの)。空なら source enroll が元サーバーの SSH_CONNECTION から観測する
 	// (受け口の中身 = receiver_hash には from= の行が入るため、cli が実際のアドレスを渡すこと)。
 	From string
 	// Retention は延長の目標 A の計算に使う保持の定数(nil なら製品の固定値)。

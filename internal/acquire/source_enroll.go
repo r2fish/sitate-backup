@@ -136,10 +136,16 @@ func (d enrollDeps) enrollConnected(ctx context.Context, in contract.EnrollInput
 	if err != nil {
 		return enrollOut{}, err
 	}
-	if d.From == "" || strings.ContainsAny(d.From, "\"\n\x00'") { // from= が空の受け口の行は作れない。台本を流さない
+	from := d.From
+	if from == "" { // 元サーバーの SSH 接続から観測する(台本を流す前)
+		if from, err = d.observeFrom(ctx, conn); err != nil {
+			return enrollOut{}, err
+		}
+	}
+	if from == "" || strings.ContainsAny(from, "\"\n\x00'") { // from= が空の受け口の行は作れない。台本を流さない
 		return enrollOut{}, errInternal("")
 	}
-	script, hash, err := setupScript(def, clusters, key.Secret.PublicKey, d.From)
+	script, hash, err := setupScript(def, clusters, key.Secret.PublicKey, from)
 	if err != nil {
 		return enrollOut{}, err
 	}
@@ -167,6 +173,20 @@ func (d enrollDeps) enrollConnected(ctx context.Context, in contract.EnrollInput
 		}
 	}
 	return out, nil
+}
+
+// observeFrom は元サーバーから見た核の送信元のアドレス(元サーバーの SSH の SSH_CONNECTION の先頭の語)を取る。
+// 取れなければ SOURCE_SETUP_FAILED(step: connect、reason: null)で台本を流さない。sudo は環境を落とすので使わない。
+func (d enrollDeps) observeFrom(ctx context.Context, conn contract.SSHConn) (string, error) {
+	o, err := runSSH(ctx, d.SSH, contract.SSHRequest{SSHConn: conn, Script: []byte("printf '%s\\n' \"${SSH_CONNECTION%% *}\"\n")})
+	if err != nil {
+		return "", mapConnErr(err, setupAuth)
+	}
+	from := strings.TrimSpace(string(o.Out))
+	if o.Exit != 0 || from == "" || strings.Trim(from, "0123456789abcdefABCDEF.:") != "" {
+		return "", errSetup(setupDetail{Step: "connect"})
+	}
+	return from, nil
 }
 
 // convSurveyErr は調査(db_only)の失敗を source enroll の側の原因コードにする(調査の失敗は準備の失敗の step に読み替える)。
