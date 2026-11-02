@@ -112,6 +112,10 @@ func newMaster() (file, key []byte, err error) {
 }
 
 func (k *Keys) initCreate(ctx context.Context, now time.Time, pub string, blob []byte) (contract.Reply, error) {
+	// タイマーの登録を先に行う(失敗したら状態もファイルも進めない。状態だけが進むと、タイマーの無い初期化済みの状態が残る)。
+	if err := k.registerTimers(ctx); err != nil {
+		return contract.Reply{}, err
+	}
 	rid := make([]byte, 16)
 	if _, err := rand.Read(rid); err != nil {
 		return contract.Reply{}, errInternal()
@@ -140,9 +144,6 @@ func (k *Keys) initCreate(ctx context.Context, now time.Time, pub string, blob [
 		"approval_key", map[string]string{"key_fp": fp, "key_type": "software", "public_key": approvalKeyType + " " + pub},
 		"kit", map[string]any{"version": kv, "confirmed_version": nil, "location_checked_at": nil, "confirmed_core_version": nil})
 	if err != nil {
-		return contract.Reply{}, err
-	}
-	if err := k.registerTimers(ctx); err != nil {
 		return contract.Reply{}, err
 	}
 	rec, _ := json.Marshal(map[string]any{"schema": "sitate.secret-string/v1", "kind": "recovery_phrase", "words": words, "keyring_version": 1})

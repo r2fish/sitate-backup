@@ -72,7 +72,7 @@ func wireAcquire(d *Deps, stateDir string, write *dynStore, idx *acquire.Index) 
 }
 
 func wireKeysRestore(d *Deps, stateDir string, write, read *dynStore, ver *keys.Verifier) {
-	probe := &store.StoreProbe{Keys: map[string]contract.ObjectStore{"write": write, "read": read}}
+	probe := newDynProbe(write, read)
 	d.Keys = &keys.Keys{Store: write, Probe: probe, State: d.State, KeyS: d.KeyS, Codec: d.Codec, Provision: d.Adapters, Clock: d.Clock, Secrets: d.Secrets,
 		Dir: stateDir, Recorder: d.Recorder, Verifier: ver, Bundle: d.Bundles, OS: d.OSProbe, Timers: d.Timers, ProvisionName: ProvisionNameDefault}
 	d.Restore = &restore.Restore{Store: read, State: d.State, Adapters: d.Adapters, Codec: d.Codec, KeyS: d.KeyS, Crypto: d.Crypto, Recorder: d.Recorder,

@@ -11,6 +11,10 @@ role="$(cat "$in/role")"
 install -d -m 0755 /etc/ssh
 install -m 0600 "$in/ssh_host_ed25519_key" /etc/ssh/ssh_host_ed25519_key
 install -m 0644 "$in/ssh_host_ed25519_key.pub" /etc/ssh/ssh_host_ed25519_key.pub
+# 3 つのホストで同じイメージ由来の RSA・ECDSA のホスト鍵を使わず、起動時に生成した Ed25519 の鍵だけを出す(ホスト鍵の固定・照合の試験でホストが区別できる。
+# 記録した指紋 SITATE_ACCEPT_*_HOST_KEY_FP も Ed25519 のもの)。
+install -d -m 0755 /etc/ssh/sshd_config.d
+printf 'HostKey /etc/ssh/ssh_host_ed25519_key\n' > /etc/ssh/sshd_config.d/00-sitate-test-hostkey.conf
 admin="$(cat "$in/admin_user")"
 if ! id "$admin" >/dev/null 2>&1; then useradd -m -s /bin/bash "$admin"; fi
 install -d -m 0700 -o "$admin" -g "$admin" "/home/$admin/.ssh"

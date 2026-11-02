@@ -4,7 +4,7 @@
 # 割り当て:
 #   - 接続先は同じ名前付きネットワーク(sitate-test)の中のコンテナ名 sitate-<NAME>-s3:9000(NAME ごとに別のコンテナ)。
 #     ホストのポートは公開しない(複数インスタンスでポートが衝突しない)。開発用コンテナも同じネットワークに入る。
-#   - バケット名: sitate-<name>-main(Object Lock 有効)。接頭辞: sitate-<name>-(<name> は NAME の小文字化)
+#   - バケット名: sitate-<name>-main(Object Lock 有効。LOCK_DEFAULT_DAYS=<n> を付けると既定保持 COMPLIANCE <n> 日も設定する)。接頭辞: sitate-<name>-(<name> は NAME の小文字化)
 #   - 資格情報: 起動のたびに乱数で生成し test/env/.run/<NAME>/env(git 管理外)に書く。リポジトリには置かない。
 #   - 同じ NAME の再起動: 先に同じ NAME のコンテナと .run/<NAME>/ を消してから新しく起動する(資格情報とバケットは新しくなる)。
 #   - 模擬時間の共有の値: test/env/.run/<NAME>/simtime(JSON。形は internal/contract の SimTime)。fake は毎回読む。
@@ -61,6 +61,8 @@ done
 if [ "$kind" = minio ]; then
   mcr() { docker run --rm --network "$network" -v "$run:/pol:ro" -e "MC_HOST_t=http://$ak:$sk@$s3:9000" "$MC_IMAGE" "$@" >/dev/null; }
   mcr mb --with-lock "t/$bucket"
+  # LOCK_DEFAULT_DAYS=<n>: バケットの既定保持(COMPLIANCE)を設定する(主経路の第 2 段。init-storage が既定保持 90 日を照合するため)。既定は設定しない。
+  if [ -n "${LOCK_DEFAULT_DAYS:-}" ]; then mcr retention set --default COMPLIANCE "${LOCK_DEFAULT_DAYS}d" "t/$bucket"; fi
   # 書き込み鍵と読み取り鍵(spec 3.2.6 の操作の表の「許す」だけ。版指定なしの削除 s3:DeleteObject・設定の変更・保持の迂回・リーガルホールドは付けない)。
   b="arn:aws:s3:::$bucket"
   printf '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":["s3:PutObject","s3:GetObject","s3:GetObjectVersion","s3:ListBucket","s3:ListBucketVersions","s3:GetBucketVersioning","s3:GetBucketObjectLockConfiguration","s3:GetObjectRetention","s3:PutObjectRetention","s3:DeleteObjectVersion"],"Resource":["%s","%s/*"]}]}\n' "$b" "$b" > "$run/policy-write.json"
