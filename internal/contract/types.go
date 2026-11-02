@@ -94,7 +94,8 @@ type RunContext struct {
 	PdeathSig    bool // PR_SET_PDEATHSIG を掛ける
 	Deadline     time.Time
 	// Wrap は取得アダプタを容器で起動するときの口(提供: acquire。spec 3.4、7.5)。Runner は署名と sha256 を検証した後、
-	// 実行ファイルを直接起動せず、Wrap が返す引数列を起動する(標準入出力とプロセスグループと時限は同じ)。nil なら直接起動する。
+	// 実行ファイルを直接起動せず、Wrap が返す引数列(実行ファイルまで。Runner がアダプタの引数をその後に足す)を起動する
+	// (標準入出力とプロセスグループと時限は同じ)。env は最小化した子の環境。nil なら直接起動する。
 	Wrap func(exe string, env []string) (argv []string, err error)
 }
 

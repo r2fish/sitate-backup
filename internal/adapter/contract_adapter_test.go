@@ -44,8 +44,19 @@ func newRunner(t *testing.T, valid bool, script string) (*Runner, string) {
 	return &Runner{Root: root, Version: "1.0.0", Arch: "linux-x86_64", Verifier: &fake.Verifier{Valid: valid}}, marker
 }
 
+// request は通知の要求のスキーマに合う要求(試験ベクトル)の contract を差し替えたもの。
 func request(contractVer string) json.RawMessage {
-	return json.RawMessage(`{"contract":"` + contractVer + `","to":"ops@example.invalid","event":{"schema":"sitate.event/v1"},"secrets":{"url":"https://hooks.example.invalid/x"}}`)
+	b, err := os.ReadFile(harness.VectorPath("adapter/valid/notify-request.json"))
+	if err != nil {
+		panic(err)
+	}
+	var m map[string]json.RawMessage
+	if err := json.Unmarshal(b, &m); err != nil {
+		panic(err)
+	}
+	m["contract"], _ = json.Marshal(contractVer)
+	out, _ := json.Marshal(m)
+	return out
 }
 
 func TestContractRunnerDeclaration(t *testing.T) {
@@ -114,18 +125,24 @@ func TestContractRunnerRunOutputInvalid(t *testing.T) {
 	}
 }
 
-// 終了 1 の kind 固有の error は結果として返さず、ADAPTER_ERROR の誤りに error の全体を載せる(contract.AdapterRunner)。
+// 終了 1 の error は結果として返さず、ADAPTER_ERROR の誤りに error の全体を載せる(contract.AdapterRunner)。
 // 結果として返すと、呼び出し側が失敗を成功と取り違える。
-func TestContractRunnerRunExit1KindSpecific(t *testing.T) {
-	line := `{"contract":"sitate.restore-dest/v1","error":{"code":"quota","detail":{},"resources":[{"type":"vm","id":"r1"}]}}`
+func TestContractRunnerRunExit1Error(t *testing.T) {
+	line := `{"contract":"sitate.notify/v1","error":{"code":"adapter:webhook:BOOM","detail":{}}}`
 	r, _ := newRunner(t, true, "cat >/dev/null; echo '"+line+"'; exit 1")
-	res, err := r.Run(ctx, contract.RunContext{}, "restore-dest", "ssh-host", json.RawMessage(`{"contract":"sitate.restore-dest/v1"}`), nil)
+	res, err := r.Run(ctx, contract.RunContext{}, "notify", "webhook", request("sitate.notify/v1"), nil)
 	harness.Implemented(t, err)
 	if err == nil {
 		t.Fatalf("終了 1 が成功に見える: %s", res)
 	}
 	ce := harness.ExpectCode(t, err, contract.CodeAdapterError)
-	if ce.Adapter == nil || ce.Adapter.Code != "quota" || len(ce.Adapter.Resources) != 1 || ce.Adapter.Resources[0].ID != "r1" {
+	if ce.Adapter == nil || ce.Adapter.Code != "adapter:webhook:BOOM" {
 		t.Errorf("Error.Adapter に error の全体が無い: %+v", ce.Adapter)
+	}
+	if !strings.Contains(string(ce.Detail), `"adapter_code":"adapter:webhook:BOOM"`) {
+		t.Errorf("detail.adapter_code: %s", ce.Detail)
+	}
+	if verr := contract.Validate("cli/detail.json#/$defs/ADAPTER_ERROR", ce.Detail); verr != nil {
+		t.Errorf("detail がスキーマに合わない: %v", verr)
 	}
 }
