@@ -10,6 +10,9 @@ import (
 	"github.com/r2fish/sitate-backup/internal/contract"
 )
 
+// restoreToDir は手順 (5) の --to(spec 4.7。空のディレクトリは紙の描画部が先に作る)。$RUN は手順 (3) と同じ run_id。
+const restoreToDir = "/var/lib/sitate/restore/$RUN/to"
+
 // binPrefix は保管先の bin/ の置き場(`<p>bin/`)。prefix は `<p>`(末尾の / を含む形)。
 func binPrefix(prefix string) string { return prefix + "bin/" }
 
@@ -41,7 +44,7 @@ func (d kitData) fields(clock contract.Clock, ctx context.Context) (map[string]a
 		step("1"), step("2"),
 		step("3", append(append(append(run, "storage", "issue-read-key"), conn...), append([]string{"--adapter", d.Provider, "--admin-ref", "admin"}, append(ref, "--run-id", "$RUN", "--secrets-stdin")...)...)...),
 		step("4", append(append(append(run, "list"), conn...), append([]string{"--keyring", d.KeyringID}, append(ref, "--phrase-stdin")...)...)...),
-		step("5", append(append(append(run, "restore"), conn...), append([]string{"--keyring", d.KeyringID}, append(ref, "--phrase-stdin", "--backup", "latest")...)...)...),
+		step("5", append(append(append(run, "restore"), conn...), append([]string{"--keyring", d.KeyringID}, append(ref, "--phrase-stdin", "--backup", "latest", "--to", restoreToDir)...)...)...),
 		step("6", append(append(run, "storage", "revoke-read-key"), "--endpoint", t.Endpoint, "--bucket", t.Bucket, "--prefix", t.Prefix, "--adapter", d.Provider, "--admin-ref", "admin", "--key-ref", t.KeyRef, "--secrets-stdin")...),
 	}
 	return map[string]any{
