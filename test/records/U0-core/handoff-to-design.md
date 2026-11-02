@@ -145,3 +145,9 @@ D-0157 の申し送り 6 件を直した。そのときに決めた形と、見�
 - `propose restore-elsewhere`・`storage-read-extra` の `--to` もローカルへの復元の拒否を照らす(3.1.5 は `restore` だけを書く)。
 
 U1f-1 の途中から: `--snapshot-key-stdin` の標準入力の終わりの `RUN_ABORTED` の `detail.reason` に切断の値が無く、`signal` に寄せた。
+
+## 17. U1b の差し戻しから
+
+- `prune` は `Index` が無ければ止まる(結線の漏れで消した版が索引に残らないように)。契約試験の前提を直した。
+- `write_intent` は `state.json` の項目でなく `journal/` の種別なので、`Retention.Intents` を足し、`cli` が記録から渡す。7.5 の表に足すお願い。
+- 試験ビルドの `verify` で「`LastModified` にオフセットを足して比べる」は入れていない(偽の保管先は模擬時間で二重になる)。実の保管先にオフセットを与える運用は無い前提。

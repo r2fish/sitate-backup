@@ -127,7 +127,7 @@ func TestContractObjectStoreBucketConfigStoreTime(t *testing.T) {
 func newRetention(t *testing.T) (*Retention, *fake.ObjectStore, *fake.ManualClock) {
 	t.Helper()
 	st, clk, _ := fake.NewTestStore(fake.RoleWrite)
-	return &Retention{Store: st, State: &fake.StateFiles{}, Codec: &harness.RefCodec{}, KeyS: fake.KeyService{}, Clock: &fake.Clock{T: fake.StartTime}}, st, clk
+	return &Retention{Index: &fake.Index{M: map[string]contract.ChunkRef{}}, Store: st, State: &fake.StateFiles{}, Codec: &harness.RefCodec{}, KeyS: fake.KeyService{}, Clock: &fake.Clock{T: fake.StartTime}}, st, clk
 }
 
 func putRef(t *testing.T, st *fake.ObjectStore, key string) contract.VersionRef {

@@ -74,6 +74,10 @@ func (*ObjectStore) StoreTime(ctx context.Context) (time.Time, error) {
 
 // Retention は contract.Retention の骨格。実装は WP が書く(いまは NOT_IMPLEMENTED を返す)。
 type Retention struct {
+	// Index はチャンクの記録の読み書き(Records、SetRetain、Remove)。
+	Index contract.Index
+	// Intents は書き込み予定のキーの一覧(journal の write_intent。結合で cli が注入する)。中断した書き込みを UNEXPECTED_VERSION にしない。
+	Intents func(ctx context.Context) ([]string, error)
 	Store contract.ObjectStore
 	State contract.StateFiles
 	Codec contract.Codec

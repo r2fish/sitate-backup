@@ -34,6 +34,7 @@ func newRetentionState(t *testing.T, items map[string]any) (*Retention, *fake.Ob
 		sf.Items[k] = b
 	}
 	r := &Retention{Store: st, State: sf, Codec: &harness.RefCodec{}, KeyS: fake.KeyService{}, Clock: &fake.Clock{T: clk.T}, Offset: simOffset{clk: clk}}
+	r.Index = &fake.Index{M: map[string]contract.ChunkRef{}} // prune は消した版を索引から外す。無ければ止まる
 	return r, st, clk, sf
 }
 
