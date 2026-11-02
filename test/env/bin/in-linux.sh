@@ -31,7 +31,7 @@ args=(--user 0:0 -e "SITATE_UID=$uid" -e "SITATE_GID=$gid" -v "$root:$root" -w "
 if [ -n "$common" ] && [ "$common" != "$root/.git" ]; then args+=(-v "$common:$common"); fi
 if [ -n "${NAME:-}" ] && [ -f "$root/test/env/.run/$NAME/env" ]; then args+=(--env-file "$root/test/env/.run/$NAME/env"); fi
 if [ "${SITATE_NESTED:-}" = "1" ]; then
-  args+=(--cap-add SYS_ADMIN --security-opt seccomp=unconfined --security-opt apparmor=unconfined --security-opt systempaths=unconfined --device /dev/fuse --device /dev/net/tun -e HOME=/home/rootless)
+  args+=(--cap-add SYS_ADMIN --security-opt seccomp=unconfined --security-opt apparmor=unconfined --security-opt systempaths=unconfined --device /dev/fuse --device /dev/net/tun -e HOME=/home/rootless -e GOCACHE=/cache/go-build-nested)
 fi
 accnet=""
 if [ -n "${ACCEPT:-}" ]; then

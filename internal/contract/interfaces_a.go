@@ -102,6 +102,7 @@ type Codec interface {
 	Chunk(ctx context.Context, r io.Reader, emit func(Chunk) error) error
 	Seal(plain, chunkKey []byte, chunkID string) ([]byte, error)
 	Open(sealed, chunkKey []byte, chunkID string) ([]byte, error)          // AAD にチャンク ID を含む(spec 4.3 の AAD の表)ため、封緘と同じ ID を受ける
+	// Encode の h は種類ごとに Kind・FormatVersion・Mark・Wrapped を全部要る。マニフェストの Mark はマスター鍵の鍵 ID(k<n> の n)の 4 バイトのビッグエンディアン。
 	Encode(kind, id string, h Header, content, key []byte) ([]byte, error) // kind: 4 バイトの種類(MagicManifest など)。id は AAD の ID(AAD の説明を見よ)
 	Decode(kind, id string, sealed, key []byte) ([]byte, error)            // 見出しは sealed から読む。開けない理由は *FormatError
 	Header(b []byte) (Header, error)
