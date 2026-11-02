@@ -71,9 +71,15 @@ const (
 	DistURL = "https://github.com/r2fish/sitate-backup/releases/download/<version>/"
 
 	// 固定値の表。
-	Argon2idMemoryKiB      = 256 * 1024
-	Argon2idIterations     = 3
-	Argon2idParallelism    = 4
+	Argon2idMemoryKiB   = 256 * 1024
+	Argon2idIterations  = 3
+	Argon2idParallelism = 4
+	// Argon2id の見出しの値の上限(spec 4.3)。測定値でなく製品が作らない値を拒否する線で、初期値を上げるときは同時に上げ、下げない。
+	Argon2idMemoryMaxKiB   = 256 * 1024
+	Argon2idIterationsMax  = 3
+	Argon2idParallelismMax = 4
+	// ManifestMax はマニフェストの展開後の上限(spec 4.3。参照 1 件を約 250 バイトとして約 6 万 7 千件の計算値)。
+	ManifestMax            = 16 << 20
 	NolockOpDeadline       = 60 * time.Second
 	StateLockRetryInterval = 100 * time.Millisecond
 	AdapterResultMax       = 1 << 20

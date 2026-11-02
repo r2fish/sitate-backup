@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/ed25519"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -145,14 +146,48 @@ func TestManifestCompressionAndLimit(t *testing.T) {
 	if back, err := c.Decode(contract.MagicManifest, id, obj, key(1)); err != nil || !bytes.Equal(back, json) {
 		t.Errorf("往復 %v", err)
 	}
-	// 展開が ChunkMax を超える本体は tag。
+	// 展開が ManifestMax を超える本体は header(spec 4.3)。
 	hh, _ := c.Header(obj)
 	aad, _ := c.AAD(contract.MagicManifest, id, hh)
-	big := zEnc().EncodeAll(make([]byte, contract.ChunkMax+1), nil)
+	big := zEnc().EncodeAll(make([]byte, contract.ManifestMax+1), nil)
 	s, _ := (&Crypto{}).AEADSeal(big, key(1), aad)
 	bad := append(append([]byte{}, obj[:81]...), s...)
-	if _, err := c.Decode(contract.MagicManifest, id, bad, key(1)); reasonOf(t, err) != "tag" {
+	if _, err := c.Decode(contract.MagicManifest, id, bad, key(1)); reasonOf(t, err) != "header" {
 		t.Errorf("展開の上限超え: %v", err)
+	}
+	// 上限ちょうどは読める
+	full := make([]byte, contract.ManifestMax)
+	h = contract.Header{Kind: contract.MagicManifest, FormatVersion: contract.FormatVersion, Mark: hh.Mark, Wrapped: hh.Wrapped}
+	enc, err := c.Encode(contract.MagicManifest, id, h, full, key(1))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if back, err := c.Decode(contract.MagicManifest, id, enc, key(1)); err != nil || len(back) != contract.ManifestMax {
+		t.Errorf("上限ちょうどが読めない: %d %v", len(back), err)
+	}
+	// 書くときに超えれば INTERNAL(component: format)
+	_, err = c.Encode(contract.MagicManifest, id, h, make([]byte, contract.ManifestMax+1), key(1))
+	var ce *contract.Error
+	if !errors.As(err, &ce) || ce.Code != contract.CodeInternal || !strings.Contains(string(ce.Detail), `"component":"format"`) {
+		t.Errorf("書くときの上限超え: %v", err)
+	}
+	if err := contract.Validate("cli/detail.json#/$defs/INTERNAL", ce.Detail); err != nil {
+		t.Errorf("detail がスキーマに合わない: %v", err)
+	}
+}
+
+// 見出しの Argon2id の値が上限を超えるとメモリを確保せずに header で拒否する(spec 4.3)。上限の値そのものは通す。
+func TestArgon2idParamLimits(t *testing.T) {
+	c := &Crypto{}
+	salt := key(2)[:16]
+	const mem, it, par = contract.Argon2idMemoryMaxKiB, contract.Argon2idIterationsMax, contract.Argon2idParallelismMax
+	for _, p := range [][3]int{{mem + 1, 1, 1}, {64, it + 1, 1}, {64, 1, par + 1}, {0xFFFFFFFF, 1, 1}, {64, 0xFFFFFFFF, 1}, {64, 1, 255}} {
+		if _, err := c.Argon2id(key(1), salt, p[0], p[1], p[2]); reasonOf(t, err) != "header" {
+			t.Errorf("%v: %v", p, err)
+		}
+	}
+	if _, err := c.Argon2id(key(1), salt, 64, it, par); err != nil {
+		t.Errorf("上限の内側を拒否した: %v", err)
 	}
 }
 

@@ -5,9 +5,12 @@ package format
 import (
 	"encoding/binary"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"unicode/utf8"
+
+	"github.com/klauspost/compress/zstd"
 
 	"github.com/r2fish/sitate-backup/internal/contract"
 )
@@ -43,6 +46,13 @@ func checkPrefix(b []byte, kind string) error {
 		return headerErr()
 	}
 	return checkVersion(int(b[4]))
+}
+
+// manifestTooLarge は書くときに上限を超えたマニフェストの誤り(spec 4.3)。
+func manifestTooLarge() error {
+	info := contract.CodeTable[contract.CodeInternal]
+	return &contract.Error{Code: contract.CodeInternal, Class: contract.ExitClass(info.Exit), Retryable: info.Retryable, Next: []contract.Next{},
+		Detail: json.RawMessage(`{"component":"format","http_status":null,"kind":null,"name":null,"reason":null}`)}
 }
 
 func headerErr() error { return &contract.FormatError{Reason: "header"} }
@@ -154,6 +164,9 @@ func (c *Codec) Encode(kind, id string, h contract.Header, content, key []byte) 
 		return nil, err
 	}
 	if kind == contract.MagicManifest { // 本体は常に zstd で圧縮する。呼び出し側は JSON を渡す
+		if len(content) > contract.ManifestMax {
+			return nil, manifestTooLarge()
+		}
 		content = zEnc().EncodeAll(content, nil)
 	}
 	body, err := (&Crypto{}).AEADSeal(content, key, aad)
@@ -194,8 +207,12 @@ func (c *Codec) Decode(kind, id string, sealed, key []byte) ([]byte, error) {
 	if err != nil {
 		return nil, tagErr()
 	}
-	if kind == contract.MagicManifest { // 本体は zstd で圧縮した JSON。展開の上限は ChunkMax
-		if plain, err = zDec().DecodeAll(plain, nil); err != nil {
+	if kind == contract.MagicManifest { // 本体は zstd で圧縮した JSON。展開後の上限は ManifestMax で、超えれば header
+		plain, err = zManifestDec().DecodeAll(plain, nil)
+		if errors.Is(err, zstd.ErrDecoderSizeExceeded) || errors.Is(err, zstd.ErrWindowSizeExceeded) || errors.Is(err, zstd.ErrFrameSizeExceeded) {
+			return nil, headerErr()
+		}
+		if err != nil {
 			return nil, tagErr()
 		}
 	}

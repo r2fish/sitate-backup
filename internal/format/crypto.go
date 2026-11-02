@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"math"
 
 	"github.com/zeebo/blake3"
 	"golang.org/x/crypto/argon2"
@@ -61,10 +60,14 @@ func (*Crypto) HKDF(ikm, info []byte, n int) ([]byte, error) {
 	return out, nil
 }
 
-// Argon2id は Argon2id(版 0x13)で 32 バイトの KEK を導出する。
+// Argon2id は Argon2id(版 0x13)で 32 バイトの KEK を導出する。見出しの値は認証の前に読むので(偽の版を置ける)、
+// 上限を超える値はメモリを確保する前に FormatError{header} で拒否する(spec 4.3)。
 func (*Crypto) Argon2id(phrase, salt []byte, memKiB, iterations, parallelism int) ([]byte, error) {
-	if memKiB <= 0 || iterations <= 0 || parallelism <= 0 || parallelism > 255 || uint64(memKiB) > math.MaxUint32 || uint64(iterations) > math.MaxUint32 {
+	if memKiB <= 0 || iterations <= 0 || parallelism <= 0 {
 		return nil, errors.New("format: Argon2id のパラメータが不正")
+	}
+	if memKiB > contract.Argon2idMemoryMaxKiB || iterations > contract.Argon2idIterationsMax || parallelism > contract.Argon2idParallelismMax {
+		return nil, headerErr()
 	}
 	return argon2.IDKey(phrase, salt, uint32(iterations), uint32(memKiB), uint8(parallelism), contract.KeySize), nil
 }

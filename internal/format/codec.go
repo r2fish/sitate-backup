@@ -31,6 +31,13 @@ var (
 		}
 		return e
 	})
+	zManifestDec = sync.OnceValue(func() *zstd.Decoder {
+		d, err := zstd.NewReader(nil, zstd.WithDecoderMaxMemory(contract.ManifestMax), zstd.WithDecoderConcurrency(1))
+		if err != nil {
+			panic(err)
+		}
+		return d
+	})
 	zDec = sync.OnceValue(func() *zstd.Decoder {
 		d, err := zstd.NewReader(nil, zstd.WithDecoderMaxMemory(contract.ChunkMax), zstd.WithDecoderConcurrency(1))
 		if err != nil {
