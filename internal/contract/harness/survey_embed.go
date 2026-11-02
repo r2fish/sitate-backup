@@ -25,21 +25,23 @@ func SurveyPreamble(scope string, duTimeoutS int) (string, error) {
 	return fmt.Sprintf("%s='%s'\n%s='%d'\n", contract.EmbedVarScope, scope, contract.EmbedVarDuTimeout, duTimeoutS), nil
 }
 
-// SetupPreamble は source-setup の台本の先頭に置くクラスタの行(1 クラスタ 1 行)。
+// SetupPreamble は source-setup の台本の先頭に置くクラスタの一覧。1 変数に 1 クラスタ 1 行で入れる(sh は同じ変数への代入を重ねると後が前を消す)。
 func SetupPreamble(cl []StateCluster) (string, error) {
-	var b strings.Builder
+	if len(cl) == 0 {
+		return "", nil
+	}
+	lines := make([]string, 0, len(cl))
 	for _, c := range cl {
 		f := append([]string{c.SocketDir, fmt.Sprint(c.Port), fmt.Sprint(c.Major)}, c.RawPaths...)
 		for _, x := range f {
-			if strings.Contains(x, "\t") {
-				return "", fmt.Errorf("タブを含む値は埋め込めない")
+			if strings.ContainsAny(x, "\t\n") {
+				return "", fmt.Errorf("タブと改行を含む値は埋め込めない")
+			}
+			if _, err := shQuote(x); err != nil {
+				return "", err
 			}
 		}
-		q, err := shQuote(strings.Join(f, "\t"))
-		if err != nil {
-			return "", err
-		}
-		b.WriteString(contract.EmbedVarCluster + "=" + q + "\n")
+		lines = append(lines, strings.Join(f, "\t"))
 	}
-	return b.String(), nil
+	return contract.EmbedVarClusters + "='" + strings.ReplaceAll(strings.Join(lines, "\n"), "'", `'\''`) + "'\n", nil
 }

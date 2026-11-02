@@ -16,8 +16,8 @@ const (
 const (
 	EmbedVarScope     = "SITATE_SCOPE"
 	EmbedVarDuTimeout = "SITATE_DU_TIMEOUT_S"
-	// EmbedVarCluster はクラスタ 1 つにつき 1 行。値は socket_dir・port・major・raw_path... をタブで区切ったもの(source-setup だけ)。
-	EmbedVarCluster = "SITATE_CLUSTER"
+	// EmbedVarClusters は信じるクラスタの一覧。1 クラスタ 1 行で、行は socket_dir・port・major・raw_path... をタブで区切ったもの(source-setup だけ)。
+	EmbedVarClusters = "SITATE_CLUSTERS"
 )
 
 // 候補の規則(spec 3.3)。

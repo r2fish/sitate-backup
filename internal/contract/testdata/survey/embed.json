@@ -9,13 +9,13 @@
  "setup": [
   {"name": "none", "clusters": [], "want": ""},
   {"name": "one", "clusters": [{"socket_dir": "/run/postgresql", "port": 5432, "major": 16, "raw_paths": ["/var/lib/postgresql/16/main"]}],
-   "want": "SITATE_CLUSTER='/run/postgresql\t5432\t16\t/var/lib/postgresql/16/main'\n"},
+   "want": "SITATE_CLUSTERS='/run/postgresql\t5432\t16\t/var/lib/postgresql/16/main'\n"},
   {"name": "two-with-wal", "clusters": [
     {"socket_dir": "/run/postgresql", "port": 5432, "major": 16, "raw_paths": ["/d/main", "/w/pg_wal"]},
     {"socket_dir": "/var/run/postgresql", "port": 5433, "major": 15, "raw_paths": ["/e/main"]}],
-   "want": "SITATE_CLUSTER='/run/postgresql\t5432\t16\t/d/main\t/w/pg_wal'\nSITATE_CLUSTER='/var/run/postgresql\t5433\t15\t/e/main'\n"},
+   "want": "SITATE_CLUSTERS='/run/postgresql\t5432\t16\t/d/main\t/w/pg_wal\n/var/run/postgresql\t5433\t15\t/e/main'\n"},
   {"name": "single-quote-in-path", "clusters": [{"socket_dir": "/run/postgresql", "port": 5432, "major": 16, "raw_paths": ["/d/o'brien"]}],
-   "want": "SITATE_CLUSTER='/run/postgresql\t5432\t16\t/d/o'\\''brien'\n"},
+   "want": "SITATE_CLUSTERS='/run/postgresql\t5432\t16\t/d/o'\\''brien'\n"},
   {"name": "newline-in-path", "clusters": [{"socket_dir": "/run/postgresql", "port": 5432, "major": 16, "raw_paths": ["/d/a\nb"]}], "want": null},
   {"name": "tab-in-path", "clusters": [{"socket_dir": "/run/postgresql", "port": 5432, "major": 16, "raw_paths": ["/d/a\tb"]}], "want": null}
  ],
