@@ -202,6 +202,7 @@ func newSrcAcquire(items map[string]json.RawMessage) (*Acquire, *fake.StateFiles
 	a := shapeAcquire()
 	a.State = &srcState{StateFiles: st, cand: []byte(testDef)}
 	a.SSH = routeSSH{}
+	a.From = "203.0.113.9" // authorized_keys の from=(無ければ source-setup を流さない)
 	return a, st
 }
 

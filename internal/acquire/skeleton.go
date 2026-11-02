@@ -60,6 +60,8 @@ func (*Index) Remove(ctx context.Context, versionID string) error {
 // Acquire は contract.Acquire の骨格。実装は WP が書く(いまは NOT_IMPLEMENTED を返す)。
 // 依存は公開フィールドで受ける(契約試験が偽物を差し込む。実装は他のフィールドを足してよいが、これらを消さない)。
 type Acquire struct {
+	// From は source enroll が authorized_keys の from= に書くバックアップサーバーのアドレス(結合で cli が注入する)。
+	From     string
 	Store    contract.ObjectStore
 	State    contract.StateFiles
 	Index    contract.Index
@@ -145,6 +147,7 @@ func (*RunCleanup) Cleanup(ctx context.Context, own string, interrupted string) 
 
 // SourceEnroller は contract.Enroller の骨格。実装は WP が書く(いまは NOT_IMPLEMENTED を返す)。
 type SourceEnroller struct {
+	From    string
 	SSH     contract.SSH
 	Secrets contract.Secrets
 	State   contract.StateFiles
