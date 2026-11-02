@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	defPass = `{"version":1,"storage":[{"key_ref":"store-key"}],"restore":{"adapter":"ssh-host","dest":{"at":"ssh://restore@dest.example.invalid:22","key_ref":"dest-key"}}}`
+	defPass = `{"version":1,"storage":[{"key_ref":"store-key"}],"restore":{"ssh_from":"192.0.2.10","adapter":"ssh-host","dest":{"at":"ssh://restore@dest.example.invalid:22","key_ref":"dest-key"}}}`
 	fpDest  = "SHA256:abcDEF123"
 	repoID  = "rp-0123456789abcdef0123456789abcdef"
 	privKey = "-----BEGIN OPENSSH PRIVATE KEY-----\nfake-restore-key\n-----END OPENSSH PRIVATE KEY-----\n"

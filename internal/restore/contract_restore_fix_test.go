@@ -84,7 +84,7 @@ func seed(t *testing.T, st *fake.StateFiles, clk *fake.ManualClock, core *fake.C
 }
 
 // 復元先が ssh-host の承認済みの定義(restore 節)。
-const defSSH = `{"version":1,"restore":{"adapter":"ssh-host","dest":{"at":"ssh://restore@dest.example.invalid:22","key_ref":"dest-key"}}}`
+const defSSH = `{"version":1,"restore":{"ssh_from":"192.0.2.10","adapter":"ssh-host","dest":{"at":"ssh://restore@dest.example.invalid:22","key_ref":"dest-key"}}}`
 
 // ledgerSession は破棄を確かめられず残った復元テストの資源の台帳の記録(状態の台帳のスキーマで検査する)。
 func ledgerSession(t *testing.T, runID, session string, remaining bool) json.RawMessage {

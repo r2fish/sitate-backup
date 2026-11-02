@@ -204,7 +204,7 @@ func enrollWith(t *testing.T, write bool) (contract.EnrollResult, *fake.StateFil
 	r, st := newRestore()
 	r.Adapters.(*fake.AdapterRunner).Script("restore-dest", fake.Step{Outcome: fake.OutcomeSuccess, Result: enrollVector(t)})
 	e := &RestoreDestEnroller{Store: r.Store, State: st, Adapters: r.Adapters, Codec: r.Codec, KeyS: r.KeyS, Crypto: r.Crypto, Recorder: r.Recorder, Clock: r.Clock}
-	res, err := e.Enroll(ctx, contract.EnrollInput{Kind: "restore-dest", Section: json.RawMessage(`{"adapter":"ssh-host","dest":{"at":"ssh://restore@dest.example.invalid:22","key_ref":"dest-key"}}`), HostKeyFP: "SHA256:abcDEF123", WriteState: write})
+	res, err := e.Enroll(ctx, contract.EnrollInput{Kind: "restore-dest", Section: json.RawMessage(`{"ssh_from":"192.0.2.10","adapter":"ssh-host","dest":{"at":"ssh://restore@dest.example.invalid:22","key_ref":"dest-key"}}`), HostKeyFP: "SHA256:abcDEF123", WriteState: write})
 	return res, st, err
 }
 
