@@ -275,6 +275,7 @@ type Notifier interface {
 
 // TestNotifier は試験通知(提供: state、利用: approval)。確認語のハッシュだけを残す。
 type TestNotifier interface {
+	// proofHashes は宛先 → `<word_salt>|<word_hash>`(spec 4.5。approval が change_proofs[] に写す)。確認語そのものは返さない。
 	Test(ctx context.Context, to []string) (proofHashes map[string]string, err error)
 }
 

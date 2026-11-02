@@ -12,6 +12,8 @@ import (
 // Approval は contract.Approval の骨格。実装は WP が書く(いまは NOT_IMPLEMENTED を返す)。
 // 依存は公開フィールドで受ける(契約試験が偽物を差し込む。実装は他のフィールドを足してよいが、これらを消さない)。
 type Approval struct {
+	// Dir は状態ディレクトリ(pending/ の置き場)。空なら動かない。
+	Dir      string
 	State    contract.StateFiles
 	Enroller contract.Enroller
 	Recorder contract.Recorder
@@ -85,7 +87,10 @@ func (*Proposer) Propose(ctx context.Context, kind string, content json.RawMessa
 }
 
 // PendingList は contract.PendingList の骨格。実装は WP が書く(いまは NOT_IMPLEMENTED を返す)。
-type PendingList struct{ State contract.StateFiles }
+type PendingList struct {
+	Dir   string
+	State contract.StateFiles
+}
 
 var _ contract.PendingList = (*PendingList)(nil)
 

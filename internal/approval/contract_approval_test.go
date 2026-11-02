@@ -8,6 +8,7 @@ package approval
 import (
 	"context"
 	"encoding/json"
+	"os"
 	"reflect"
 	"testing"
 
@@ -19,7 +20,16 @@ import (
 var ctx = context.Background()
 
 func newApproval() *Approval {
-	return &Approval{State: &fake.StateFiles{}, Enroller: &fake.Enroller{}, Recorder: &fake.Recorder{}, Clock: &fake.Clock{T: fake.StartTime}}
+	return &Approval{Dir: contractDir(), State: &fake.StateFiles{}, Enroller: &fake.Enroller{}, Recorder: &fake.Recorder{}, Clock: &fake.Clock{T: fake.StartTime}}
+}
+
+// contractDir は状態ディレクトリの代わり(Dir が空なら Approval は動かない)。
+func contractDir() string {
+	d, err := os.MkdirTemp("", "sitate-approval-*")
+	if err != nil {
+		panic(err)
+	}
+	return d
 }
 
 type gateVectors struct {
@@ -242,7 +252,7 @@ func TestContractApprovalProposer(t *testing.T) {
 }
 
 func TestContractApprovalPendingList(t *testing.T) {
-	l, err := (&PendingList{State: &fake.StateFiles{}}).List(ctx)
+	l, err := (&PendingList{Dir: contractDir(), State: &fake.StateFiles{}}).List(ctx)
 	harness.Implemented(t, err)
 	if err != nil || l == nil {
 		t.Errorf("保留中の変更の一覧は空でも配列: %v %v", l, err)
