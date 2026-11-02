@@ -706,7 +706,8 @@
         "role_exists_foreign",
         "db_connect",
         "db_privileges",
-        "db_tools"
+        "db_tools",
+        "from_missing"
        ]
       },
       {

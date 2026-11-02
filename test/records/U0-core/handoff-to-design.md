@@ -161,3 +161,9 @@ U1f-1 の途中から: `--snapshot-key-stdin` の標準入力の終わりの `RU
 - DB の対象のクラスタの選び方が U1c(`port` か 1 つだけ)、U2a、3.3(DB 名で選ぶ)で揃わない。`db_only` の調査では DB 名が読めない。今は U1c の形(`port` 指定か信じるクラスタが 1 つ)で、複数なら `cluster_ambiguous`。
 - 取得の途中でリンクの中間の要素を差し替えると `sitate-ro` の権限の範囲で根の外を読む。`setfacl` に nofollow が無い。5.3 の残るリスクに書くお願い。
 - `from=` が空の `source-setup` は成功にしない。`sudo` の経路では `SSH_CLIENT` が消えるので、核が `From` を埋め込む(設定の持ち主は `cli`)。
+
+## 19. U2a の差し戻しから
+
+- `SOURCE_SETUP_FAILED` の `reason` に `from_missing` を足した(`SITATE_FROM` が空か不正)。3.1.3 と 3.3 に足すお願い。
+- 名前に `\001` を含むファイル 1 つで受け口の `list` が止まり、対象全体が毎回 `failed` になる。3.3 の `list` の形に報告の形が無い。そのファイルを取らずに報告する形か、今の形かを決めてほしい。
+- 全対象が `failed` のときの結果の `targets[]`: 3.2.2 は `error_code` を結果に置くが、失敗の封筒は `result: null`。今は `run_end` にだけ載る。
