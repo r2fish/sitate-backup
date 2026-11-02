@@ -242,3 +242,25 @@ U1f-1 の途中から: `--snapshot-key-stdin` の標準入力の終わりの `RU
 - S2 手順 5 の `bucket check` は引数なしと読めるが、`seal` の前は `--key-ref` の既定が無く `ARG_INVALID`(`missing`)。案: 手順書に `--key-ref` を書く / 候補の定義の `storage[0].key_ref` を既定にする。
 - S3 `secrets set` がイテレーション 3 のため、イテレーション 1 では B2 以外の保管先に鍵を置く手段が無い。A2 は B2 なので測定は止まらない。受入試験の環境の MinIO は試験用の代役のアダプタで通す方針で、仕様の変更は求めない(確認だけ)。
 - E3 の関連: 記録の journal 鍵は master から導くが、`init` の前の `init-storage` には master が無い。仕様の答えが見つからなければ、担当が最小の形を選び、次の節に足す。
+
+## 32. 主経路のレビューからの裁定の依頼(2026-11-03)
+
+### 32.1 裁定が要る(手順 10 が止まる)
+
+`ssh-host` で `restore.dest.key_ref` が解決せず、`propose seal` が必ず `DEF_INVALID`(`unresolved_ref`)になる。監督がコードで確かめた。
+
+- `propose seal` は `ValidateDef(..., false)`(`internal/approval/defs.go:49`)で、解決は `Secrets.Exists`(`internal/cli/secrets.go:31`)が `secrets/<ref>.json` の有無を見る。
+- 仕様 2 章の秘密の表は「`ssh-host` の初期資格情報はバックアップサーバーのディスクに置かない」。`restore-dest enroll` は標準入力で受けて渡すだけで保存しない。
+- 仕様の `def validate` の行と D-0160 は `restore.dest.key_ref` を「手順 9 で置かれる」とする。`ssh-host` では置かれないので食い違う。
+- 案 A: `ssh-host` では `host_keys[]` の `role: restore_dest` と `restore_dest_enrollment` の記録があれば解決とみなす。案 B: `ssh-host` の `key_ref` を定義の参照名の検査から外す。案 C: 定義の必須から外す。
+
+### 32.2 追認を求める(担当が選んだ形。D-0160 の依頼どおり)
+
+`init` の前の journal 鍵: マスター鍵がまだ無い間(`init` の前の `init-storage`)は `write_intent` だけを `journal/pre-master` に平文で退避し、鍵ができた最初の追記の前に連番の項目として移す。中身は `probe/` の乱数のキー名だけで、保管先へ写らない。`keys/pending/master.json` がある間は journal の鍵だけをその鍵から導き、項目は状態ディレクトリにだけ置き、確定の後の `SyncRemote` が写す。仕様 4.5 の「`journal/` の項目は暗号化」から外れるのは pre-master の 1 ファイルだけ。
+
+### 32.3 疑義(急がない)
+
+- `ExecStart=-` は段を独立に走らせるために読めるが、systemd の結果が常に成功に見え、`OnFailure=` が使えない。今は変えない。
+- 「アダプタの無い事業者」の判定の出所が仕様に無い。配布物は常に `b2` を同梱し、`bucket check` は `--adapter` を受けないので、B2 以外の事業者でも `b2` の `check` を呼ぶ。`untested` の経路に実物の入口が無い。
+- seal の前は候補の復元先へ `restore-test` がスナップショット鍵を渡す(D-0025 の 5 の範囲。E4 の修正で初めて動く)。乗っ取られたエージェントが seal の前に候補の `restore.dest` を替えると、取得済みのデータを読める。消せるようにはならない。残るリスクの表にあるかを確かめてほしい。
+- `mlock`・`PR_SET_DUMPABLE` の呼び出しが `internal/`・`cmd/` に無い(仕様 3.1.1「鍵のメモリ」)。実装の欠けとして次の WP で扱う。
