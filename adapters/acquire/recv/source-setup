@@ -1,4 +1,348 @@
 #!/bin/sh
-# 元サーバーの設定の骨格(U2a が実装する)。
-echo "NOT_IMPLEMENTED: source-setup" >&2
-exit 1
+# 元サーバーの導入のスクリプト(source-setup。POSIX sh。GNU findutils・GNU tar・coreutils・acl を前提とする)。
+# 核が値を埋め込んで生成し、標準入力で `sh -s`(root)か `sudo -n sh -s` に渡す。元サーバーにファイルを残さない。
+# eval を使わない。標準入力はスクリプト自身なので、本体は関数にして最後の 1 行で呼ぶ(子プロセスにスクリプトを読ませない)。
+#
+# 核がこのファイルの先頭に置く代入(単一引用符の文字列。' は '\'' にする。改行を含む値は複数行の引用符):
+#   SITATE_RECEIVER   受け口の中身(許可リストと版を埋め込んだ後のバイト列そのもの。receiver_hash はこの SHA-256)
+#   SITATE_PULL_KEY   pull 用公開鍵(authorized_keys の鍵の部分。例 `ssh-ed25519 AAAA...`)
+#   SITATE_FROM       authorized_keys の from= に書くバックアップサーバーのアドレス
+#   SITATE_TARGETS    許可リスト(受け口の SITATE_TARGETS と同じ。PostgreSQL の行は末尾に <port 指定あり: 1|0> を足す)
+#                       ファイル  : <id> TAB files TAB <根> TAB <根の JSON 文字列>
+#                       PostgreSQL: <id> TAB postgresql TAB <DB 名> TAB <ソケットのディレクトリ> TAB <ポート> TAB <DB 名の JSON> TAB <ソケットの JSON> TAB <port 指定あり>
+#   SITATE_CLUSTERS   信じるクラスタの一覧。1 クラスタ 1 行(改行区切り)、欄は TAB 区切りで
+#                       <ソケットのディレクトリ> TAB <ポート> TAB <主版> TAB <生のファイルの場所>... 。
+#                     (同じ変数への代入を重ねても後の行が前を消すため、複数のクラスタは 1 つの変数に改行で入れる)
+# authorized_keys の行は `restrict,from="<SITATE_FROM>",command="/usr/local/libexec/sitate-recv" <SITATE_PULL_KEY>` の 1 行。
+# root が動かす管理系の道具(useradd・runuser など)は sbin にあるため、仕様の PATH=/usr/bin:/bin に sbin を足す(報告の逸脱)。
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
+LC_ALL=C
+export PATH LC_ALL
+for _v in $(env | sed -n 's/^\(PG[A-Za-z0-9_]*\)=.*/\1/p'); do unset "$_v"; done
+set -f
+umask 022
+TAB=$(printf '\t')
+ROLE=sitate-ro
+HOME_DIR=/var/lib/sitate-ro
+LIBEXEC=/usr/local/libexec
+RECV=$LIBEXEC/sitate-recv
+MARK='sitate-backup receiver'
+CHANGED=0
+
+emit() {
+	_t=null _r=null
+	[ -z "$2" ] || _t="\"$2\""
+	[ -z "$4" ] || _r="\"$4\""
+	printf '{"step":"%s","target_id":%s,"result":"%s","reason":%s,"missing":%s}\n' "$1" "$_t" "$3" "$_r" "${5:-null}"
+}
+done_step() {
+	emit "$1" "$2" "$3" "" ""
+	[ "$3" = unchanged ] || CHANGED=1
+}
+fail() {
+	emit "$1" "$2" failed "$3" "${4:-}"
+	exit 1
+}
+
+each_target() { # each_target <種別> <関数>: 許可リストの該当行ごとに関数を呼ぶ(T_ID T_1〜T_6 を置く)
+	while IFS="$TAB" read -r T_ID _kind T_1 T_2 T_3 T_4 T_5 T_6 || [ -n "$T_ID" ]; do
+		[ "$_kind" = "$1" ] || continue
+		"$2"
+	done <<EOT
+$SITATE_TARGETS
+EOT
+}
+has_kind() { printf '%s\n' "$SITATE_TARGETS" | cut -f2 | grep -qx "$1"; }
+all_clusters() { printf '%s\n' "${SITATE_CLUSTERS-}" | grep -v '^$'; }
+
+pg_bin() { # pg_bin <名前>: PostgreSQL の道具のパスを標準出力へ(glob を展開するためこの中だけ set +f)
+	set +f
+	for _d in /usr/lib/postgresql/*/bin /usr/pgsql-*/bin /usr/bin; do
+		[ -x "$_d/$1" ] && { set -f; echo "$_d/$1"; return 0; }
+	done
+	set -f
+	return 1
+}
+
+# --- prereq ---
+gnu_ok() { "$1" --version 2>/dev/null </dev/null | head -n 1 | grep -q 'GNU\|findutils\|tar (GNU'; }
+step_prereq() {
+	[ "$(uname -s)" = Linux ] || fail prereq "" unsupported_os
+	_m=
+	command -v find >/dev/null && gnu_ok find || _m="$_m findutils"
+	command -v tar >/dev/null && gnu_ok tar || _m="$_m tar"
+	command -v setfacl >/dev/null || _m="$_m setfacl"
+	command -v sha256sum >/dev/null || _m="$_m sha256sum"
+	if has_kind postgresql; then
+		command -v runuser >/dev/null || _m="$_m runuser"
+		pg_bin psql >/dev/null || _m="$_m psql"
+	fi
+	if [ -n "$_m" ]; then
+		_j=
+		for _n in $_m; do _j="$_j${_j:+,}\"$_n\""; done
+		fail prereq "" tool_missing "[$_j]"
+	fi
+	done_step prereq "" unchanged
+}
+
+# --- roots ---
+under() { # under <親> <子>: 子が親と同じか下にあるとき 0('/' の区切りで比べる)
+	[ "$1" = / ] && return 0
+	[ "$2" = "$1" ] && return 0
+	case $2 in "$1"/*) return 0 ;; esac
+	return 1
+}
+touches_raw() { # touches_raw <realpath>
+	all_clusters | while IFS="$TAB" read -r _sd _po _ma _rest; do
+		IFS=$TAB
+		for _p in $_rest; do
+			if under "$_p" "$1" || under "$1" "$_p"; then echo hit; fi
+		done
+	done | grep -q hit
+}
+# forbidden_root <実パス>: 根に置けない場所(spec 4.1 の (i)(ii)(iii)。internal/contract の RootForbidden* と同じ一覧)
+forbidden_root() {
+	case $1 in / | /etc | /var | /home | /srv | /opt) return 0 ;; esac
+	for _f in /proc /sys /dev /run /boot /usr /bin /sbin /lib /lib32 /lib64 /etc/ssh /root /tmp /var/tmp; do
+		case $1 in "$_f" | "$_f"/*) return 0 ;; esac
+	done
+	return 1
+}
+roots_one() {
+	_rp=$(readlink -f -- "$T_1" 2>/dev/null) || _rp=
+	[ -d "$_rp" ] || { done_step roots "$T_ID" unchanged; return 0; }
+	# 根がシンボリックリンクなら、実パスも固定の一覧で検査する(/etc/ssh や /root に ACL を付けない)
+	if forbidden_root "$_rp"; then fail roots "$T_ID" root_forbidden; fi
+	if touches_raw "$_rp"; then fail roots "$T_ID" root_forbidden; fi
+	if [ -n "$(find -P "$_rp" -xdev \( \( -type f -name PG_VERSION -execdir test -f ./global/pg_control \; \) -o \( -type d -name 'PG_[0-9]*_[0-9]*' \) \) -print -quit 2>/dev/null </dev/null)" ]; then
+		fail roots "$T_ID" root_forbidden
+	fi
+	done_step roots "$T_ID" unchanged
+}
+
+# --- account ---
+passwd_field() { getent passwd "$ROLE" | cut -d: -f"$1"; }
+step_account() {
+	_res=unchanged
+	if getent passwd "$ROLE" >/dev/null; then
+		[ "$(passwd_field 5)" = "$MARK" ] || fail account "" account_exists_foreign
+		if [ "$(passwd_field 7)" != /bin/sh ] || [ "$(passwd_field 6)" != "$HOME_DIR" ]; then
+			usermod -d "$HOME_DIR" -s /bin/sh "$ROLE" </dev/null || fail account "" account_exists_foreign
+			_res=updated
+		fi
+	else
+		useradd --system --no-create-home --home-dir "$HOME_DIR" --shell /bin/sh --comment "$MARK" "$ROLE" </dev/null || fail account "" account_exists_foreign
+		_res=created
+	fi
+	# 鍵だけでログインできるように、パスワード欄は '*'(sshd が '!' 始まりの欄を拒む環境があるため)
+	if [ "$(getent shadow "$ROLE" | cut -d: -f2)" != '*' ]; then
+		usermod -p '*' "$ROLE" </dev/null || fail account "" account_exists_foreign
+		[ "$_res" != unchanged ] || _res=updated
+	fi
+	if [ ! -d "$HOME_DIR" ] || [ "$(stat -c '%U:%G:%a' "$HOME_DIR")" != root:root:755 ]; then
+		install -d -m 0755 -o root -g root "$HOME_DIR" || fail account "" account_exists_foreign
+		[ "$_res" != unchanged ] || _res=updated
+	fi
+	done_step account "" "$_res"
+}
+
+# --- 原子的な置き方 ---
+# put_file <中身を標準入力から> <パス> <モード>: 同じディレクトリの一時ファイルに書いて名前を付け替える。変えたら 0、同じなら 1 を返す。
+put_file() {
+	_dst=$1 _mode=$2
+	_new=$(mktemp "$(dirname "$_dst")/.sitate-new.XXXXXX") || return 2
+	cat >"$_new"
+	if [ -f "$_dst" ] && cmp -s "$_new" "$_dst" && [ "$(stat -c '%U:%G:%a' "$_dst")" = "root:root:$_mode" ]; then
+		rm -f "$_new"
+		return 1
+	fi
+	chown root:root "$_new" && chmod "$_mode" "$_new" && mv -f "$_new" "$_dst" || { rm -f "$_new"; return 2; }
+	return 0
+}
+
+step_authorized_keys() {
+	_ak=$HOME_DIR/.ssh/authorized_keys
+	_existed=0
+	[ -f "$_ak" ] && _existed=1
+	install -d -m 0755 -o root -g root "$HOME_DIR/.ssh" || fail authorized_keys "" account_exists_foreign
+	printf 'restrict,from="%s",command="%s" %s\n' "$SITATE_FROM" "$RECV" "$SITATE_PULL_KEY" | put_file "$_ak" 644
+	case $? in
+	0) if [ "$_existed" = 1 ]; then done_step authorized_keys "" updated; else done_step authorized_keys "" created; fi ;;
+	1) done_step authorized_keys "" unchanged ;;
+	*) fail authorized_keys "" account_exists_foreign ;;
+	esac
+}
+
+step_receiver() {
+	_existed=0
+	[ -f "$RECV" ] && _existed=1
+	install -d -m 0755 -o root -g root "$LIBEXEC" || fail receiver "" account_exists_foreign
+	printf '%s' "$SITATE_RECEIVER" | put_file "$RECV" 755
+	case $? in
+	0) if [ "$_existed" = 1 ]; then done_step receiver "" updated; else done_step receiver "" created; fi ;;
+	1) done_step receiver "" unchanged ;;
+	*) fail receiver "" account_exists_foreign ;;
+	esac
+}
+
+# --- acl ---
+ro_can_x() { # sitate-ro がディレクトリを通れるか
+	if command -v runuser >/dev/null; then
+		runuser -u "$ROLE" -- test -x "$1" </dev/null
+	else
+		su -s /bin/sh -c "test -x '$(printf '%s' "$1" | sed "s/'/'\\\\''/g")'" "$ROLE" </dev/null
+	fi
+}
+# acl_missing <f|d> <根>: 期待の ACL エントリを持たない対象の数
+acl_missing() {
+	_want=r--
+	_find='-type f'
+	[ "$1" = d ] && { _want=r-x; _find='-type d'; }
+	find -P "$2" -xdev $_find -exec getfacl -p -c {} + 2>/dev/null </dev/null |
+		awk -v want="$_want" -v kind="$1" -v ROLE="$ROLE" 'BEGIN { RS = ""; FS = "\n" }
+		{ ok = 0; dok = (kind == "f")
+		  for (i = 1; i <= NF; i++) {
+		    if ($i ~ "^user:" ROLE ":" want "($|[ \t])") ok = 1
+		    if ($i ~ "^default:user:" ROLE ":" want "($|[ \t])") dok = 1
+		  }
+		  if (!(ok && dok)) n++ }
+		END { print n + 0 }'
+}
+# acl_apply <f|d> <根> <setfacl の引数>: 既に mask を持つ対象は -n で mask を広げず、持たない対象は mask を計算して付ける。
+acl_apply() {
+	ACL_ARGS=$3 find -P "$2" -xdev -type "$1" -exec sh -c 'for p; do
+		if getfacl -p -c -- "$p" 2>/dev/null | grep -q "^mask::"; then setfacl -n $ACL_ARGS -- "$p"; else setfacl $ACL_ARGS -- "$p"; fi
+	done' sh {} + 2>&1 </dev/null
+}
+# acl_apply_one <パス> <setfacl の引数>: mask があれば -n(広げない)、無ければ mask を計算して付ける
+acl_apply_one() {
+	if getfacl -p -c -- "$1" 2>/dev/null </dev/null | grep -q '^mask::'; then setfacl -n $2 -- "$1" 2>&1 </dev/null; else setfacl $2 -- "$1" 2>&1 </dev/null; fi
+}
+acl_one() {
+	_rp=$(readlink -f -- "$T_1" 2>/dev/null) || _rp=
+	[ -d "$_rp" ] || fail acl "$T_ID" root_missing
+	_before=$(( $(acl_missing f "$_rp") + $(acl_missing d "$_rp") ))
+	_anc=$(dirname "$_rp") _need=
+	while [ "$_anc" != / ]; do
+		ro_can_x "$_anc" || _need="$_need
+$_anc"
+		_anc=$(dirname "$_anc")
+	done
+	if [ "$_before" = 0 ] && [ -z "$_need" ]; then
+		done_step acl "$T_ID" unchanged
+		return 0
+	fi
+	_err=$(
+		acl_apply f "$_rp" "-m u:$ROLE:r"
+		acl_apply d "$_rp" "-m u:$ROLE:rx -m d:u:$ROLE:rx"
+		printf '%s\n' "$_need" | while IFS= read -r _a; do
+			[ -z "$_a" ] || acl_apply_one "$_a" "-m u:$ROLE:x"
+		done
+	)
+	# 消えたファイルは誤りにしない。ACL を受けない・その他の失敗は止める
+	if printf '%s' "$_err" | grep -v 'No such file or directory' | grep -q .; then fail acl "$T_ID" acl_unsupported; fi
+	# 通れない祖先が残る(mask が x を落としている)なら成功にしない
+	_anc=$(dirname "$_rp")
+	while [ "$_anc" != / ]; do
+		ro_can_x "$_anc" || fail acl "$T_ID" acl_unsupported
+		_anc=$(dirname "$_anc")
+	done
+	done_step acl "$T_ID" updated
+}
+
+# --- db_role ---
+conninfo() { printf "dbname='%s'" "$(printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e "s/'/\\\\'/g")"; }
+psql_pg() { # psql_pg <ソケット> <ポート> <DB> <SQL>: postgres として実行して結果を標準出力へ
+	(cd / && runuser -u postgres -- "$PSQL_BIN" -X -w -At -v ON_ERROR_STOP=1 -h "$1" -p "$2" -d "$(conninfo "$3")" -c "$4" </dev/null)
+}
+cluster_major() { # cluster_major <ソケット> <ポート>: 埋め込みの一覧から主版を返す。無ければ空
+	all_clusters | while IFS="$TAB" read -r _sd _po _ma _rest; do
+		[ "$_sd" = "$1" ] && [ "$_po" = "$2" ] && { echo "$_ma"; break; }
+	done
+}
+db_in_cluster() { # db_in_cluster <ソケット> <ポート> <DB 名>: 1 か 0
+	_lit=$(printf '%s' "$3" | sed "s/'/''/g")
+	_q="select count(*) from pg_database where datname = '$_lit'"
+	[ "$(psql_pg "$1" "$2" postgres "$_q" 2>/dev/null)" = 1 ] && echo 1 || echo 0
+}
+db_role_select() { # 規則(spec 3.3)で選んだクラスタを検証する。選べなければ理由を返す
+	_major=$(cluster_major "$T_2" "$T_3")
+	[ -n "$_major" ] || { echo cluster_not_found; return 0; }
+	[ "$_major" -ge 13 ] || { echo server_too_old; return 0; }
+	[ "$(db_in_cluster "$T_2" "$T_3" "$T_1")" = 1 ] || { echo cluster_not_found; return 0; }
+	[ "$T_6" = 1 ] && return 0
+	# port の指定が無いときは、信じるクラスタ(主版 13 以上)がちょうど 1 つのときだけ
+	_n=$(all_clusters | awk -F'\t' '$3 >= 13' | wc -l)
+	[ "$_n" -le 1 ] || echo cluster_ambiguous
+}
+ROLE_ATTR_BAD="select count(*) from pg_authid where rolname = '$ROLE' and not (rolcanlogin and rolbypassrls and not rolsuper and not rolcreatedb and not rolcreaterole and not rolreplication and rolpassword is null)"
+OWNERS_SQL="select datdba as r from pg_database where datname = current_database()
+ union select nspowner from pg_namespace where nspname !~ '^pg_' and nspname <> 'information_schema'
+ union select c.relowner from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname !~ '^pg_' and n.nspname <> 'information_schema' and c.relkind in ('r','p','v','m','f','S')"
+NEEDS_SQL="select
+ (select count(*) from pg_namespace n where n.nspname !~ '^pg_' and n.nspname <> 'information_schema' and not has_schema_privilege('$ROLE', n.oid, 'USAGE'))
+ + (select count(*) from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname !~ '^pg_' and n.nspname <> 'information_schema' and c.relkind in ('r','p','v','m','f') and not has_table_privilege('$ROLE', c.oid, 'SELECT'))
+ + (select count(*) from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname !~ '^pg_' and n.nspname <> 'information_schema' and case when c.relkind = 'S' then not has_sequence_privilege('$ROLE', c.oid, 'SELECT') else false end)
+ + (select count(*) from ($OWNERS_SQL) o cross join (values ('r'),('S'),('n')) t(k)
+     where not exists (select 1 from pg_default_acl d, aclexplode(d.defaclacl) a
+       where d.defaclrole = o.r and d.defaclnamespace = 0 and d.defaclobjtype = t.k
+       and a.grantee = (select oid from pg_roles where rolname = '$ROLE')
+       and a.privilege_type = case t.k when 'n' then 'USAGE' else 'SELECT' end))"
+GRANT_SQL="do \$\$
+declare s record; o record; rn text;
+begin
+ for s in select nspname from pg_namespace where nspname !~ '^pg_' and nspname <> 'information_schema' loop
+  execute format('grant usage on schema %I to \"$ROLE\"', s.nspname);
+  execute format('grant select on all tables in schema %I to \"$ROLE\"', s.nspname);
+  execute format('grant select on all sequences in schema %I to \"$ROLE\"', s.nspname);
+ end loop;
+ for o in $OWNERS_SQL loop
+  select rolname into rn from pg_roles where oid = o.r;
+  execute format('alter default privileges for role %I grant select on tables to \"$ROLE\"', rn);
+  execute format('alter default privileges for role %I grant select on sequences to \"$ROLE\"', rn);
+  execute format('alter default privileges for role %I grant usage on schemas to \"$ROLE\"', rn);
+ end loop;
+end \$\$"
+db_role_one() {
+	_why=$(db_role_select)
+	[ -z "$_why" ] || fail db_role "$T_ID" "$_why"
+	_res=updated
+	_cm=$(psql_pg "$T_2" "$T_3" "$T_1" "select coalesce(shobj_description(oid, 'pg_authid'), '-') from pg_roles where rolname = '$ROLE'") || fail db_role "$T_ID" cluster_not_found
+	if [ -z "$_cm" ]; then
+		psql_pg "$T_2" "$T_3" "$T_1" "create role \"$ROLE\" login bypassrls nosuperuser nocreatedb nocreaterole noreplication; comment on role \"$ROLE\" is '$MARK'" >/dev/null || fail db_role "$T_ID" role_exists_foreign
+		_res=created
+	elif [ "$_cm" != "$MARK" ]; then
+		fail db_role "$T_ID" role_exists_foreign
+	fi
+	_bad=$(psql_pg "$T_2" "$T_3" "$T_1" "$ROLE_ATTR_BAD") || fail db_role "$T_ID" cluster_not_found
+	if [ "$_bad" != 0 ]; then
+		psql_pg "$T_2" "$T_3" "$T_1" "alter role \"$ROLE\" login bypassrls nosuperuser nocreatedb nocreaterole noreplication password null" >/dev/null || fail db_role "$T_ID" role_exists_foreign
+	fi
+	_need=$(psql_pg "$T_2" "$T_3" "$T_1" "$NEEDS_SQL") || fail db_role "$T_ID" cluster_not_found
+	if [ "$_res" = created ] || [ "$_need" != 0 ] || [ "$_bad" != 0 ]; then
+		psql_pg "$T_2" "$T_3" "$T_1" "$GRANT_SQL" >/dev/null || fail db_role "$T_ID" cluster_not_found
+	else
+		_res=unchanged
+	fi
+	done_step db_role "$T_ID" "$_res"
+}
+
+main() {
+	cd / || exit 1
+	# from= は核が SITATE_FROM に埋め込む。空・不正なら成功にしない(from="" の行は pull を通さない)。
+	case ${SITATE_FROM-} in
+	'' | *'"'* | *'\'* | *[!!-~]*) fail prereq "" from_missing ;;
+	esac
+	step_prereq
+	each_target files roots_one
+	step_account
+	step_authorized_keys
+	step_receiver
+	each_target files acl_one
+	if has_kind postgresql; then
+		PSQL_BIN=$(pg_bin psql)
+		each_target postgresql db_role_one
+	fi
+	if [ "$CHANGED" = 1 ]; then emit done "" updated "" ""; else emit done "" unchanged "" ""; fi
+}
+main

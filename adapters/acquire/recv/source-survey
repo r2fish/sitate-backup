@@ -1,0 +1,271 @@
+#!/bin/sh
+# 元サーバーの調査の処理(POSIX sh。GNU findutils・coreutils を前提とする)。
+# 核が値を埋め込んで生成し、標準入力で `sh -s`(root)か `sudo -n sh -s` に渡す。読み取りだけで、元サーバーに何も書かない
+# (スクリプトも一時ファイルも残さない)。eval を使わない。判定(class・label・supported・主版の線)は持たない材料だけを返す。
+# 標準入力はスクリプト自身なので、本体は関数にして最後の 1 行で呼ぶ(子プロセスには /dev/null を渡す)。
+#
+# 核がこのファイルの先頭に置く代入(単一引用符の文字列。spec 3.3、internal/contract の EmbedVar*):
+#   SITATE_SCOPE          full か db_only(db_only は clusters だけを読み、psql を動かさない)
+#   SITATE_DU_TIMEOUT_S   ディレクトリ 1 つの du を打ち切る秒数(1 以上)
+# 標準出力は JSON 1 つ `{"format":"sitate.source-survey/v1",...}`。OS が Linux でなければ何も出さず終了状態 77。
+# root が動かす管理系の道具(useradd・runuser など)は sbin にあるため、仕様の PATH=/usr/bin:/bin に sbin を足す(報告の逸脱)。
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
+LC_ALL=C
+export PATH LC_ALL
+for _v in $(env | sed -n 's/^\(PG[A-Za-z0-9_]*\)=.*/\1/p'); do unset "$_v"; done
+set -f
+TAB=$(printf '\t')
+DEFIFS=$(printf ' \t\n_')
+DEFIFS=${DEFIFS%_}
+SOCK_DIRS='/run/postgresql /var/run/postgresql /tmp'
+
+JE_CTRL=
+_i=1
+while [ "$_i" -le 31 ]; do
+	JE_CTRL="$JE_CTRL -e s/\\x$(printf '%02x' "$_i")/\\\\u$(printf '%04x' "$_i")/g"
+	_i=$((_i + 1))
+done
+jesc() { sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' $JE_CTRL; }
+conninfo() { printf "dbname='%s'" "$(printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e "s/'/\\\\'/g")"; }
+jq1() { printf '"%s"' "$(printf '%s' "$1" | jesc)"; }
+under() {
+	[ "$1" = / ] && return 0
+	[ "$2" = "$1" ] && return 0
+	case $2 in "$1"/*) return 0 ;; esac
+	return 1
+}
+pg_bin() {
+	set +f
+	for _d in /usr/lib/postgresql/*/bin /usr/pgsql-*/bin /usr/bin; do
+		[ -x "$_d/$1" ] && { set -f; echo "$_d/$1"; return 0; }
+	done
+	set -f
+	return 1
+}
+gnu_ok() { "$1" --version 2>/dev/null </dev/null | head -n 1 | grep -q 'GNU\|findutils'; }
+
+# --- クラスタ ---
+# discover: 1 ソケット 1 行 `<key> TAB <socket_dir> TAB <port> TAB <major> TAB <readable> TAB <生のファイルの場所>...` を標準出力へ。
+discover() {
+	for _sd in $SOCK_DIRS; do
+		[ -d "$_sd" ] || continue
+		root_made=1
+		[ "$_sd" != /tmp ] || root_made=0
+		for _sock in $(find "$_sd" -maxdepth 1 -type s -name '.s.PGSQL.[0-9]*' 2>/dev/null </dev/null | sort); do
+			_port=${_sock##*.}
+			case $_port in *[!0-9]* | '') continue ;; esac
+			_su=$(stat -c %u -- "$_sock" 2>/dev/null) || continue
+			_lock="$_sd/.s.PGSQL.$_port.lock"
+			_dd=; [ -f "$_lock" ] && _dd=$(timeout 5 sed -n 2p "$_lock" 2>/dev/null </dev/null)
+			_lu=$(stat -c %u -- "$_lock" 2>/dev/null) || _lu=
+			if [ -n "$_dd" ] && [ -f "$_dd/PG_VERSION" ] && [ -r "$_dd/PG_VERSION" ] && [ -n "$_lu" ]; then
+				_du=$(stat -L -c %u -- "$_dd" 2>/dev/null) || _du=
+				[ "$_su" = "$_lu" ] && [ "$_lu" = "$_du" ] || continue
+				_real=$(readlink -f -- "$_dd")
+				_major=$(sed -n '1s/^\([0-9][0-9]*\).*/\1/p' "$_dd/PG_VERSION")
+				[ -n "$_major" ] || { [ "$root_made" = 1 ] && printf 'u:%s\t%s\t%s\tnull\t0\n' "$_port" "$_sd" "$_port"; continue; }
+				printf '%s\t%s\t%s\t%s\t1\t%s%s\n' "$_real" "$_sd" "$_port" "$_major" "$_real" "$(raw_extra "$_real" "$_du")"
+			elif [ "$root_made" = 1 ]; then
+				printf 'u:%s\t%s\t%s\tnull\t0\n' "$_port" "$_sd" "$_port"
+			fi
+		done
+	done | awk -F'\t' '!seen[$1]++'
+}
+# raw_extra <データディレクトリの realpath> <所有者>: pg_wal の実体と pg_tblspc の各リンクの先(所有者が同じものだけ)を TAB 区切りで
+raw_extra() { set +f; raw_extra_1 "$@"; set -f; }
+raw_extra_1() {
+	for _p in "$1/pg_wal" "$1"/pg_tblspc/*; do
+		[ -e "$_p" ] || continue
+		_r=$(readlink -f -- "$_p") || continue
+		[ "$(stat -c %u -- "$_r" 2>/dev/null)" = "$2" ] || continue
+		[ "$_r" != "$1" ] || continue
+		case $_r in "$1"/*) continue ;; esac
+		printf '\t%s' "$_r"
+	done
+}
+raw_of_all() { # raw_of_all <クラスタの行>: 生のファイルの場所を 1 行 1 つで
+	printf '%s\n' "$1" | while IFS="$TAB" read -r _k _sd _po _ma _rd _rest; do
+		[ "$_rd" = 1 ] || continue
+		IFS=$TAB
+		for _x in $_rest; do echo "$_x"; done
+	done
+}
+touches() { # touches <パス> <生のファイルの場所の一覧>
+	while IFS= read -r _x; do
+		[ -n "$_x" ] || continue
+		if under "$_x" "$1" || under "$1" "$_x"; then echo hit; fi
+	done <<EOT
+$2
+EOT
+}
+touches_json() { [ -n "$(touches "$1" "$2" | head -n 1)" ] && printf true || printf false; }
+
+# --- マウント ---
+mounts_list() { # `<path> TAB <fs_type>` を 1 行 1 つで(mountinfo の八進エスケープを戻す)
+	awk '
+	function dec(s,  r) { r = ""; while (length(s) > 0) { if (substr(s, 1, 1) == "\\" && substr(s, 2, 3) ~ /^[0-7][0-7][0-7]$/) { r = r sprintf("%c", substr(s, 2, 1) * 64 + substr(s, 3, 1) * 8 + substr(s, 4, 1)); s = substr(s, 5) } else { r = r substr(s, 1, 1); s = substr(s, 2) } } return r }
+	{ for (i = 1; i <= NF; i++) if ($i == "-") break; if (i > NF) next
+	  t = $(i + 1); if (t !~ /^[A-Za-z0-9][A-Za-z0-9_.+-]*$/ || length(t) > 64) t = "other"
+	  print dec($5) "\t" t }' /proc/self/mountinfo
+}
+fs_of() { # fs_of <パス> <マウント一覧>: 最も長いマウント点の種類
+	_best= _bl=-1 _bt=other
+	while IFS="$TAB" read -r _mp _mt; do
+		[ -n "$_mp" ] || continue
+		if under "$_mp" "$1" && [ "${#_mp}" -gt "$_bl" ]; then _bl=${#_mp}; _bt=$_mt; fi
+	done <<EOT
+$2
+EOT
+	printf '%s' "$_bt"
+}
+bytes_of_fs() { # statvfs の使用量(バイト)。取れなければ null
+	_o=$(timeout 5 stat -f -c '%S %b %f' -- "$1" 2>/dev/null </dev/null) || { printf null; return 0; }
+	set -- $_o
+	[ $# -eq 3 ] || { printf null; return 0; }
+	printf '%s' $((($2 - $3) * $1))
+}
+bytes_of_dir() { # du(ファイルシステムをまたがない)。打ち切ったら null
+	_o=$(timeout "$SITATE_DU_TIMEOUT_S" du -sx -B1 -- "$1" 2>/dev/null </dev/null); _s=$?
+	if [ "$_s" -ge 124 ] && [ "$_s" -le 125 ] || [ -z "$_o" ]; then printf null; return 0; fi
+	printf '%s' "${_o%%$TAB*}"
+}
+forbidden_for_dirs() { # 4.1 の根に置けない場所 (i)(ii)(iii) に当たるマウント点は直下を調べない
+	case $1 in
+	/ | /etc | /var | /home | /srv | /opt) return 0 ;;
+	esac
+	for _f in /proc /sys /dev /run /boot /usr /bin /sbin /lib /lib32 /lib64 /etc/ssh /root /tmp /var/tmp; do
+		under "$_f" "$1" && return 0
+	done
+	return 1
+}
+
+emit_mounts() {
+	_first=1
+	printf '"mounts":['
+	while IFS="$TAB" read -r _mp _mt; do
+		[ -n "$_mp" ] || continue
+		[ "$_first" = 1 ] || printf ','
+		_first=0
+		printf '{"path":%s,"fs_type":"%s","bytes":%s,"touches_raw":%s}' "$(jq1 "$_mp")" "$_mt" "$(bytes_of_fs "$_mp")" "$(touches_json "$_mp" "$RAW")"
+	done <<EOT
+$MOUNTS
+EOT
+	printf '],'
+}
+emit_dir_one() { # emit_dir_one <親> <子>
+	[ -d "$2" ] && [ ! -L "$2" ] || return 0
+	[ "$(stat -c %d -- "$1")" = "$(stat -c %d -- "$2")" ] || return 0
+	[ "$_dfirst" = 1 ] || printf ','
+	_dfirst=0
+	printf '{"path":%s,"parent":%s,"fs_type":"%s","bytes":%s,"touches_raw":%s}' "$(jq1 "$2")" "$(jq1 "$1")" "$(fs_of "$2" "$MOUNTS")" "$(bytes_of_dir "$2")" "$(touches_json "$2" "$RAW")"
+}
+emit_dirs() {
+	_dfirst=1
+	printf '"dirs":['
+	_parents='/home
+/srv'
+	while IFS="$TAB" read -r _mp _mt; do
+		[ -n "$_mp" ] || continue
+		forbidden_for_dirs "$_mp" && continue
+		[ "$(touches_json "$_mp" "$RAW")" = true ] && _parents="$_parents
+$_mp"
+	done <<EOT
+$MOUNTS
+EOT
+	_plist=$(printf '%s\n' "$_parents" | sort -u)
+	while IFS= read -r _pd; do
+		[ -d "$_pd" ] || continue
+		_clist=$(find "$_pd" -mindepth 1 -maxdepth 1 -type d 2>/dev/null </dev/null | sort)
+		while IFS= read -r _c; do
+			[ -z "$_c" ] || emit_dir_one "$_pd" "$_c"
+		done <<EOT2
+$_clist
+EOT2
+	done <<EOT
+$_plist
+EOT
+	printf '],'
+}
+
+# --- クラスタと DB の JSON ---
+psql_pg() { # psql_pg <ソケット> <ポート> <DB> <SQL>
+	(cd / && runuser -u postgres -- "$PSQL_BIN" -X -w -At -v ON_ERROR_STOP=1 -h "$1" -p "$2" -d "$(conninfo "$3")" -c "$4" </dev/null 2>/dev/null)
+}
+emit_clusters() {
+	_first=1
+	printf '"clusters":['
+	while IFS="$TAB" read -r _k _sd _po _ma _rd _rest; do
+		[ -n "$_k" ] || continue
+		[ "$_first" = 1 ] || printf ','
+		_first=0
+		_paths=
+		if [ "$_rd" = 1 ]; then
+			IFS=$TAB
+			set -- $_rest
+			IFS=$DEFIFS
+			for _x; do _paths="$_paths${_paths:+,}$(jq1 "$_x")"; done
+		fi
+		_nr=false
+		[ "$SITATE_SCOPE" = full ] && DB_OK_PORTS_HAS "$_po" && _nr=true
+		printf '{"socket_dir":%s,"port":%s,"major":%s,"raw_paths":[%s],"readable":%s,"names_readable":%s}' \
+			"$(jq1 "$_sd")" "$_po" "$_ma" "$_paths" "$([ "$_rd" = 1 ] && echo true || echo false)" "$_nr"
+	done <<EOT
+$CLUSTERS
+EOT
+	printf '],'
+}
+DB_OK_PORTS_HAS() { case " $DB_OK_PORTS " in *" $1 "*) return 0 ;; esac; return 1; }
+
+# collect_dbs: クラスタごとに DB を読み、DBS(JSON の要素をカンマで連結)・DB_OK_PORTS・DB_COMPLETE を決める
+add_missing() { PREREQ="$PREREQ${PREREQ:+,}\"$1\""; }
+collect_dbs() {
+	DBS= DB_OK_PORTS= DB_COMPLETE=true PREREQ=
+	command -v find >/dev/null && gnu_ok find || add_missing findutils
+	command -v tar >/dev/null && gnu_ok tar || add_missing tar
+	command -v setfacl >/dev/null || add_missing setfacl
+	command -v sha256sum >/dev/null || add_missing sha256sum
+	[ -n "$CLUSTERS" ] || return 0
+	command -v runuser >/dev/null || { add_missing runuser; DB_COMPLETE=false; }
+	PSQL_BIN=$(pg_bin psql) || { add_missing psql; DB_COMPLETE=false; PSQL_BIN=; }
+	if [ "$DB_COMPLETE" = false ]; then return 0; fi
+	while IFS="$TAB" read -r _k _sd _po _ma _rd _rest; do
+		[ -n "$_k" ] || continue
+		_names=$(psql_pg "$_sd" "$_po" postgres "select to_jsonb(datname)::text || E'\t' || pg_database_size(datname) || E'\t' || datname from pg_database where not datistemplate and datname <> 'postgres' order by datname") || { DB_COMPLETE=false; continue; }
+		DB_OK_PORTS="$DB_OK_PORTS $_po"
+		while IFS="$TAB" read -r _jn _sz _raw; do
+			[ -n "$_jn" ] || continue
+			_lo=$(psql_pg "$_sd" "$_po" "$_raw" 'select exists(select 1 from pg_largeobject_metadata)') || _lo=f
+			[ "$_lo" = t ] && _lo=true || _lo=false
+			DBS="$DBS${DBS:+,}{\"name\":$_jn,\"port\":$_po,\"bytes\":$_sz,\"large_objects\":$_lo}"
+		done <<EOT
+$_names
+EOT
+	done <<EOT
+$CLUSTERS
+EOT
+	# 読めないクラスタがあれば完全ではない
+	printf '%s\n' "$CLUSTERS" | cut -f5 | grep -qx 0 && DB_COMPLETE=false
+	return 0
+}
+
+main() {
+	[ "$(uname -s)" = Linux ] || exit 77
+	cd / || exit 1
+	CLUSTERS=$(discover)
+	RAW=$(raw_of_all "$CLUSTERS")
+	printf '{"format":"sitate.source-survey/v1","scope":"%s",' "$SITATE_SCOPE"
+	if [ "$SITATE_SCOPE" = db_only ]; then
+		DB_OK_PORTS=
+		printf '"mounts":[],"dirs":[],'
+		emit_clusters
+		printf '"databases":[],"databases_complete":true,"prereq_missing":[]}\n'
+		return 0
+	fi
+	MOUNTS=$(mounts_list)
+	collect_dbs
+	emit_mounts
+	emit_dirs
+	emit_clusters
+	printf '"databases":[%s],"databases_complete":%s,"prereq_missing":[%s]}\n' "$DBS" "$DB_COMPLETE" "$PREREQ"
+}
+main

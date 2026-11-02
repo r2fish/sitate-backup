@@ -1,4 +1,319 @@
 #!/bin/sh
-# 受け口の骨格(U2a が実装する)。
-echo "NOT_IMPLEMENTED: sitate-recv" >&2
-exit 1
+# 元サーバー側の受け口(sitate-recv。POSIX sh。GNU findutils・GNU tar・coreutils を前提とする)。
+# 強制コマンド(authorized_keys の command=)として動き、SSH_ORIGINAL_COMMAND の先頭語で操作を選ぶ。
+# eval を使わない。元サーバーのどこにも書かない(一時ファイルは /tmp に置き、終わる前に消す)。
+#
+# 核は下の BEGIN-EMBEDDED から END-EMBEDDED までの 3 行を、単一引用符の文字列(' は '\'' にする)で置き換えて埋め込む。
+#   SITATE_VERSION        受け口を生成した核の版([0-9A-Za-z.+-]{1,64})
+#   SITATE_AUTH_LINE      source-setup が authorized_keys に置く行(selftest の match の照合に使う)
+#   SITATE_TARGETS        許可リスト。1 対象 1 行(改行区切り)、欄は TAB 区切りで空の欄を置かない:
+#                           ファイル  : <id> TAB files TAB <根のパス> TAB <根のパスの JSON 文字列(引用符つき)>
+#                           PostgreSQL: <id> TAB postgresql TAB <DB 名> TAB <ソケットのディレクトリ> TAB <ポート> TAB <DB 名の JSON 文字列> TAB <ソケットのディレクトリの JSON 文字列> [TAB <port 指定あり: 1|0>]
+#   SITATE_AUTHKEYS_FILE  sitate-ro の authorized_keys の場所(selftest が読む)
+# BEGIN-EMBEDDED
+SITATE_VERSION='0.0.0-unset'
+SITATE_AUTH_LINE=''
+SITATE_TARGETS=''
+SITATE_AUTHKEYS_FILE='/var/lib/sitate-ro/.ssh/authorized_keys'
+# END-EMBEDDED
+
+PATH=/usr/bin:/bin
+LC_ALL=C
+export PATH LC_ALL
+for _v in $(env | sed -n 's/^\(PG[A-Za-z0-9_]*\)=.*/\1/p'); do unset "$_v"; done
+set -f
+umask 077
+TAB=$(printf '\t')
+SEP=$(printf '\001')
+ROLE=sitate-ro
+RB_INPUT_MAX=268435456 # read-batch の標準入力の上限(256 MiB)
+
+deny() { exit 126; }
+
+# --- 引数(空白で語に分けるだけ。評価しない) ---
+set -- ${SSH_ORIGINAL_COMMAND-}
+op=${1-}
+case $op in
+selftest | survey) [ $# -eq 1 ] || deny ;;
+list | read-batch | dump-pg | dump-pg-globals | dump-my)
+	[ $# -eq 2 ] || deny
+	case $2 in t[1-9] | t[1-9][0-9] | t[1-9][0-9][0-9] | t[1-9][0-9][0-9][0-9]) tid=$2 ;; *) deny ;; esac
+	;;
+*) deny ;;
+esac
+
+# 許可リストの検索。見つければ T_KIND と T_1〜T_6 に欄を置く。
+find_target() {
+	T_KIND=
+	while IFS="$TAB" read -r _id _kind _f1 _f2 _f3 _f4 _f5 _f6 || [ -n "$_id" ]; do
+		[ "$_id" = "$1" ] || continue
+		T_KIND=$_kind T_1=$_f1 T_2=$_f2 T_3=$_f3 T_4=$_f4 T_5=$_f5
+		return 0
+	done <<EOT
+$SITATE_TARGETS
+EOT
+	return 1
+}
+
+tmp=
+cleanup() { [ -z "$tmp" ] || rm -rf "$tmp"; }
+mk_tmp() {
+	tmp=$(mktemp -d /tmp/sitate-recv.XXXXXX) || exit 5
+	trap cleanup EXIT
+	trap 'cleanup; exit 5' HUP INT TERM
+}
+# rc <状態を書くファイル> <コマンド...>: コマンドの終了状態をファイルへ書く(パイプラインの各段の失敗を拾う)
+rc() { _f=$1; shift; "$@"; echo $? >"$_f"; }
+st() { cat "$1" 2>/dev/null || echo 99; }
+
+# JSON 文字列(引用符つき)を標準出力へ。入力は 1 行の値。
+jstr() { printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e "s/$TAB/\\\\t/g" -e '1s/^/"/' -e '$s/$/"/'; }
+
+# --- list ---
+op_list() {
+	root=$T_1
+	if [ ! -d "$root" ]; then
+		case $(stat -- "$root" 2>&1) in *"Permission denied"*) exit 4 ;; esac
+		exit 3
+	fi
+	[ -r "$root" ] && [ -x "$root" ] || exit 4
+	cd "$root" 2>/dev/null || exit 4
+	mk_tmp
+	: >"$tmp/bad"
+	_t='\001'
+	_hdr="%U${_t}%G${_t}%T@${_t}"
+	# 根自身(最初のレコード)。時刻の小数は 9 桁にそろえる(下の sed)。
+	find -P . -maxdepth 0 -printf "d${_t}1${_t}%s${_t}%m${_t}${_hdr}.${_t}\\0" | trim_mtime | tr '\001' '\000' || exit 5
+	rc "$tmp/s1" find -P . -mindepth 1 -xdev \( -type f -o -type d -o -type l \) \
+		\( \( \( -path "*$SEP*" -o -lname "*$SEP*" \) -fprint "$tmp/bad" \) \
+		-o \( -type l -printf "l${_t}1${_t}%s${_t}%m${_t}${_hdr}%P${_t}%l\\0" \) \
+		-o \( -type f -readable -printf "f${_t}1${_t}%s${_t}%m${_t}${_hdr}%P${_t}\\0" \) \
+		-o \( -type f -printf "f${_t}0${_t}%s${_t}%m${_t}${_hdr}%P${_t}\\0" \) \
+		-o \( -type d -readable -executable -printf "d${_t}1${_t}%s${_t}%m${_t}${_hdr}%P${_t}\\0" \) \
+		-o \( -type d -printf "d${_t}0${_t}%s${_t}%m${_t}${_hdr}%P${_t}\\0" -prune \) \) 2>"$tmp/ferr" |
+		rc "$tmp/s2" trim_mtime |
+		rc "$tmp/s3" sort -z -t "$SEP" -k8,8 -T "$tmp" |
+		rc "$tmp/s4" tr '\001' '\000'
+	[ "$(st "$tmp/s2")" = 0 ] && [ "$(st "$tmp/s3")" = 0 ] && [ "$(st "$tmp/s4")" = 0 ] || exit 5
+	[ ! -s "$tmp/bad" ] || exit 5
+	_f=$(st "$tmp/s1")
+	if [ "$_f" != 0 ]; then
+		# 一覧の途中で消えたパスだけなら誤りにしない
+		[ "$_f" = 1 ] && ! grep -qv 'No such file or directory' "$tmp/ferr" || exit 5
+	fi
+	exit 0
+}
+trim_mtime() {
+	sed -z 's/^\(\([^\x01]*\x01\)\{6\}-\{0,1\}[0-9]*\.[0-9]\{9\}\)[0-9]\x01/\1\x01/'
+}
+
+# --- read-batch ---
+op_read_batch() {
+	cd "$T_1" 2>/dev/null || exit 5
+	mk_tmp
+	head -c "$((RB_INPUT_MAX + 1))" >"$tmp/in" || exit 5
+	[ "$(wc -c <"$tmp/in")" -le "$RB_INPUT_MAX" ] || exit 126
+	# 検査: 空のパス・/ で始まる・. と .. と空の要素を含む・重複・NUL で終わらない
+	if [ -s "$tmp/in" ]; then
+		[ "$(tail -c 1 "$tmp/in" | od -An -tx1 | tr -d ' ')" = 00 ] || exit 126
+		[ "$(sed -z -n -e '/^$/p' -e '/\(^\|\/\)\.\{0,2\}\(\/\|$\)/p' "$tmp/in" | wc -c)" -eq 0 ] || exit 126
+		[ "$(sort -z "$tmp/in" | uniq -zd | wc -c)" -eq 0 ] || exit 126
+	fi
+	: >"$tmp/inc"
+	if [ -s "$tmp/in" ]; then
+		find -P . -xdev -type f -readable -printf '%P\0' 2>/dev/null | sort -z -T "$tmp" >"$tmp/cand"
+		sort -z -T "$tmp" "$tmp/in" | comm -z -12 - "$tmp/cand" >"$tmp/inc" || exit 5
+	fi
+	snapshot "$tmp/before"
+	if [ -s "$tmp/inc" ]; then
+		tar --create --format=pax --numeric-owner --no-recursion --hard-dereference --ignore-failed-read \
+			--null --verbatim-files-from -T "$tmp/inc" 2>/dev/null
+		[ $? -lt 2 ] || exit 5
+	else
+		head -c 10240 /dev/zero || exit 5
+	fi
+	snapshot "$tmp/after"
+	printf 'SITATE-CHANGED/1\n'
+	sort -z "$tmp/before" >"$tmp/b.s"
+	sort -z "$tmp/after" >"$tmp/a.s"
+	comm -z -3 "$tmp/b.s" "$tmp/a.s" | sed -z 's/^\t\{0,1\}[^ ]* [^ ]* [^ ]* //' | sort -zu
+	exit 0
+}
+# snapshot <出力>: tar に入れる各ファイルの大きさ・更新時刻・変更時刻(NUL 終端のレコード)
+snapshot() {
+	: >"$1"
+	[ -s "$tmp/inc" ] || return 0
+	xargs -0 -r -a "$tmp/inc" stat --printf='%s %.9Y %.9Z %n\0' -- >"$1" 2>/dev/null
+	return 0
+}
+
+# --- PostgreSQL の道具 ---
+# pg_tool <名前> <主版>: その主版の道具のパスを PG_TOOL へ(--version で確かめる)。
+pg_dirs() { set +f; printf '%s\n' /usr/lib/postgresql/*/bin /usr/pgsql-*/bin /usr/bin; set -f; }
+pg_major_of() { "$1" --version 2>/dev/null | sed -n 's/^[^0-9]*\([0-9][0-9]*\)\.\{0,1\}\([0-9]*\).*/\1/p' | head -n 1; }
+pg_num_of() { "$1" --version 2>/dev/null | sed -n 's/^[^0-9]*\([0-9][0-9]*\)\.\{0,1\}\([0-9]*\).*/\1 \2/p' | head -n 1 | { read -r _a _b; echo $((_a * 10000 + ${_b:-0})); }; }
+find_psql() {
+	PSQL=
+	for _d in $(pg_dirs); do
+		[ -x "$_d/psql" ] && { PSQL=$_d/psql; return 0; }
+	done
+	return 1
+}
+# find_pg_tool <pg_dump|pg_dumpall> <サーバーの主版>
+find_pg_tool() {
+	PG_TOOL=
+	_want=$2
+	for _d in $(pg_dirs); do
+		[ -x "$_d/$1" ] || continue
+		[ "$(pg_major_of "$_d/$1")" = "$_want" ] && { PG_TOOL=$_d/$1; return 0; }
+	done
+	_best=0
+	for _d in $(pg_dirs); do
+		[ -x "$_d/$1" ] || continue
+		_m=$(pg_major_of "$_d/$1")
+		[ -n "$_m" ] && [ "$_m" -gt "$_want" ] && [ "$_m" -gt "$_best" ] && { _best=$_m; PG_TOOL=$_d/$1; }
+	done
+	[ -n "$PG_TOOL" ]
+}
+# conninfo <DB 名>: DB 名を接続文字列の dbname='...' にして、名前の中の = や host= を接続の指定として解釈させない
+conninfo() { printf "dbname='%s'" "$(printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e "s/'/\\\\'/g")"; }
+# psql_q <ソケット> <ポート> <DB> <SQL>: 結果を標準出力へ。標準エラーは PSQL_ERR へ。
+psql_q() {
+	"$PSQL" -X -w -At -h "$1" -p "$2" -U "$ROLE" -d "$(conninfo "$3")" -c "$4" </dev/null 2>"$tmp/psql.err"
+}
+pg_setup() {
+	db=$T_1 sock=$T_2 port=$T_3
+	mk_tmp
+	find_psql || exit 124
+	_v=$(psql_q "$sock" "$port" "$db" 'show server_version_num') || exit 1
+	find_pg_tool "$2" "$((_v / 10000))" || exit 124
+}
+dump_exit() {
+	_s=$1
+	if [ "$_s" -ge 126 ]; then exit 125; fi
+	exit "$_s"
+}
+op_dump_pg() {
+	pg_setup x pg_dump
+	"$PG_TOOL" --format=custom -Z 0 -B -w -h "$sock" -p "$port" -U "$ROLE" -d "$(conninfo "$db")"
+	dump_exit $?
+}
+op_dump_pg_globals() {
+	pg_setup x pg_dumpall
+	"$PG_TOOL" --globals-only --no-role-passwords -w -h "$sock" -p "$port" -U "$ROLE" -l "$(conninfo "$db")"
+	dump_exit $?
+}
+
+# --- selftest ---
+files_target_json() {
+	_state=ok
+	if [ ! -d "$T_1" ]; then
+		_state=not_found
+		case $(stat -- "$T_1" 2>&1) in *"Permission denied"*) _state=unreadable ;; esac
+	elif [ ! -r "$T_1" ] || [ ! -x "$T_1" ]; then
+		_state=unreadable
+	fi
+	printf '{"id":"%s","kind":"files","root":%s,"root_state":"%s"}' "$1" "$T_2" "$_state"
+}
+connect_error_of() {
+	case $1 in
+	*"User does not have CONNECT privilege"*) echo connect_privilege ;;
+	*[Aa]uthentication\ failed* | *"no pg_hba.conf entry"* | *"no password supplied"*) echo auth ;;
+	*"No such file or directory"* | *"Connection refused"* | *"Is the server running locally"*) echo socket ;;
+	*) echo other ;;
+	esac
+}
+pg_target_json() {
+	_id=$1 db=$T_1 sock=$T_2 port=$T_3
+	_pre=$(printf '{"id":"%s","kind":"postgresql","db":%s,"socket_dir":%s,"port":%s' "$_id" "$T_4" "$T_5" "$port")
+	if ! find_psql || ! _v=$(psql_q "$sock" "$port" "$db" 'show server_version_num'); then
+		_e=$(connect_error_of "$(cat "$tmp/psql.err" 2>/dev/null)")
+		[ -n "${PSQL-}" ] || _e=other
+		printf '%s,"connect":false,"connect_error":"%s","server_version_num":null,"pg_dump_version_num":null,"unreadable_tables":null,"large_objects":null}' "$_pre" "$_e"
+		return 0
+	fi
+	_dn=null
+	if find_pg_tool pg_dump "$((_v / 10000))"; then _dn=$(pg_num_of "$PG_TOOL"); fi
+	_ut=$(psql_q "$sock" "$port" "$db" "$UNREADABLE_SQL") || _ut=null
+	_lo=$(psql_q "$sock" "$port" "$db" 'select exists(select 1 from pg_largeobject_metadata)') || _lo=null
+	case $_lo in t) _lo=true ;; f) _lo=false ;; esac
+	printf '%s,"connect":true,"connect_error":null,"server_version_num":%s,"pg_dump_version_num":%s,"unreadable_tables":%s,"large_objects":%s}' "$_pre" "$_v" "$_dn" "$_ut" "$_lo"
+}
+UNREADABLE_SQL="select count(*) from pg_class c join pg_namespace n on n.oid = c.relnamespace
+ where c.relkind in ('r','S') and n.nspname !~ '^pg_' and n.nspname <> 'information_schema'
+ and (not has_schema_privilege(n.oid, 'USAGE')
+  or not (case when c.relkind = 'S' then has_sequence_privilege(c.oid, 'SELECT') else has_table_privilege(c.oid, 'SELECT') end)
+  or (c.relrowsecurity and not (select rolbypassrls from pg_roles where rolname = current_user)))"
+op_selftest() {
+	mk_tmp
+	_hash=$(sha256sum "$0" | cut -d' ' -f1)
+	_lines=0 _match=false
+	if [ -r "$SITATE_AUTHKEYS_FILE" ]; then
+		_lines=$(grep -c -v -e '^[[:space:]]*$' -e '^[[:space:]]*#' "$SITATE_AUTHKEYS_FILE")
+		_eq=$(grep -c -x -F -- "$SITATE_AUTH_LINE" "$SITATE_AUTHKEYS_FILE")
+		[ "$_lines" -gt 0 ] && [ "$_lines" = "$_eq" ] && _match=true
+	fi
+	printf '{"format":"sitate.recv-selftest/v1","version":"%s","receiver_hash":"sha256:%s","authorized_keys":{"lines":%s,"match":%s},"targets":[' \
+		"$SITATE_VERSION" "$_hash" "$_lines" "$_match"
+	_first=1
+	while IFS="$TAB" read -r _tid _kind _f1 _f2 _f3 _f4 _f5 _f6 || [ -n "$_tid" ]; do
+		[ "$_first" = 1 ] || printf ','
+		_first=0
+		T_1=$_f1 T_2=$_f2 T_3=$_f3 T_4=$_f4 T_5=$_f5
+		case $_kind in
+		files) files_target_json "$_tid" ;;
+		postgresql) pg_target_json "$_tid" ;;
+		esac
+	done <<EOT
+$SITATE_TARGETS
+EOT
+	printf ']}\n'
+	exit 0
+}
+
+# --- survey ---
+op_survey() {
+	mk_tmp
+	printf '{"format":"sitate.recv-survey/v1","mounts":['
+	awk '
+	function dec(s,  r, c) { r = ""; while (length(s) > 0) { if (substr(s, 1, 1) == "\\" && substr(s, 2, 3) ~ /^[0-7][0-7][0-7]$/) { r = r sprintf("%c", substr(s, 2, 1) * 64 + substr(s, 3, 1) * 8 + substr(s, 4, 1)); s = substr(s, 5) } else { r = r substr(s, 1, 1); s = substr(s, 2) } } return r }
+	function esc(s) { gsub(/\\/, "\\\\", s); gsub(/"/, "\\\"", s); return s }
+	{ for (i = 1; i <= NF; i++) if ($i == "-") break; if (i > NF) next
+	  printf "%s{\"path\":\"%s\",\"fs_type\":\"%s\"}", (n++ ? "," : ""), esc(dec($5)), esc($(i + 1)) }
+	' /proc/self/mountinfo
+	printf '],"clusters":['
+	_first=1
+	for _p in $(survey_ports); do
+		[ "$_first" = 1 ] || printf ','
+		_first=0
+		printf '{"port":%s,"names":%s}' "$_p" "$(survey_names "$_p")"
+	done
+	printf ']}\n'
+	exit 0
+}
+survey_ports() {
+	for _d in /run/postgresql /var/run/postgresql /tmp; do
+		find "$_d" -maxdepth 1 -type s -name '.s.PGSQL.[0-9]*' -printf '%f\n' 2>/dev/null
+	done | sed -n 's/^\.s\.PGSQL\.\([0-9][0-9]*\)$/\1/p' | sort -un
+}
+survey_names() {
+	find_psql || { echo null; return 0; }
+	for _d in /run/postgresql /var/run/postgresql /tmp; do
+		[ -S "$_d/.s.PGSQL.$1" ] || continue
+		_n=$(psql_q "$_d" "$1" postgres "select coalesce(jsonb_agg(datname order by datname), '[]'::jsonb) from pg_database where not datistemplate and datname <> 'postgres'") && [ -n "$_n" ] && { echo "$_n"; return 0; }
+	done
+	echo null
+}
+
+case $op in
+selftest) op_selftest ;;
+survey) op_survey ;;
+esac
+find_target "$tid" || deny
+case $op:$T_KIND in
+list:files) op_list ;;
+read-batch:files) op_read_batch ;;
+dump-pg:postgresql) op_dump_pg ;;
+dump-pg-globals:postgresql) op_dump_pg_globals ;;
+*) deny ;;
+esac
