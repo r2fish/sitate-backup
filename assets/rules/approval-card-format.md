@@ -27,7 +27,7 @@
 {
   "sections": ["heading", "target", "change", "reversible", "cost", "timing", "op_specific", "target_name", "ai_explanation"],
   "ops": {
-    "storage-init": {"target_fields": ["bucket"], "fields": ["key_ref", "reissue", "revoke_key"]},
+    "storage-init": {"target_fields": ["bucket"], "fields": ["key_ref", "reissue", "revoke_key_ids"]},
     "read-key-issue": {"target_fields": ["bucket"], "fields": []},
     "restore-change": {"target_fields": ["host_key_fp"], "fields": ["before", "after", "needs_secret"]},
     "restore-elsewhere": {"target_fields": ["backup", "to", "host_key_fp"], "fields": ["read_bytes"]},
@@ -44,9 +44,9 @@
     "restore-test-reduce": {"target_fields": [], "fields": ["from", "to"]},
     "restore-test-increase": {"target_fields": [], "fields": ["from", "to"]},
     "storage-read-extra": {"target_fields": ["backup"], "fields": ["read_bytes", "month_read_bytes", "reserved_bytes", "planned_bytes"]},
-    "def-change": {"target_fields": [], "fields": ["diff", "estimate_after_jpy", "cost_ceiling_yen", "over_ceiling"]},
-    "def-change-unlisted": {"target_fields": [], "fields": ["diff", "estimate_after_jpy", "cost_ceiling_yen", "over_ceiling"]},
-    "checks-weaken": {"target_fields": [], "fields": ["diff", "estimate_after_jpy", "cost_ceiling_yen", "over_ceiling"]},
+    "def-change": {"target_fields": [], "fields": ["diff", "def_hash_after", "estimate_after_jpy", "cost_ceiling_yen", "over_ceiling"]},
+    "def-change-unlisted": {"target_fields": [], "fields": ["diff", "def_hash_after", "estimate_after_jpy", "cost_ceiling_yen", "over_ceiling"]},
+    "checks-weaken": {"target_fields": [], "fields": ["diff", "def_hash_after", "estimate_after_jpy", "cost_ceiling_yen", "over_ceiling"]},
     "hold-release": {"target_fields": [], "fields": ["causes", "since", "days_since_last_ok"]},
     "adapter-add": {"target_fields": ["kind", "name"], "fields": ["version", "sha256", "signature_ok", "replaces"]},
     "seal": {"target_fields": [], "fields": ["definition", "host_keys", "approval_key_fp", "weaker_items", "definition_from"]},

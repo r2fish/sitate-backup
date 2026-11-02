@@ -111,6 +111,24 @@
    "secret_refs": "string"
   }
  },
+ "card.backup.at": {
+  "args": {}
+ },
+ "card.backup.health": {
+  "args": {}
+ },
+ "card.backup.restore_verified": {
+  "args": {}
+ },
+ "card.backup.stored_at": {
+  "args": {}
+ },
+ "card.backup.stored_at_mismatch": {
+  "args": {}
+ },
+ "card.backup.targets_ok": {
+  "args": {}
+ },
  "card.confirm_word.label": {
   "args": {
    "recipient": "string"
@@ -139,6 +157,243 @@
   }
  },
  "card.delay.none": {
+  "args": {}
+ },
+ "card.field.adapter-add.kind": {
+  "args": {}
+ },
+ "card.field.adapter-add.name": {
+  "args": {}
+ },
+ "card.field.adapter-add.replaces": {
+  "args": {}
+ },
+ "card.field.adapter-add.sha256": {
+  "args": {}
+ },
+ "card.field.adapter-add.signature_ok": {
+  "args": {}
+ },
+ "card.field.adapter-add.version": {
+  "args": {}
+ },
+ "card.field.approval-key-change.key_fp_after": {
+  "args": {}
+ },
+ "card.field.approval-key-change.key_fp_before": {
+  "args": {}
+ },
+ "card.field.approval-key-change.key_type": {
+  "args": {}
+ },
+ "card.field.checks-weaken.cost_ceiling_yen": {
+  "args": {}
+ },
+ "card.field.checks-weaken.def_hash_after": {
+  "args": {}
+ },
+ "card.field.checks-weaken.diff": {
+  "args": {}
+ },
+ "card.field.checks-weaken.estimate_after_jpy": {
+  "args": {}
+ },
+ "card.field.checks-weaken.over_ceiling": {
+  "args": {}
+ },
+ "card.field.def-change-unlisted.cost_ceiling_yen": {
+  "args": {}
+ },
+ "card.field.def-change-unlisted.def_hash_after": {
+  "args": {}
+ },
+ "card.field.def-change-unlisted.diff": {
+  "args": {}
+ },
+ "card.field.def-change-unlisted.estimate_after_jpy": {
+  "args": {}
+ },
+ "card.field.def-change-unlisted.over_ceiling": {
+  "args": {}
+ },
+ "card.field.def-change.cost_ceiling_yen": {
+  "args": {}
+ },
+ "card.field.def-change.def_hash_after": {
+  "args": {}
+ },
+ "card.field.def-change.diff": {
+  "args": {}
+ },
+ "card.field.def-change.estimate_after_jpy": {
+  "args": {}
+ },
+ "card.field.def-change.over_ceiling": {
+  "args": {}
+ },
+ "card.field.delay-change.after": {
+  "args": {}
+ },
+ "card.field.delay-change.applies_to": {
+  "args": {}
+ },
+ "card.field.delay-change.before": {
+  "args": {}
+ },
+ "card.field.hold-release.causes": {
+  "args": {}
+ },
+ "card.field.hold-release.days_since_last_ok": {
+  "args": {}
+ },
+ "card.field.hold-release.since": {
+  "args": {}
+ },
+ "card.field.key-rotate-waive.adopted_at": {
+  "args": {}
+ },
+ "card.field.key-rotate-waive.cause": {
+  "args": {}
+ },
+ "card.field.key-rotate.keyring_version": {
+  "args": {}
+ },
+ "card.field.key-rotate.over_ceiling": {
+  "args": {}
+ },
+ "card.field.notify-add.after": {
+  "args": {}
+ },
+ "card.field.notify-add.before": {
+  "args": {}
+ },
+ "card.field.notify-change.after": {
+  "args": {}
+ },
+ "card.field.notify-change.before": {
+  "args": {}
+ },
+ "card.field.phrase-reissue.keyring_version": {
+  "args": {}
+ },
+ "card.field.read-key-issue.bucket": {
+  "args": {}
+ },
+ "card.field.restore-change.after": {
+  "args": {}
+ },
+ "card.field.restore-change.before": {
+  "args": {}
+ },
+ "card.field.restore-change.host_key_fp": {
+  "args": {}
+ },
+ "card.field.restore-change.needs_secret": {
+  "args": {}
+ },
+ "card.field.restore-dest-release.allow_from": {
+  "args": {}
+ },
+ "card.field.restore-dest-release.authorized_key_fp": {
+  "args": {}
+ },
+ "card.field.restore-dest-release.backup": {
+  "args": {}
+ },
+ "card.field.restore-dest-release.restore_change": {
+  "args": {}
+ },
+ "card.field.restore-dest-release.session_id": {
+  "args": {}
+ },
+ "card.field.restore-elsewhere.backup": {
+  "args": {}
+ },
+ "card.field.restore-elsewhere.host_key_fp": {
+  "args": {}
+ },
+ "card.field.restore-elsewhere.read_bytes": {
+  "args": {}
+ },
+ "card.field.restore-elsewhere.to": {
+  "args": {}
+ },
+ "card.field.restore-session-extend.backup": {
+  "args": {}
+ },
+ "card.field.restore-session-extend.expires_at_after": {
+  "args": {}
+ },
+ "card.field.restore-session-extend.expires_at_before": {
+  "args": {}
+ },
+ "card.field.restore-session-extend.session_id": {
+  "args": {}
+ },
+ "card.field.restore-test-increase.from": {
+  "args": {}
+ },
+ "card.field.restore-test-increase.to": {
+  "args": {}
+ },
+ "card.field.restore-test-reduce.from": {
+  "args": {}
+ },
+ "card.field.restore-test-reduce.to": {
+  "args": {}
+ },
+ "card.field.seal.approval_key_fp": {
+  "args": {}
+ },
+ "card.field.seal.definition": {
+  "args": {}
+ },
+ "card.field.seal.definition_from": {
+  "args": {}
+ },
+ "card.field.seal.host_keys": {
+  "args": {}
+ },
+ "card.field.seal.weaker_items": {
+  "args": {}
+ },
+ "card.field.source-change.after": {
+  "args": {}
+ },
+ "card.field.source-change.before": {
+  "args": {}
+ },
+ "card.field.source-change.host_key_fp": {
+  "args": {}
+ },
+ "card.field.source-change.needs_secret": {
+  "args": {}
+ },
+ "card.field.storage-init.bucket": {
+  "args": {}
+ },
+ "card.field.storage-init.key_ref": {
+  "args": {}
+ },
+ "card.field.storage-init.reissue": {
+  "args": {}
+ },
+ "card.field.storage-init.revoke_key_ids": {
+  "args": {}
+ },
+ "card.field.storage-read-extra.backup": {
+  "args": {}
+ },
+ "card.field.storage-read-extra.month_read_bytes": {
+  "args": {}
+ },
+ "card.field.storage-read-extra.planned_bytes": {
+  "args": {}
+ },
+ "card.field.storage-read-extra.read_bytes": {
+  "args": {}
+ },
+ "card.field.storage-read-extra.reserved_bytes": {
   "args": {}
  },
  "card.host_key_fp.verify_note": {
@@ -269,6 +524,25 @@
  },
  "card.unknown.update_prompt": {
   "args": {}
+ },
+ "card.value.date": {
+  "args": {
+   "at": "date"
+  }
+ },
+ "card.value.false": {
+  "args": {}
+ },
+ "card.value.none": {
+  "args": {}
+ },
+ "card.value.true": {
+  "args": {}
+ },
+ "card.value.yen": {
+  "args": {
+   "amount": "number"
+  }
  },
  "chat.manual.unanswerable": {
   "args": {}

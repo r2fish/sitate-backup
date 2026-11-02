@@ -117,3 +117,83 @@ test("未知の op・未知の欄・ハッシュの不一致は承認を無効�
   assert.equal(buildCard(tampered, { t }).disabledReason, "hash_mismatch");
   assert.equal(buildCard(sealRecord(), { t }).canonicalHash, sealRecord().canonical_hash);
 });
+
+// --- 欄の見出し(card.field.<op>.<欄名>)と値の書式 ---
+const { CARD_FIELDS } = await import("../../src/main/approval-card-fields.ts");
+const catalogs = (["ja", "en"] as const).map((l) => JSON.parse(readFileSync(new URL(`../../src/i18n/${l}/catalog.json`, import.meta.url), "utf8")) as Record<string, string>);
+
+function planFor(op: string): Record<string, unknown> {
+  const spec = CARD_FIELDS[op]!;
+  const plan: Record<string, unknown> = { reversible: true, errors: [] };
+  for (const f of [...spec.target, ...spec.fields]) plan[f] = f === "diff" ? [{ pointer: "/schedule/time", before: "01:00", after: "02:00" }] : f === "backup" ? { at: "2026-11-03T01:00:00Z", health: "ok", stored_at_mismatch: true } : "VALUE-" + f;
+  return plan;
+}
+function recFor(op: string, plan: Record<string, unknown>): Record<string, unknown> {
+  const rec: Record<string, unknown> = { change_id: "c-20261103-0009", op, args: {}, target: null, plan, delay_hours: 0, expires_at: "2026-11-10T01:00:00Z" };
+  rec.canonical_hash = canonicalHash(rec);
+  return rec;
+}
+
+test("欄の見出し: 規則ファイルの全 op の全欄に、日英のカタログの固定文がある", () => {
+  const rule = readFileSync(new URL("../../../assets/rules/approval-card-format.md", import.meta.url), "utf8");
+  const json = JSON.parse(rule.slice(rule.indexOf("```json") + 7, rule.indexOf("```", rule.indexOf("```json") + 7))) as { ops: Record<string, { target_fields: string[]; fields: string[] }> };
+  assert.deepEqual(Object.keys(json.ops).sort(), Object.keys(CARD_FIELDS).sort());
+  for (const [op, spec] of Object.entries(json.ops)) {
+    assert.deepEqual([...CARD_FIELDS[op]!.target], spec.target_fields, op);
+    assert.deepEqual([...CARD_FIELDS[op]!.fields], spec.fields, op);
+    for (const f of [...spec.target_fields, ...spec.fields]) {
+      const key = `card.field.${op}.${f}`;
+      assert.ok(Object.hasOwn(keys, key), key);
+      for (const cat of catalogs) assert.ok(cat[key] !== undefined && cat[key] !== "" && !cat[key]!.startsWith("[仮]") && !cat[key]!.startsWith("[tmp]") && cat[key] !== f, key);
+    }
+  }
+});
+
+test("欄の見出し: どの op のカードも、生の欄名を行の見出しに出さず、承認は有効のまま", () => {
+  for (const op of Object.keys(CARD_FIELDS)) {
+    const plan = planFor(op);
+    const c = buildCard(recFor(op, plan), { t });
+    assert.equal(c.disabledReason, null, op);
+    const labels = c.sections.flatMap((s) => s.rows.map((r) => r.label));
+    for (const f of Object.keys(plan)) assert.ok(!labels.includes(f), `${op}: 生の欄名 ${f} が見出しに出た`);
+    for (const l of labels) assert.ok(/^card\.|^\/|^[a-z0-9]+ \(/.test(l), `${op}: 見出し ${l}`);
+    if (op !== "attest" && op !== "seal") for (const f of [...CARD_FIELDS[op]!.target, ...CARD_FIELDS[op]!.fields]) {
+      if (op === "source-change" && (f === "before" || f === "after")) continue;
+      if (op === "hold-release" || f !== "diff") assert.ok(labels.includes(`card.field.${op}.${f}`), `${op}.${f} の見出し`);
+    }
+  }
+});
+
+test("欄の見出し: カタログに見出しの無い欄は未知の欄として承認を無効にし、行に出さない", () => {
+  const noKey = (key: string, args?: Record<string, unknown>): string => {
+    if (key === "card.field.delay-change.applies_to") throw new Error("no key");
+    return t(key, args);
+  };
+  const c = buildCard(recFor("delay-change", { before: 24, after: 48, applies_to: "later", reversible: true, errors: [] }), { t: noKey });
+  assert.equal(c.approveEnabled, false);
+  assert.equal(c.disabledReason, "unknown_field");
+  assert.ok(!allText(c).includes("applies_to"));
+});
+
+test("値の書式: 日付は現地時刻の日時、大きさは単位付き、金額は円、真偽値は固定文、null は固定文", () => {
+  const plan = { reversible: true, errors: [], read_bytes: 2_500_000_000, month_read_bytes: 1500, reserved_bytes: 0, planned_bytes: 12_000, backup: "g1", host_key_fp: "SHA256:abc", to: "ssh://h", };
+  const c = buildCard(recFor("restore-elsewhere", plan), { t });
+  const rows = c.sections.flatMap((s) => s.rows);
+  assert.ok(rows.some((r) => r.label === "card.field.restore-elsewhere.read_bytes" && r.value === "2.5 GB"));
+  const d = buildCard(recFor("def-change", { reversible: true, errors: [], diff: [], def_hash_after: "sha256:x", estimate_after_jpy: 1234, cost_ceiling_yen: 3000, over_ceiling: null }), { t });
+  const dr = d.sections.flatMap((s) => s.rows);
+  assert.ok(dr.some((r) => r.label === "card.field.def-change.estimate_after_jpy" && r.value === 'card.value.yen{"amount":1234}'));
+  assert.ok(dr.some((r) => r.label === "card.field.def-change.over_ceiling" && r.value === "card.value.none"));
+  const h = buildCard(recFor("hold-release", { reversible: true, errors: [], causes: ["a"], since: "2026-11-01T00:00:00Z", days_since_last_ok: 3 }), { t });
+  const s7 = h.sections.find((s) => s.no === 7)!;
+  assert.ok(s7.rows.some((r) => r.label === "card.field.hold-release.since" && r.value === 'card.value.date{"at":"2026-11-01T00:00:00.000Z"}'));
+  assert.equal(h.sections.find((s) => s.no === 3)!.rows.length, 0, "停止の原因は区画 7 だけ");
+  const k = buildCard(recFor("restore-change", { reversible: true, errors: [], host_key_fp: "SHA256:abc", before: { a: 1 }, after: { a: 2 }, needs_secret: true }), { t });
+  assert.ok(k.sections.flatMap((s) => s.rows).some((r) => r.label === "card.field.restore-change.needs_secret" && r.value === "card.value.true"));
+});
+
+test("世代(backup)は区画 2 に at・stored_at・health などを描き、食い違いに印を付ける", () => {
+  const c = buildCard(recFor("storage-read-extra", { reversible: true, errors: [], backup: { at: "2026-11-03T01:00:00Z", health: "ok", targets_ok: true, restore_verified: false, stored_at_mismatch: true }, read_bytes: 1 }), { t });
+  const labels = c.sections.find((s) => s.no === 2)!.rows.map((r) => r.label);
+  for (const want of ["card.backup.at", "card.backup.health", "card.backup.targets_ok", "card.backup.restore_verified", "card.backup.stored_at_mismatch"]) assert.ok(labels.includes(want), want);
+});
