@@ -1,0 +1,32 @@
+{
+ "contract": "sitate.acquire/v1",
+ "status": "partial",
+ "stats": {
+  "files": 1,
+  "bytes": 2,
+  "errors": 1,
+  "errors_omitted": 0,
+  "warnings_omitted": 0,
+  "changed_during_read": 1
+ },
+ "errors": [
+  {
+   "code": "PERMISSION",
+   "path_b64": "YS9i"
+  },
+  {
+   "code": "EXIT_STATUS",
+   "item_ref": "d:t3:globals"
+  },
+  {
+   "code": "NOT_FOUND",
+   "item_ref": null
+  }
+ ],
+ "warnings": [
+  {
+   "code": "CHANGED_DURING_READ",
+   "path_b64": "YQ=="
+  }
+ ]
+}

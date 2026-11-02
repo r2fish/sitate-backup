@@ -1,0 +1,11 @@
+{
+ "contract": "sitate.acquire/v1",
+ "target": {
+  "id": "t1",
+  "kind": "files",
+  "spec": {
+   "path": "/srv/app/data"
+  }
+ },
+ "previous_index": "/run/sitate/work/t1.prev.idx"
+}

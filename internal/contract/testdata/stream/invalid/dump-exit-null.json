@@ -1,0 +1,32 @@
+{
+ "description": "dump の item_end の exit_status が null",
+ "frames": [
+  {
+   "h": {
+    "type": "dump",
+    "format": "globals"
+   }
+  },
+  {
+   "h": {
+    "type": "item_end",
+    "bytes": 0,
+    "hash": "blake3:af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+    "status": "ok",
+    "exit_status": null
+   }
+  },
+  {
+   "h": {
+    "type": "end",
+    "bytes": 0,
+    "hash": "blake3:f4428329ca3ef6c38de8365fa1c0f68cc6f70992c5af7221bbd42d9860859879",
+    "exit_status": 0
+   }
+  }
+ ],
+ "error": {
+  "kind": "contract",
+  "reason": "item"
+ }
+}

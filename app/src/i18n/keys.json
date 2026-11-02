@@ -1,0 +1,1043 @@
+{
+ "app.agent.exited": {
+  "args": {}
+ },
+ "app.agent.output_truncated": {
+  "args": {}
+ },
+ "app.agent.turn_limit": {
+  "args": {}
+ },
+ "app.bootstrap.already_done": {
+  "args": {}
+ },
+ "app.bootstrap.not_done": {
+  "args": {}
+ },
+ "app.bootstrap.package_failed": {
+  "args": {}
+ },
+ "app.bootstrap.platform_unsupported": {
+  "args": {}
+ },
+ "app.bootstrap.privilege_required": {
+  "args": {}
+ },
+ "app.bootstrap.restore_order": {
+  "args": {}
+ },
+ "app.bootstrap.signature_invalid": {
+  "args": {}
+ },
+ "app.envelope.exit_unknown": {
+  "args": {}
+ },
+ "app.envelope.invalid": {
+  "args": {}
+ },
+ "app.envelope.secret_mismatch": {
+  "args": {}
+ },
+ "app.envelope.too_many_records": {
+  "args": {}
+ },
+ "app.llm.billing": {
+  "args": {}
+ },
+ "app.llm.key_invalid": {
+  "args": {}
+ },
+ "app.llm.model_not_found": {
+  "args": {}
+ },
+ "app.llm.no_response": {
+  "args": {}
+ },
+ "app.llm.provider_error": {
+  "args": {}
+ },
+ "app.llm.rate_limited": {
+  "args": {}
+ },
+ "app.ssh.auth_denied": {
+  "args": {}
+ },
+ "app.ssh.disconnected": {
+  "args": {}
+ },
+ "app.ssh.hostkey_mismatch": {
+  "args": {}
+ },
+ "app.ssh.unreachable": {
+  "args": {}
+ },
+ "app.tool.arg_invalid": {
+  "args": {}
+ },
+ "app.tool.denied": {
+  "args": {}
+ },
+ "app.tool.human_cancelled": {
+  "args": {}
+ },
+ "app.tool.path_ref_unknown": {
+  "args": {}
+ },
+ "app.tool.quote_rejected": {
+  "args": {}
+ },
+ "card.actions.approve": {
+  "args": {}
+ },
+ "card.actions.cancel": {
+  "args": {}
+ },
+ "card.actions.close": {
+  "args": {}
+ },
+ "card.adopt.weaker_heading": {
+  "args": {}
+ },
+ "card.ai_explanation.heading": {
+  "args": {}
+ },
+ "card.attest.r3.body": {
+  "args": {
+   "old_key_ids": "string"
+  }
+ },
+ "card.attest.r7.body": {
+  "args": {
+   "secret_refs": "string"
+  }
+ },
+ "card.confirm_word.label": {
+  "args": {
+   "recipient": "string"
+  }
+ },
+ "card.confirm_word.note": {
+  "args": {}
+ },
+ "card.conflicts.note": {
+  "args": {}
+ },
+ "card.cost.after": {
+  "args": {
+   "ceiling_jpy": "number",
+   "monthly_jpy": "number"
+  }
+ },
+ "card.cost.delta": {
+  "args": {
+   "delta_jpy": "number"
+  }
+ },
+ "card.delay.hours": {
+  "args": {
+   "hours": "number"
+  }
+ },
+ "card.delay.none": {
+  "args": {}
+ },
+ "card.host_key_fp.verify_note": {
+  "args": {}
+ },
+ "card.mark.irreversible": {
+  "args": {}
+ },
+ "card.op.adapter-add.title": {
+  "args": {}
+ },
+ "card.op.approval-key-change.title": {
+  "args": {}
+ },
+ "card.op.attest.title": {
+  "args": {}
+ },
+ "card.op.checks-weaken.title": {
+  "args": {}
+ },
+ "card.op.def-change-unlisted.title": {
+  "args": {}
+ },
+ "card.op.def-change.title": {
+  "args": {}
+ },
+ "card.op.delay-change.title": {
+  "args": {}
+ },
+ "card.op.hold-release.title": {
+  "args": {}
+ },
+ "card.op.key-rotate-waive.title": {
+  "args": {}
+ },
+ "card.op.key-rotate.title": {
+  "args": {}
+ },
+ "card.op.notify-add.title": {
+  "args": {}
+ },
+ "card.op.notify-change.title": {
+  "args": {}
+ },
+ "card.op.phrase-reissue.title": {
+  "args": {}
+ },
+ "card.op.read-key-issue.title": {
+  "args": {}
+ },
+ "card.op.restore-change.title": {
+  "args": {}
+ },
+ "card.op.restore-dest-release.title": {
+  "args": {}
+ },
+ "card.op.restore-elsewhere.title": {
+  "args": {}
+ },
+ "card.op.restore-session-extend.title": {
+  "args": {}
+ },
+ "card.op.restore-test-increase.title": {
+  "args": {}
+ },
+ "card.op.restore-test-reduce.title": {
+  "args": {}
+ },
+ "card.op.seal.title": {
+  "args": {}
+ },
+ "card.op.source-change.title": {
+  "args": {}
+ },
+ "card.op.storage-init.title": {
+  "args": {}
+ },
+ "card.op.storage-read-extra.title": {
+  "args": {}
+ },
+ "card.proof.machine_heading": {
+  "args": {}
+ },
+ "card.section.change": {
+  "args": {}
+ },
+ "card.section.cost": {
+  "args": {}
+ },
+ "card.section.op_specific": {
+  "args": {}
+ },
+ "card.section.reversible": {
+  "args": {}
+ },
+ "card.section.target": {
+  "args": {}
+ },
+ "card.section.timing": {
+  "args": {}
+ },
+ "card.source.excluded_heading": {
+  "args": {}
+ },
+ "card.source.size_note": {
+  "args": {}
+ },
+ "card.source.targets_heading": {
+  "args": {}
+ },
+ "card.source.undeclared_candidates": {
+  "args": {
+   "count": "number"
+  }
+ },
+ "card.timing.after_delay": {
+  "args": {
+   "hours": "number"
+  }
+ },
+ "card.timing.expires": {
+  "args": {
+   "expires_at": "date"
+  }
+ },
+ "card.timing.immediate": {
+  "args": {}
+ },
+ "card.unknown.update_prompt": {
+  "args": {}
+ },
+ "chat.manual.unanswerable": {
+  "args": {}
+ },
+ "chat.quote.rejected_guide": {
+  "args": {}
+ },
+ "chat.secret.detected.keychain_value": {
+  "args": {}
+ },
+ "chat.secret.detected.llm_api_key": {
+  "args": {}
+ },
+ "chat.secret.detected.phrase": {
+  "args": {}
+ },
+ "chat.secret.detected.private_key": {
+  "args": {}
+ },
+ "chat.secret.detected.storage_key": {
+  "args": {}
+ },
+ "chat.secret.detected.webhook_url": {
+  "args": {}
+ },
+ "chat.secret.input_box_guide": {
+  "args": {}
+ },
+ "chat.secret.revoke_reissue.admin_key": {
+  "args": {}
+ },
+ "chat.secret.revoke_reissue.llm_api_key": {
+  "args": {}
+ },
+ "chat.secret.revoke_reissue.notify_credential": {
+  "args": {}
+ },
+ "chat.secret.revoke_reissue.phrase": {
+  "args": {}
+ },
+ "chat.secret.revoke_reissue.storage_key": {
+  "args": {}
+ },
+ "chat.tool.display.call_format": {
+  "args": {
+   "result": "string",
+   "tool_name": "string"
+  }
+ },
+ "chat.tool.display.name.sitate_apply": {
+  "args": {}
+ },
+ "chat.tool.display.name.sitate_attest": {
+  "args": {}
+ },
+ "chat.tool.display.name.sitate_backup": {
+  "args": {}
+ },
+ "chat.tool.display.name.sitate_bootstrap": {
+  "args": {}
+ },
+ "chat.tool.display.name.sitate_bootstrap_restore": {
+  "args": {}
+ },
+ "chat.tool.display.name.sitate_bucket_check": {
+  "args": {}
+ },
+ "chat.tool.display.name.sitate_cancel": {
+  "args": {}
+ },
+ "chat.tool.display.name.sitate_def_show": {
+  "args": {}
+ },
+ "chat.tool.display.name.sitate_def_validate": {
+  "args": {}
+ },
+ "chat.tool.display.name.sitate_doctor": {
+  "args": {}
+ },
+ "chat.tool.display.name.sitate_estimate": {
+  "args": {}
+ },
+ "chat.tool.display.name.sitate_extend": {
+  "args": {}
+ },
+ "chat.tool.display.name.sitate_hold_set": {
+  "args": {}
+ },
+ "chat.tool.display.name.sitate_init": {
+  "args": {}
+ },
+ "chat.tool.display.name.sitate_init_storage": {
+  "args": {}
+ },
+ "chat.tool.display.name.sitate_kit": {
+  "args": {}
+ },
+ "chat.tool.display.name.sitate_list": {
+  "args": {}
+ },
+ "chat.tool.display.name.sitate_notify_set": {
+  "args": {}
+ },
+ "chat.tool.display.name.sitate_notify_test": {
+  "args": {}
+ },
+ "chat.tool.display.name.sitate_pending": {
+  "args": {}
+ },
+ "chat.tool.display.name.sitate_propose": {
+  "args": {}
+ },
+ "chat.tool.display.name.sitate_prune": {
+  "args": {}
+ },
+ "chat.tool.display.name.sitate_report": {
+  "args": {}
+ },
+ "chat.tool.display.name.sitate_restore": {
+  "args": {}
+ },
+ "chat.tool.display.name.sitate_restore_dest_check": {
+  "args": {}
+ },
+ "chat.tool.display.name.sitate_restore_dest_enroll": {
+  "args": {}
+ },
+ "chat.tool.display.name.sitate_restore_test": {
+  "args": {}
+ },
+ "chat.tool.display.name.sitate_source_check": {
+  "args": {}
+ },
+ "chat.tool.display.name.sitate_source_enroll": {
+  "args": {}
+ },
+ "chat.tool.display.name.sitate_source_survey": {
+  "args": {}
+ },
+ "chat.tool.display.name.sitate_status": {
+  "args": {}
+ },
+ "chat.tool.display.name.sitate_verify": {
+  "args": {}
+ },
+ "chat.tool.display.name.sitate_version": {
+  "args": {}
+ },
+ "chat.tool.display.result_ok": {
+  "args": {}
+ },
+ "chat.tool.display.step_passed": {
+  "args": {
+   "step": "string"
+  }
+ },
+ "core.code.ADAPTER_ERROR": {
+  "args": {}
+ },
+ "core.code.ADAPTER_TIMEOUT": {
+  "args": {}
+ },
+ "core.code.ALL_TARGETS_FAILED": {
+  "args": {}
+ },
+ "core.code.ALREADY_INITIALIZED": {
+  "args": {}
+ },
+ "core.code.ALREADY_SEALED": {
+  "args": {}
+ },
+ "core.code.ANCHOR_INVALID": {
+  "args": {}
+ },
+ "core.code.APPROVAL_REQUIRED": {
+  "args": {}
+ },
+ "core.code.ARG_INVALID": {
+  "args": {}
+ },
+ "core.code.BUCKET_MISMATCH": {
+  "args": {}
+ },
+ "core.code.BUCKET_NOT_OWNED": {
+  "args": {}
+ },
+ "core.code.CHANGE_STATE_INVALID": {
+  "args": {}
+ },
+ "core.code.CHECK_ERROR": {
+  "args": {}
+ },
+ "core.code.CHECK_FAILED": {
+  "args": {}
+ },
+ "core.code.CHECK_INHERITED": {
+  "args": {}
+ },
+ "core.code.CHUNK_KEY_MISSING": {
+  "args": {}
+ },
+ "core.code.CONFIG_COPY_MISMATCH": {
+  "args": {}
+ },
+ "core.code.COST_CEILING_EXCEEDED": {
+  "args": {}
+ },
+ "core.code.DECRYPT_FAILED": {
+  "args": {}
+ },
+ "core.code.DEF_CHANGE_MIXED": {
+  "args": {}
+ },
+ "core.code.DEF_COPY_MISMATCH": {
+  "args": {}
+ },
+ "core.code.DEF_DRIFT": {
+  "args": {}
+ },
+ "core.code.DEF_FILE_WRITE_FAILED": {
+  "args": {}
+ },
+ "core.code.DEF_INVALID": {
+  "args": {}
+ },
+ "core.code.DELAY_NOT_ELAPSED": {
+  "args": {}
+ },
+ "core.code.DELETE_MARKER_FOUND": {
+  "args": {}
+ },
+ "core.code.FETCH_PATH_REJECTED": {
+  "args": {}
+ },
+ "core.code.FORMAT_TOO_NEW": {
+  "args": {}
+ },
+ "core.code.FORMAT_TOO_OLD": {
+  "args": {}
+ },
+ "core.code.FORMAT_UPGRADE_BLOCKED": {
+  "args": {}
+ },
+ "core.code.GATE_DENIED": {
+  "args": {}
+ },
+ "core.code.HUMAN_SECRET_REQUIRED": {
+  "args": {}
+ },
+ "core.code.INTERNAL": {
+  "args": {}
+ },
+ "core.code.JOURNAL_CHAIN_BROKEN": {
+  "args": {}
+ },
+ "core.code.KEYRING_MISMATCH": {
+  "args": {}
+ },
+ "core.code.KEY_ALLOWS_UNVERSIONED_DELETE": {
+  "args": {}
+ },
+ "core.code.KEY_LEGAL_HOLD_ALLOWED": {
+  "args": {}
+ },
+ "core.code.KEY_MISSING_PERMISSION": {
+  "args": {}
+ },
+ "core.code.KEY_RECONCILE_UNVERIFIED": {
+  "args": {}
+ },
+ "core.code.KEY_ROTATE_REQUIRED": {
+  "args": {}
+ },
+ "core.code.KEY_TOO_POWERFUL": {
+  "args": {}
+ },
+ "core.code.KIT_OUTDATED": {
+  "args": {}
+ },
+ "core.code.LOCKED": {
+  "args": {}
+ },
+ "core.code.LOCK_UNAVAILABLE": {
+  "args": {}
+ },
+ "core.code.MLOCK_FAILED": {
+  "args": {}
+ },
+ "core.code.NOTIFY_PROOF_MISMATCH": {
+  "args": {}
+ },
+ "core.code.NOTIFY_UNDELIVERED": {
+  "args": {}
+ },
+ "core.code.NOT_IMPLEMENTED": {
+  "args": {}
+ },
+ "core.code.NOT_INITIALIZED": {
+  "args": {}
+ },
+ "core.code.NOT_SEALED": {
+  "args": {}
+ },
+ "core.code.NO_HEALTHY_BACKUP": {
+  "args": {}
+ },
+ "core.code.PAIR_REQUIRED": {
+  "args": {}
+ },
+ "core.code.PENDING_CHAIN_BROKEN": {
+  "args": {}
+ },
+ "core.code.PHRASE_INVALID": {
+  "args": {}
+ },
+ "core.code.PHRASE_UNCONFIRMED": {
+  "args": {}
+ },
+ "core.code.PHRASE_VERIFY_PENDING": {
+  "args": {}
+ },
+ "core.code.PRECONDITION_CHANGED": {
+  "args": {}
+ },
+ "core.code.PRICE_UNKNOWN": {
+  "args": {}
+ },
+ "core.code.RECEIVER_SELFTEST_FAILED": {
+  "args": {}
+ },
+ "core.code.RECEIVER_TARGETS_MISMATCH": {
+  "args": {}
+ },
+ "core.code.REPO_ID_MISMATCH": {
+  "args": {}
+ },
+ "core.code.RESTORE_ENROLL_MISMATCH": {
+  "args": {}
+ },
+ "core.code.RESTORE_HOSTKEY_MISMATCH": {
+  "args": {}
+ },
+ "core.code.RESTORE_HOST_DENIED": {
+  "args": {}
+ },
+ "core.code.RESTORE_ISOLATION_FAILED": {
+  "args": {}
+ },
+ "core.code.RESTORE_MISMATCH": {
+  "args": {}
+ },
+ "core.code.RESTORE_SESSION_OPEN": {
+  "args": {}
+ },
+ "core.code.RETENTION_LONG": {
+  "args": {}
+ },
+ "core.code.ROLLBACK_SUSPECTED": {
+  "args": {}
+ },
+ "core.code.RUN_ABORTED": {
+  "args": {}
+ },
+ "core.code.RUN_INTERRUPTED": {
+  "args": {}
+ },
+ "core.code.SECRET_FD_REQUIRED": {
+  "args": {}
+ },
+ "core.code.SECRET_MISSING": {
+  "args": {}
+ },
+ "core.code.SECRET_REF_IN_USE": {
+  "args": {}
+ },
+ "core.code.SIGNATURE_INVALID": {
+  "args": {}
+ },
+ "core.code.SOURCE_HOSTKEY_MISMATCH": {
+  "args": {}
+ },
+ "core.code.SOURCE_SETUP_FAILED": {
+  "args": {}
+ },
+ "core.code.SOURCE_SURVEY_FAILED": {
+  "args": {}
+ },
+ "core.code.STORAGE_DENIED": {
+  "args": {}
+ },
+ "core.code.STORAGE_SIZE_DRIFT": {
+  "args": {}
+ },
+ "core.code.STORAGE_UNREACHABLE": {
+  "args": {}
+ },
+ "core.code.TEARDOWN_PENDING": {
+  "args": {}
+ },
+ "core.code.TEARDOWN_UNVERIFIED": {
+  "args": {}
+ },
+ "core.code.TIME_SKEW": {
+  "args": {}
+ },
+ "core.code.UNEXPECTED_VERSION": {
+  "args": {}
+ },
+ "core.why.ADAPTER_ERROR": {
+  "args": {}
+ },
+ "core.why.ADAPTER_TIMEOUT": {
+  "args": {}
+ },
+ "core.why.ALL_TARGETS_FAILED": {
+  "args": {}
+ },
+ "core.why.ALREADY_INITIALIZED": {
+  "args": {}
+ },
+ "core.why.ALREADY_SEALED": {
+  "args": {}
+ },
+ "core.why.ANCHOR_INVALID": {
+  "args": {}
+ },
+ "core.why.APPROVAL_REQUIRED": {
+  "args": {}
+ },
+ "core.why.ARG_INVALID": {
+  "args": {}
+ },
+ "core.why.BUCKET_MISMATCH": {
+  "args": {}
+ },
+ "core.why.BUCKET_NOT_OWNED": {
+  "args": {}
+ },
+ "core.why.CHANGE_STATE_INVALID": {
+  "args": {}
+ },
+ "core.why.CHECK_ERROR": {
+  "args": {}
+ },
+ "core.why.CHECK_FAILED": {
+  "args": {}
+ },
+ "core.why.CHECK_INHERITED": {
+  "args": {}
+ },
+ "core.why.CHUNK_KEY_MISSING": {
+  "args": {}
+ },
+ "core.why.CONFIG_COPY_MISMATCH": {
+  "args": {}
+ },
+ "core.why.COST_CEILING_EXCEEDED": {
+  "args": {}
+ },
+ "core.why.DECRYPT_FAILED": {
+  "args": {}
+ },
+ "core.why.DEF_CHANGE_MIXED": {
+  "args": {}
+ },
+ "core.why.DEF_COPY_MISMATCH": {
+  "args": {}
+ },
+ "core.why.DEF_DRIFT": {
+  "args": {}
+ },
+ "core.why.DEF_FILE_WRITE_FAILED": {
+  "args": {}
+ },
+ "core.why.DEF_INVALID": {
+  "args": {}
+ },
+ "core.why.DELAY_NOT_ELAPSED": {
+  "args": {}
+ },
+ "core.why.DELETE_MARKER_FOUND": {
+  "args": {}
+ },
+ "core.why.FETCH_PATH_REJECTED": {
+  "args": {}
+ },
+ "core.why.FORMAT_TOO_NEW": {
+  "args": {}
+ },
+ "core.why.FORMAT_TOO_OLD": {
+  "args": {}
+ },
+ "core.why.FORMAT_UPGRADE_BLOCKED": {
+  "args": {}
+ },
+ "core.why.GATE_DENIED": {
+  "args": {}
+ },
+ "core.why.HUMAN_SECRET_REQUIRED": {
+  "args": {}
+ },
+ "core.why.INTERNAL": {
+  "args": {}
+ },
+ "core.why.JOURNAL_CHAIN_BROKEN": {
+  "args": {}
+ },
+ "core.why.KEYRING_MISMATCH": {
+  "args": {}
+ },
+ "core.why.KEY_ALLOWS_UNVERSIONED_DELETE": {
+  "args": {}
+ },
+ "core.why.KEY_LEGAL_HOLD_ALLOWED": {
+  "args": {}
+ },
+ "core.why.KEY_MISSING_PERMISSION": {
+  "args": {}
+ },
+ "core.why.KEY_RECONCILE_UNVERIFIED": {
+  "args": {}
+ },
+ "core.why.KEY_ROTATE_REQUIRED": {
+  "args": {}
+ },
+ "core.why.KEY_TOO_POWERFUL": {
+  "args": {}
+ },
+ "core.why.KIT_OUTDATED": {
+  "args": {}
+ },
+ "core.why.LOCKED": {
+  "args": {}
+ },
+ "core.why.LOCK_UNAVAILABLE": {
+  "args": {}
+ },
+ "core.why.MLOCK_FAILED": {
+  "args": {}
+ },
+ "core.why.NOTIFY_PROOF_MISMATCH": {
+  "args": {}
+ },
+ "core.why.NOTIFY_UNDELIVERED": {
+  "args": {}
+ },
+ "core.why.NOT_IMPLEMENTED": {
+  "args": {}
+ },
+ "core.why.NOT_INITIALIZED": {
+  "args": {}
+ },
+ "core.why.NOT_SEALED": {
+  "args": {}
+ },
+ "core.why.NO_HEALTHY_BACKUP": {
+  "args": {}
+ },
+ "core.why.PAIR_REQUIRED": {
+  "args": {}
+ },
+ "core.why.PENDING_CHAIN_BROKEN": {
+  "args": {}
+ },
+ "core.why.PHRASE_INVALID": {
+  "args": {}
+ },
+ "core.why.PHRASE_UNCONFIRMED": {
+  "args": {}
+ },
+ "core.why.PHRASE_VERIFY_PENDING": {
+  "args": {}
+ },
+ "core.why.PRECONDITION_CHANGED": {
+  "args": {}
+ },
+ "core.why.PRICE_UNKNOWN": {
+  "args": {}
+ },
+ "core.why.RECEIVER_SELFTEST_FAILED": {
+  "args": {}
+ },
+ "core.why.RECEIVER_TARGETS_MISMATCH": {
+  "args": {}
+ },
+ "core.why.REPO_ID_MISMATCH": {
+  "args": {}
+ },
+ "core.why.RESTORE_ENROLL_MISMATCH": {
+  "args": {}
+ },
+ "core.why.RESTORE_HOSTKEY_MISMATCH": {
+  "args": {}
+ },
+ "core.why.RESTORE_HOST_DENIED": {
+  "args": {}
+ },
+ "core.why.RESTORE_ISOLATION_FAILED": {
+  "args": {}
+ },
+ "core.why.RESTORE_MISMATCH": {
+  "args": {}
+ },
+ "core.why.RESTORE_SESSION_OPEN": {
+  "args": {}
+ },
+ "core.why.RETENTION_LONG": {
+  "args": {}
+ },
+ "core.why.ROLLBACK_SUSPECTED": {
+  "args": {}
+ },
+ "core.why.RUN_ABORTED": {
+  "args": {}
+ },
+ "core.why.RUN_INTERRUPTED": {
+  "args": {}
+ },
+ "core.why.SECRET_FD_REQUIRED": {
+  "args": {}
+ },
+ "core.why.SECRET_MISSING": {
+  "args": {}
+ },
+ "core.why.SECRET_REF_IN_USE": {
+  "args": {}
+ },
+ "core.why.SIGNATURE_INVALID": {
+  "args": {}
+ },
+ "core.why.SOURCE_HOSTKEY_MISMATCH": {
+  "args": {}
+ },
+ "core.why.SOURCE_SETUP_FAILED": {
+  "args": {}
+ },
+ "core.why.SOURCE_SURVEY_FAILED": {
+  "args": {}
+ },
+ "core.why.STORAGE_DENIED": {
+  "args": {}
+ },
+ "core.why.STORAGE_SIZE_DRIFT": {
+  "args": {}
+ },
+ "core.why.STORAGE_UNREACHABLE": {
+  "args": {}
+ },
+ "core.why.TEARDOWN_PENDING": {
+  "args": {}
+ },
+ "core.why.TEARDOWN_UNVERIFIED": {
+  "args": {}
+ },
+ "core.why.TIME_SKEW": {
+  "args": {}
+ },
+ "core.why.UNEXPECTED_VERSION": {
+  "args": {}
+ },
+ "phrase.photo_caution": {
+  "args": {}
+ },
+ "phrase.storage_check": {
+  "args": {}
+ },
+ "status.app_info.heading": {
+  "args": {}
+ },
+ "status.ask_ai.input.hold_active": {
+  "args": {}
+ },
+ "status.ask_ai.input.last_ok_false": {
+  "args": {}
+ },
+ "status.ask_ai.input.silence": {
+  "args": {}
+ },
+ "status.ask_ai.input.uncovered_increase": {
+  "args": {}
+ },
+ "status.ask_ai.input.warning_new": {
+  "args": {}
+ },
+ "status.ask_ai.operation": {
+  "args": {}
+ },
+ "status.dumps.fixed": {
+  "args": {
+   "backup_ref": "string",
+   "load_verified_at": "date",
+   "verified": "string"
+  }
+ },
+ "status.heading.list": {
+  "args": {}
+ },
+ "status.heading.report": {
+  "args": {}
+ },
+ "status.llm.model_missing": {
+  "args": {}
+ },
+ "status.model_in_use": {
+  "args": {
+   "model": "string"
+  }
+ },
+ "status.model_not_first_mark": {
+  "args": {}
+ },
+ "status.row.checks_count_zero": {
+  "args": {}
+ },
+ "status.row.estimate": {
+  "args": {}
+ },
+ "status.row.hold": {
+  "args": {}
+ },
+ "status.row.last_backup": {
+  "args": {}
+ },
+ "status.row.last_restore_test": {
+  "args": {}
+ },
+ "status.row.pending_changes": {
+  "args": {}
+ },
+ "status.row.restore_sessions": {
+  "args": {}
+ },
+ "status.row.uncovered": {
+  "args": {}
+ },
+ "status.send_fields.heading": {
+  "args": {}
+ },
+ "status.send_fields.row.code_next_detail": {
+  "args": {}
+ },
+ "status.send_fields.row.config_value": {
+  "args": {}
+ },
+ "status.send_fields.row.count": {
+  "args": {}
+ },
+ "status.send_fields.row.date": {
+  "args": {}
+ },
+ "status.send_fields.row.identifier": {
+  "args": {}
+ },
+ "status.send_fields.row.size": {
+  "args": {}
+ },
+ "status.send_fields.row.source_path": {
+  "args": {}
+ },
+ "status.send_fields.row.verdict": {
+  "args": {}
+ },
+ "status.stale_mark": {
+  "args": {}
+ },
+ "status.survey.result.heading": {
+  "args": {}
+ },
+ "status.unreachable.fixed": {
+  "args": {}
+ }
+}

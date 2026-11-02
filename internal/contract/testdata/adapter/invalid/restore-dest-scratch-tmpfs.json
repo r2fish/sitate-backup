@@ -1,0 +1,15 @@
+{
+ "contract": "sitate.restore-dest/v1",
+ "session_id": "r-20261103T010203Z-3f9a",
+ "ssh": {
+  "host": "h",
+  "port": 22,
+  "user": "u"
+ },
+ "host_key_fp": "SHA256:abcDEF123",
+ "scratch": {
+  "path": "/x",
+  "method": "tmpfs"
+ },
+ "resources": []
+}

@@ -1,0 +1,11 @@
+{
+ "contract": "sitate.check/v1",
+ "phase": "restore-test",
+ "target_id": "t1",
+ "input": {
+  "kind": "tree",
+  "path": "/run/restore/tree"
+ },
+ "baseline": null,
+ "params": {}
+}

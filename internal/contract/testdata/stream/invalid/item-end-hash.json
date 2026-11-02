@@ -1,0 +1,44 @@
+{
+ "description": "item_end の hash が本体と違う",
+ "frames": [
+  {
+   "h": {
+    "type": "file",
+    "path": "a",
+    "size": 1,
+    "mode": 420,
+    "uid": 1000,
+    "gid": 1000,
+    "mtime_ns": 1760808600123456789
+   }
+  },
+  {
+   "h": {
+    "type": "data",
+    "size": 1
+   },
+   "body": "x"
+  },
+  {
+   "h": {
+    "type": "item_end",
+    "bytes": 1,
+    "hash": "blake3:0000000000000000000000000000000000000000000000000000000000000000",
+    "status": "ok",
+    "exit_status": null
+   }
+  },
+  {
+   "h": {
+    "type": "end",
+    "bytes": 1,
+    "hash": "blake3:f6596b24cdfc621e0c2df25f1191095c13ee4ba7f4db9dc5b08fc0747b6de820",
+    "exit_status": 0
+   }
+  }
+ ],
+ "error": {
+  "kind": "contract",
+  "reason": "item"
+ }
+}

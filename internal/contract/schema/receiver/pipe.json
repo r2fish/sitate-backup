@@ -1,0 +1,75 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://sitate.invalid/schema/receiver/pipe.json",
+ "$defs": {
+  "request": {
+   "type": "object",
+   "required": [
+    "format",
+    "op",
+    "target"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "format": {
+     "const": "sitate.recvpipe/v1"
+    },
+    "op": {
+     "enum": [
+      "list",
+      "read-batch",
+      "dump-pg-globals",
+      "dump-pg",
+      "dump-my"
+     ]
+    },
+    "target": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/target_id"
+    }
+   }
+  },
+  "in": {
+   "type": "object",
+   "required": [
+    "in"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "in": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 1048576
+    }
+   }
+  },
+  "out": {
+   "type": "object",
+   "required": [
+    "out"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "out": {
+     "type": "integer",
+     "minimum": 1,
+     "maximum": 1048576
+    }
+   }
+  },
+  "exit": {
+   "type": "object",
+   "required": [
+    "exit"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "exit": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 255
+    }
+   }
+  }
+ },
+ "$comment": "容器の補助コマンド SITATE_RECV と核の通信路 sitate.recvpipe/v1(spec 3.2.2)。補助コマンド→核: request の 1 行、続いて {in:n}+n バイトの繰り返し(入力の本体。n=0 で入力の終わり)。核→補助コマンド: {out:n}+n バイトの繰り返し(受け口の標準出力)、最後に {exit:s} の 1 行。s は受け口の終了状態(拒否は 126)。exit が無いまま閉じたときは補助コマンドが 255 を返す。n の最大は StreamFragmentMax"
+}

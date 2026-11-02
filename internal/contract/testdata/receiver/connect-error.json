@@ -1,0 +1,115 @@
+{
+ "description": "LC_ALL=C の psql の標準エラーの文と connect_error の値。順に connect_privilege・auth・socket を当て、どれにも当たらなければ other。名前が recorded- で始まる要素は、固定した PostgreSQL 17.11 のイメージ(test/env の PG_IMAGE の digest)で使い捨てのコンテナを起動し、LC_ALL=C の psql(-X -w)の実際の標準エラーを取ったもの(psql の終了状態はどれも 2)。ほかは別の版の文を想定して手で書いたもの。role/database does not exist は other",
+ "vectors": [
+  {
+   "name": "socket-missing",
+   "stderr": "psql: error: connection to server on socket \"/var/run/postgresql/.s.PGSQL.5432\" failed: No such file or directory\n\tIs the server running locally and accepting connections on that socket?",
+   "want": "socket"
+  },
+  {
+   "name": "socket-old-format",
+   "stderr": "psql: could not connect to server: No such file or directory\n\tIs the server running locally and accepting\n\tconnections on Unix domain socket \"/var/run/postgresql/.s.PGSQL.5432\"?",
+   "want": "socket"
+  },
+  {
+   "name": "socket-refused",
+   "stderr": "psql: error: connection to server on socket \"/var/run/postgresql/.s.PGSQL.5432\" failed: Connection refused\n\tIs the server running locally and accepting connections on that socket?",
+   "want": "socket"
+  },
+  {
+   "name": "auth-peer",
+   "stderr": "psql: error: connection to server on socket \"/var/run/postgresql/.s.PGSQL.5432\" failed: FATAL:  peer authentication failed for user \"sitate-ro\"",
+   "want": "auth"
+  },
+  {
+   "name": "auth-peer-capital",
+   "stderr": "psql: error: FATAL:  Peer authentication failed for user \"sitate-ro\"",
+   "want": "auth"
+  },
+  {
+   "name": "auth-password",
+   "stderr": "psql: error: connection to server on socket \"/var/run/postgresql/.s.PGSQL.5432\" failed: FATAL:  password authentication failed for user \"sitate-ro\"",
+   "want": "auth"
+  },
+  {
+   "name": "auth-no-hba",
+   "stderr": "psql: error: connection to server on socket \"/var/run/postgresql/.s.PGSQL.5432\" failed: FATAL:  no pg_hba.conf entry for host \"[local]\", user \"sitate-ro\", database \"app\", no encryption",
+   "want": "auth"
+  },
+  {
+   "name": "auth-no-password",
+   "stderr": "psql: error: connection to server on socket \"/var/run/postgresql/.s.PGSQL.5432\" failed: fe_sendauth: no password supplied",
+   "want": "auth"
+  },
+  {
+   "name": "connect-privilege",
+   "stderr": "psql: error: connection to server on socket \"/var/run/postgresql/.s.PGSQL.5432\" failed: FATAL:  permission denied for database \"app\"\nDETAIL:  User does not have CONNECT privilege.",
+   "want": "connect_privilege"
+  },
+  {
+   "name": "other-db-missing",
+   "stderr": "psql: error: connection to server on socket \"/var/run/postgresql/.s.PGSQL.5432\" failed: FATAL:  database \"app\" does not exist",
+   "want": "other"
+  },
+  {
+   "name": "other-role-missing",
+   "stderr": "psql: error: connection to server on socket \"/var/run/postgresql/.s.PGSQL.5432\" failed: FATAL:  role \"sitate-ro\" does not exist",
+   "want": "other"
+  },
+  {
+   "name": "other-starting-up",
+   "stderr": "psql: error: connection to server on socket \"/var/run/postgresql/.s.PGSQL.5432\" failed: FATAL:  the database system is starting up",
+   "want": "other"
+  },
+  {
+   "name": "other-empty",
+   "stderr": "",
+   "want": "other"
+  },
+  {
+   "name": "recorded-socket-dir-missing",
+   "stderr": "psql: error: connection to server on socket \"/nonexistent/.s.PGSQL.5432\" failed: No such file or directory\n\tIs the server running locally and accepting connections on that socket?",
+   "want": "socket"
+  },
+  {
+   "name": "recorded-socket-port-missing",
+   "stderr": "psql: error: connection to server on socket \"/var/run/postgresql/.s.PGSQL.5999\" failed: No such file or directory\n\tIs the server running locally and accepting connections on that socket?",
+   "want": "socket"
+  },
+  {
+   "name": "recorded-tcp-refused",
+   "stderr": "psql: error: connection to server at \"127.0.0.1\", port 5999 failed: Connection refused\n\tIs the server running on that host and accepting TCP/IP connections?",
+   "want": "socket"
+  },
+  {
+   "name": "recorded-auth-peer",
+   "stderr": "psql: error: connection to server on socket \"/var/run/postgresql/.s.PGSQL.5432\" failed: FATAL:  Peer authentication failed for user \"peerr\"",
+   "want": "auth"
+  },
+  {
+   "name": "recorded-auth-password",
+   "stderr": "psql: error: connection to server at \"127.0.0.1\", port 5432 failed: FATAL:  password authentication failed for user \"pwr\"",
+   "want": "auth"
+  },
+  {
+   "name": "recorded-auth-no-password",
+   "stderr": "psql: error: connection to server at \"127.0.0.1\", port 5432 failed: fe_sendauth: no password supplied",
+   "want": "auth"
+  },
+  {
+   "name": "recorded-connect-privilege",
+   "stderr": "psql: error: connection to server at \"127.0.0.1\", port 5432 failed: FATAL:  permission denied for database \"app\"\nDETAIL:  User does not have CONNECT privilege.",
+   "want": "connect_privilege"
+  },
+  {
+   "name": "recorded-role-missing",
+   "stderr": "psql: error: connection to server on socket \"/var/run/postgresql/.s.PGSQL.5432\" failed: FATAL:  role \"nobodyhere\" does not exist",
+   "want": "other"
+  },
+  {
+   "name": "recorded-database-missing",
+   "stderr": "psql: error: connection to server on socket \"/var/run/postgresql/.s.PGSQL.5432\" failed: FATAL:  database \"nodb\" does not exist",
+   "want": "other"
+  }
+ ]
+}

@@ -1,0 +1,9 @@
+SHELL=/bin/sh
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
+CRON_TZ=Asia/Tokyo
+30 2 * * * sitate /bin/sh -c 'timeout -k 60 87000 /usr/local/bin/sitate backup --invoked-by timer; timeout -k 60 87000 /usr/local/bin/sitate verify --invoked-by timer; if [ "$(date +\%u)" = 7 ]; then timeout -k 60 87000 /usr/local/bin/sitate bucket check --invoked-by timer; fi; if [ "$(date +\%u)" = 7 ]; then timeout -k 60 87000 /usr/local/bin/sitate extend --invoked-by timer; fi; if [ "$(date +\%u)" = 7 ]; then timeout -k 60 87000 /usr/local/bin/sitate prune --invoked-by timer; fi; timeout -k 60 87000 /usr/local/bin/sitate restore-test --invoked-by timer'
+@reboot sitate /bin/sh -c 'timeout -k 60 87000 /usr/local/bin/sitate backup --invoked-by timer; timeout -k 60 87000 /usr/local/bin/sitate verify --invoked-by timer'
+0 * * * * sitate /bin/sh -c 'timeout -k 60 87000 /usr/local/bin/sitate apply --invoked-by timer'
+0 9 1 * * sitate /bin/sh -c 'timeout -k 60 87000 /usr/local/bin/sitate report --invoked-by timer'
+0 9 * * 1 sitate /bin/sh -c 'timeout -k 60 87000 /usr/local/bin/sitate report --weekly --invoked-by timer'
+

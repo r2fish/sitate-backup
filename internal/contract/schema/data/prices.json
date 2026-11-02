@@ -1,0 +1,539 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://sitate.invalid/schema/data/prices.json",
+ "$defs": {
+  "row_id": {
+   "type": "string",
+   "pattern": "^[a-z0-9-]{1,64}$"
+  },
+  "quantity": {
+   "type": "object",
+   "required": [
+    "quantity",
+    "unit"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "quantity": {
+     "type": "string",
+     "pattern": "^[0-9]+(\\.[0-9]+)?$",
+     "maxLength": 32
+    },
+    "unit": {
+     "enum": [
+      "gb",
+      "tb",
+      "request",
+      "hour",
+      "day",
+      "month"
+     ]
+    }
+   }
+  },
+  "free": {
+   "type": "object",
+   "required": [
+    "quantity",
+    "unit",
+    "period",
+    "basis"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "quantity": {
+     "type": "string",
+     "pattern": "^[0-9]+(\\.[0-9]+)?$",
+     "maxLength": 32
+    },
+    "unit": {
+     "enum": [
+      "gb",
+      "tb",
+      "request",
+      "hour",
+      "day",
+      "month"
+     ]
+    },
+    "period": {
+     "anyOf": [
+      {
+       "enum": [
+        "month",
+        "day"
+       ]
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "basis": {
+     "enum": [
+      "absolute",
+      "stored_ratio"
+     ]
+    }
+   }
+  },
+  "charge": {
+   "type": "object",
+   "required": [
+    "item",
+    "amount",
+    "currency",
+    "unit",
+    "per",
+    "per_src",
+    "tier_upto",
+    "free",
+    "condition",
+    "src_field",
+    "src_text"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "item": {
+     "enum": [
+      "storage",
+      "egress",
+      "retrieval",
+      "request",
+      "instance",
+      "block_storage",
+      "ipv4"
+     ]
+    },
+    "ops": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+     }
+    },
+    "amount": {
+     "type": "string",
+     "pattern": "^[0-9]+(\\.[0-9]+)?$",
+     "maxLength": 32
+    },
+    "currency": {
+     "enum": [
+      "JPY",
+      "USD",
+      "EUR"
+     ]
+    },
+    "unit": {
+     "enum": [
+      "gb_month",
+      "tb_month",
+      "gb",
+      "request",
+      "hour",
+      "day",
+      "month"
+     ]
+    },
+    "per": {
+     "type": "string",
+     "pattern": "^[0-9]+(\\.[0-9]+)?$",
+     "maxLength": 32
+    },
+    "per_src": {
+     "anyOf": [
+      {
+       "type": "string",
+       "maxLength": 2048,
+       "x-sitate-data": true
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "tier_upto": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/quantity"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "free": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/free"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "condition": {
+     "anyOf": [
+      {
+       "type": "string",
+       "maxLength": 2048,
+       "x-sitate-data": true
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "src_field": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+    },
+    "src_text": {
+     "type": "string",
+     "maxLength": 2048,
+     "x-sitate-data": true
+    }
+   },
+   "if": {
+    "properties": {
+     "item": {
+      "const": "request"
+     }
+    },
+    "required": [
+     "item"
+    ]
+   },
+   "then": {
+    "required": [
+     "ops"
+    ]
+   },
+   "else": {
+    "not": {
+     "required": [
+      "ops"
+     ]
+    }
+   }
+  },
+  "minimums": {
+   "type": "object",
+   "required": [
+    "storage_quantity",
+    "storage_days",
+    "object_size_kb"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "storage_quantity": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/quantity"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "storage_days": {
+     "anyOf": [
+      {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "object_size_kb": {
+     "anyOf": [
+      {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    }
+   }
+  },
+  "row": {
+   "type": "object",
+   "required": [
+    "row_id",
+    "kind",
+    "provider",
+    "plan",
+    "country",
+    "region_country",
+    "endpoint_patterns",
+    "endpoint_default",
+    "tax",
+    "checked_on",
+    "source_url",
+    "src",
+    "minimums",
+    "charges"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "row_id": {
+     "$ref": "#/$defs/row_id"
+    },
+    "kind": {
+     "enum": [
+      "storage",
+      "compute",
+      "addon"
+     ]
+    },
+    "provider": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+    },
+    "plan": {
+     "type": "string",
+     "maxLength": 2048,
+     "x-sitate-data": true
+    },
+    "country": {
+     "anyOf": [
+      {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/country"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "region_country": {
+     "type": "object",
+     "additionalProperties": {
+      "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/country"
+     }
+    },
+    "endpoint_patterns": {
+     "type": "array",
+     "items": {
+      "type": "string",
+      "pattern": "^[a-z0-9.<>-]{1,255}$"
+     }
+    },
+    "endpoint_default": {
+     "type": "boolean"
+    },
+    "tax": {
+     "enum": [
+      "included",
+      "excluded",
+      "none"
+     ]
+    },
+    "checked_on": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/date"
+    },
+    "source_url": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/url"
+    },
+    "src": {
+     "type": "object",
+     "required": [
+      "section",
+      "index"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "section": {
+       "enum": [
+        "storage",
+        "compute"
+       ]
+      },
+      "index": {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+      }
+     }
+    },
+    "minimums": {
+     "$ref": "#/$defs/minimums"
+    },
+    "charges": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/charge"
+     }
+    }
+   }
+  },
+  "combo": {
+   "type": "object",
+   "required": [
+    "id",
+    "storage",
+    "server",
+    "restore_dest"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "id": {
+     "enum": [
+      "A",
+      "B",
+      "C"
+     ]
+    },
+    "storage": {
+     "$ref": "#/$defs/row_id"
+    },
+    "server": {
+     "$ref": "#/$defs/row_id"
+    },
+    "restore_dest": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+    }
+   }
+  },
+  "restore_dest": {
+   "type": "object",
+   "required": [
+    "at",
+    "size_class",
+    "rows"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "at": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+    },
+    "size_class": {
+     "enum": [
+      "standard",
+      "large"
+     ]
+    },
+    "rows": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/row_id"
+     }
+    }
+   }
+  },
+  "skipped": {
+   "type": "object",
+   "required": [
+    "src",
+    "src_field",
+    "reason"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "src": {
+     "type": "object",
+     "required": [
+      "section",
+      "index"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "section": {
+       "enum": [
+        "storage",
+        "compute"
+       ]
+      },
+      "index": {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+      }
+     }
+    },
+    "src_field": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+    },
+    "reason": {
+     "enum": [
+      "unconfirmed",
+      "computed",
+      "not_applicable",
+      "unmapped"
+     ]
+    }
+   }
+  },
+  "prices": {
+   "type": "object",
+   "required": [
+    "schema",
+    "generated_at",
+    "source",
+    "fx_jpy",
+    "rows",
+    "combos",
+    "restore_dests",
+    "skipped"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.prices/v1"
+    },
+    "generated_at": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "source": {
+     "type": "object",
+     "required": [
+      "file",
+      "sha256"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "file": {
+       "type": "string",
+       "maxLength": 256,
+       "x-sitate-data": true
+      },
+      "sha256": {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/hex64"
+      }
+     }
+    },
+    "fx_jpy": {
+     "type": "object",
+     "propertyNames": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$"
+     },
+     "additionalProperties": {
+      "type": "string",
+      "pattern": "^[0-9]+(\\.[0-9]+)?$",
+      "maxLength": 32
+     }
+    },
+    "rows": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/row"
+     }
+    },
+    "combos": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/combo"
+     }
+    },
+    "restore_dests": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/restore_dest"
+     }
+    },
+    "skipped": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/skipped"
+     }
+    }
+   }
+  }
+ },
+ "$ref": "#/$defs/prices"
+}

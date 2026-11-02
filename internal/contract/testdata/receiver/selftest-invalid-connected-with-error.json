@@ -1,0 +1,24 @@
+{
+ "format": "sitate.recv-selftest/v1",
+ "version": "0.1.0",
+ "receiver_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+ "authorized_keys": {
+  "lines": 1,
+  "match": true
+ },
+ "targets": [
+  {
+   "id": "t2",
+   "kind": "postgresql",
+   "db": "app",
+   "socket_dir": "/var/run/postgresql",
+   "port": 5432,
+   "connect": true,
+   "connect_error": "auth",
+   "server_version_num": 170002,
+   "pg_dump_version_num": 170002,
+   "unreadable_tables": 0,
+   "large_objects": false
+  }
+ ]
+}

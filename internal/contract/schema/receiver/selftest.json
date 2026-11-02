@@ -1,0 +1,233 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://sitate.invalid/schema/receiver/selftest.json",
+ "$ref": "#/$defs/selftest",
+ "$defs": {
+  "selftest": {
+   "type": "object",
+   "required": [
+    "format",
+    "version",
+    "receiver_hash",
+    "authorized_keys",
+    "targets"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "format": {
+     "const": "sitate.recv-selftest/v1"
+    },
+    "version": {
+     "type": "string",
+     "pattern": "^[0-9A-Za-z.+-]{1,64}$"
+    },
+    "receiver_hash": {
+     "type": "string",
+     "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "authorized_keys": {
+     "type": "object",
+     "required": [
+      "lines",
+      "match"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "lines": {
+       "type": "integer",
+       "minimum": 0
+      },
+      "match": {
+       "type": "boolean"
+      }
+     }
+    },
+    "targets": {
+     "type": "array",
+     "items": {
+      "oneOf": [
+       {
+        "$ref": "#/$defs/files_target"
+       },
+       {
+        "$ref": "#/$defs/pg_target"
+       }
+      ]
+     }
+    }
+   }
+  },
+  "files_target": {
+   "type": "object",
+   "required": [
+    "id",
+    "kind",
+    "root",
+    "root_state"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "id": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/target_id"
+    },
+    "kind": {
+     "const": "files"
+    },
+    "root": {
+     "type": "string",
+     "maxLength": 4096,
+     "x-sitate-data": true
+    },
+    "root_state": {
+     "enum": [
+      "ok",
+      "not_found",
+      "unreadable"
+     ]
+    }
+   }
+  },
+  "pg_target": {
+   "type": "object",
+   "required": [
+    "id",
+    "kind",
+    "db",
+    "socket_dir",
+    "port",
+    "connect",
+    "connect_error",
+    "server_version_num",
+    "pg_dump_version_num",
+    "unreadable_tables",
+    "large_objects"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "id": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/target_id"
+    },
+    "kind": {
+     "const": "postgresql"
+    },
+    "db": {
+     "type": "string",
+     "minLength": 1,
+     "maxLength": 63,
+     "x-sitate-data": true
+    },
+    "socket_dir": {
+     "type": "string",
+     "maxLength": 4096,
+     "x-sitate-data": true
+    },
+    "port": {
+     "type": "integer",
+     "minimum": 1,
+     "maximum": 65535
+    },
+    "connect": {
+     "type": "boolean"
+    },
+    "connect_error": {
+     "oneOf": [
+      {
+       "type": "null"
+      },
+      {
+       "enum": [
+        "socket",
+        "auth",
+        "connect_privilege",
+        "other"
+       ]
+      }
+     ]
+    },
+    "server_version_num": {
+     "oneOf": [
+      {
+       "type": "null"
+      },
+      {
+       "type": "integer",
+       "minimum": 0
+      }
+     ]
+    },
+    "pg_dump_version_num": {
+     "oneOf": [
+      {
+       "type": "null"
+      },
+      {
+       "type": "integer",
+       "minimum": 0
+      }
+     ]
+    },
+    "unreadable_tables": {
+     "oneOf": [
+      {
+       "type": "null"
+      },
+      {
+       "type": "integer",
+       "minimum": 0
+      }
+     ]
+    },
+    "large_objects": {
+     "oneOf": [
+      {
+       "type": "null"
+      },
+      {
+       "type": "boolean"
+      }
+     ]
+    }
+   },
+   "allOf": [
+    {
+     "if": {
+      "properties": {
+       "connect": {
+        "const": true
+       }
+      }
+     },
+     "then": {
+      "properties": {
+       "connect_error": {
+        "type": "null"
+       }
+      }
+     },
+     "else": {
+      "properties": {
+       "connect_error": {
+        "enum": [
+         "socket",
+         "auth",
+         "connect_privilege",
+         "other"
+        ]
+       },
+       "server_version_num": {
+        "type": "null"
+       },
+       "unreadable_tables": {
+        "type": "null"
+       },
+       "large_objects": {
+        "type": "null"
+       }
+      }
+     }
+    }
+   ]
+  }
+ },
+ "$comment": "受け口の selftest の出力 sitate.recv-selftest/v1(spec 3.3)。connect_error の照合する文は試験ベクトル(testdata/receiver/connect-error.json)"
+}

@@ -1,0 +1,10 @@
+[Unit]
+Description=Sitate-backup report-weekly
+
+[Service]
+Type=oneshot
+User=sitate
+Environment=TZ=Asia/Tokyo
+TimeoutStartSec=87060
+ExecStart=-/usr/local/bin/sitate report --weekly --invoked-by timer
+

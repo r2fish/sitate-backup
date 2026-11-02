@@ -1,0 +1,8 @@
+{
+ "contract": "sitate.notify/v1",
+ "delivered": true,
+ "channel": "sms",
+ "reason": null,
+ "http_status": null,
+ "provider_ref": null
+}

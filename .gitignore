@@ -1,0 +1,9 @@
+/bundle/
+/dist/
+/build/
+node_modules/
+/app/out/
+/test/env/state-snapshots/
+/test/env/.run/
+/.claude/worktrees/
+*.test

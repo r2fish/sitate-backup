@@ -1,0 +1,9 @@
+{
+  "kind": "notify",
+  "name": "webhook",
+  "version": "0.0.0",
+  "contract": "sitate.notify/v1",
+  "exe": "webhook",
+  "secrets": [],
+  "network": true
+}

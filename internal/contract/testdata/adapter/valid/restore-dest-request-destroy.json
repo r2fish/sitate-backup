@@ -1,0 +1,19 @@
+{
+ "contract": "sitate.restore-dest/v1",
+ "op": "destroy",
+ "session_id": "r-20261103T010203Z-3f9a",
+ "dest": {
+  "at": "dest.example.invalid",
+  "key_ref": "dest-key"
+ },
+ "host_key_fp": null,
+ "resources": [
+  {
+   "type": "instance",
+   "id": "i-0abc"
+  }
+ ],
+ "secrets": {
+  "dest_key": "x"
+ }
+}

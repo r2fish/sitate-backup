@@ -1,0 +1,1011 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://sitate.invalid/schema/adapter/restore-dest.json",
+ "$defs": {
+  "dest": {
+   "type": "object",
+   "required": [
+    "at",
+    "key_ref"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "at": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/anypath"
+    },
+    "key_ref": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+    }
+   }
+  },
+  "create": {
+   "type": "object",
+   "required": [
+    "contract",
+    "op",
+    "session_id",
+    "dest",
+    "needs",
+    "authorized_key",
+    "allow_ssh_from",
+    "egress_allow",
+    "secrets"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "contract": {
+     "const": "sitate.restore-dest/v1"
+    },
+    "op": {
+     "const": "create"
+    },
+    "session_id": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/run_id"
+    },
+    "dest": {
+     "$ref": "#/$defs/dest"
+    },
+    "needs": {
+     "type": "object",
+     "required": [
+      "disk_gb",
+      "size_class"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "disk_gb": {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+      },
+      "size_class": {
+       "enum": [
+        "standard",
+        "large"
+       ]
+      }
+     }
+    },
+    "authorized_key": {
+     "$ref": "https://sitate.invalid/schema/data/state.json#/$defs/pubkey"
+    },
+    "allow_ssh_from": {
+     "type": "array",
+     "items": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F:./]{1,64}$"
+     }
+    },
+    "egress_allow": {
+     "type": "array",
+     "items": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F:./]{1,64}$"
+     }
+    },
+    "secrets": {
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "host_key": {
+       "type": "string",
+       "maxLength": 8192,
+       "x-sitate-data": true
+      },
+      "dest_key": {
+       "type": "string",
+       "maxLength": 8192,
+       "x-sitate-data": true
+      }
+     }
+    }
+   }
+  },
+  "destroy": {
+   "type": "object",
+   "required": [
+    "contract",
+    "op",
+    "session_id",
+    "dest",
+    "host_key_fp",
+    "resources",
+    "secrets"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "contract": {
+     "const": "sitate.restore-dest/v1"
+    },
+    "op": {
+     "const": "destroy"
+    },
+    "session_id": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/run_id"
+    },
+    "dest": {
+     "$ref": "#/$defs/dest"
+    },
+    "host_key_fp": {
+     "anyOf": [
+      {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/fp"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "resources": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/adapter/common.json#/$defs/resource"
+     }
+    },
+    "secrets": {
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "dest_key": {
+       "type": "string",
+       "maxLength": 8192,
+       "x-sitate-data": true
+      }
+     }
+    }
+   }
+  },
+  "enroll": {
+   "type": "object",
+   "required": [
+    "contract",
+    "op",
+    "dest",
+    "authorized_key",
+    "allow_ssh_from",
+    "egress_allow",
+    "egress_host",
+    "secrets"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "contract": {
+     "const": "sitate.restore-dest/v1"
+    },
+    "op": {
+     "const": "enroll"
+    },
+    "dest": {
+     "$ref": "#/$defs/dest"
+    },
+    "authorized_key": {
+     "$ref": "https://sitate.invalid/schema/data/state.json#/$defs/pubkey"
+    },
+    "allow_ssh_from": {
+     "type": "array",
+     "items": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F:./]{1,64}$"
+     }
+    },
+    "egress_allow": {
+     "type": "array",
+     "items": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F:./]{1,64}$"
+     }
+    },
+    "egress_host": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/host"
+    },
+    "secrets": {
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "dest_key": {
+       "type": "string",
+       "maxLength": 8192,
+       "x-sitate-data": true
+      }
+     }
+    }
+   }
+  },
+  "start": {
+   "type": "object",
+   "required": [
+    "contract",
+    "op",
+    "session_id",
+    "dest",
+    "needs",
+    "host_key_fp",
+    "authorized_key",
+    "allow_ssh_from",
+    "egress_allow",
+    "egress_host",
+    "secrets"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "contract": {
+     "const": "sitate.restore-dest/v1"
+    },
+    "op": {
+     "const": "start"
+    },
+    "session_id": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/run_id"
+    },
+    "dest": {
+     "$ref": "#/$defs/dest"
+    },
+    "needs": {
+     "type": "object",
+     "required": [
+      "disk_gb"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "disk_gb": {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+      }
+     }
+    },
+    "host_key_fp": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/fp"
+    },
+    "authorized_key": {
+     "$ref": "https://sitate.invalid/schema/data/state.json#/$defs/pubkey"
+    },
+    "allow_ssh_from": {
+     "type": "array",
+     "items": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F:./]{1,64}$"
+     }
+    },
+    "egress_allow": {
+     "type": "array",
+     "items": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F:./]{1,64}$"
+     }
+    },
+    "egress_host": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/host"
+    },
+    "secrets": {
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "restore-dest-ssh": {
+       "type": "string",
+       "maxLength": 8192,
+       "x-sitate-data": true
+      }
+     }
+    }
+   }
+  },
+  "stop": {
+   "type": "object",
+   "required": [
+    "contract",
+    "op",
+    "session_id",
+    "dest",
+    "host_key_fp",
+    "resources",
+    "secrets"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "contract": {
+     "const": "sitate.restore-dest/v1"
+    },
+    "op": {
+     "const": "stop"
+    },
+    "session_id": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/run_id"
+    },
+    "dest": {
+     "$ref": "#/$defs/dest"
+    },
+    "host_key_fp": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/fp"
+    },
+    "resources": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/adapter/common.json#/$defs/resource"
+     }
+    },
+    "secrets": {
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "restore-dest-ssh": {
+       "type": "string",
+       "maxLength": 8192,
+       "x-sitate-data": true
+      }
+     }
+    }
+   }
+  },
+  "inspect": {
+   "type": "object",
+   "required": [
+    "contract",
+    "op",
+    "session_id",
+    "dest",
+    "host_key_fp",
+    "resources",
+    "secrets"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "contract": {
+     "const": "sitate.restore-dest/v1"
+    },
+    "op": {
+     "const": "inspect"
+    },
+    "session_id": {
+     "anyOf": [
+      {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/run_id"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "dest": {
+     "$ref": "#/$defs/dest"
+    },
+    "host_key_fp": {
+     "anyOf": [
+      {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/fp"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "resources": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/adapter/common.json#/$defs/resource"
+     }
+    },
+    "secrets": {
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "dest_key": {
+       "type": "string",
+       "maxLength": 8192,
+       "x-sitate-data": true
+      },
+      "restore-dest-ssh": {
+       "type": "string",
+       "maxLength": 8192,
+       "x-sitate-data": true
+      }
+     }
+    }
+   }
+  },
+  "expose": {
+   "type": "object",
+   "required": [
+    "contract",
+    "op",
+    "session_id",
+    "dest",
+    "host_key_fp",
+    "resources",
+    "authorized_key",
+    "allow_ssh_from",
+    "secrets"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "contract": {
+     "const": "sitate.restore-dest/v1"
+    },
+    "op": {
+     "const": "expose"
+    },
+    "session_id": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/run_id"
+    },
+    "dest": {
+     "$ref": "#/$defs/dest"
+    },
+    "host_key_fp": {
+     "anyOf": [
+      {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/fp"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "resources": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/adapter/common.json#/$defs/resource"
+     }
+    },
+    "authorized_key": {
+     "$ref": "https://sitate.invalid/schema/data/state.json#/$defs/pubkey"
+    },
+    "allow_ssh_from": {
+     "type": "array",
+     "items": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F:./]{1,64}$"
+     }
+    },
+    "secrets": {
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "dest_key": {
+       "type": "string",
+       "maxLength": 8192,
+       "x-sitate-data": true
+      },
+      "restore-dest-ssh": {
+       "type": "string",
+       "maxLength": 8192,
+       "x-sitate-data": true
+      }
+     }
+    }
+   }
+  },
+  "release": {
+   "type": "object",
+   "required": [
+    "contract",
+    "op",
+    "session_id",
+    "dest",
+    "host_key_fp",
+    "resources",
+    "secrets"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "contract": {
+     "const": "sitate.restore-dest/v1"
+    },
+    "op": {
+     "const": "release"
+    },
+    "session_id": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/run_id"
+    },
+    "dest": {
+     "$ref": "#/$defs/dest"
+    },
+    "host_key_fp": {
+     "anyOf": [
+      {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/fp"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "resources": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/adapter/common.json#/$defs/resource"
+     }
+    },
+    "secrets": {
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "dest_key": {
+       "type": "string",
+       "maxLength": 8192,
+       "x-sitate-data": true
+      },
+      "restore-dest-ssh": {
+       "type": "string",
+       "maxLength": 8192,
+       "x-sitate-data": true
+      }
+     }
+    }
+   }
+  },
+  "request": {
+   "oneOf": [
+    {
+     "$ref": "#/$defs/create"
+    },
+    {
+     "$ref": "#/$defs/destroy"
+    },
+    {
+     "$ref": "#/$defs/enroll"
+    },
+    {
+     "$ref": "#/$defs/start"
+    },
+    {
+     "$ref": "#/$defs/stop"
+    },
+    {
+     "$ref": "#/$defs/inspect"
+    },
+    {
+     "$ref": "#/$defs/expose"
+    },
+    {
+     "$ref": "#/$defs/release"
+    }
+   ]
+  },
+  "result_create": {
+   "type": "object",
+   "required": [
+    "contract",
+    "session_id",
+    "ssh",
+    "host_key_fp",
+    "scratch",
+    "resources"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "contract": {
+     "const": "sitate.restore-dest/v1"
+    },
+    "session_id": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/run_id"
+    },
+    "ssh": {
+     "type": "object",
+     "required": [
+      "host",
+      "port",
+      "user"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "host": {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/host"
+      },
+      "port": {
+       "type": "integer",
+       "minimum": 1,
+       "maximum": 65535
+      },
+      "user": {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+      }
+     }
+    },
+    "host_key_fp": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/fp"
+    },
+    "scratch": {
+     "type": "object",
+     "required": [
+      "path",
+      "method"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "path": {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/anypath"
+      },
+      "method": {
+       "const": "gocryptfs"
+      }
+     }
+    },
+    "resources": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/adapter/common.json#/$defs/resource"
+     }
+    }
+   }
+  },
+  "result_destroy": {
+   "type": "object",
+   "required": [
+    "contract",
+    "done",
+    "verified_by",
+    "remaining"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "contract": {
+     "const": "sitate.restore-dest/v1"
+    },
+    "done": {
+     "type": "boolean"
+    },
+    "verified_by": {
+     "enum": [
+      "provider-api",
+      "ssh"
+     ]
+    },
+    "remaining": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/adapter/common.json#/$defs/resource"
+     }
+    }
+   }
+  },
+  "result_enroll": {
+   "type": "object",
+   "required": [
+    "contract",
+    "host_key_fp",
+    "user",
+    "prereq"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "contract": {
+     "const": "sitate.restore-dest/v1"
+    },
+    "host_key_fp": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/fp"
+    },
+    "user": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+    },
+    "prereq": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "required": [
+       "name",
+       "ok"
+      ],
+      "additionalProperties": false,
+      "properties": {
+       "name": {
+        "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+       },
+       "ok": {
+        "type": "boolean"
+       }
+      }
+     }
+    }
+   }
+  },
+  "result_inspect": {
+   "type": "object",
+   "required": [
+    "contract",
+    "resources",
+    "state"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "contract": {
+     "const": "sitate.restore-dest/v1"
+    },
+    "resources": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/adapter/common.json#/$defs/resource_session"
+     }
+    },
+    "state": {
+     "enum": [
+      "present",
+      "absent",
+      "unknown"
+     ]
+    }
+   }
+  },
+  "result_expose": {
+   "type": "object",
+   "required": [
+    "contract",
+    "done",
+    "connect"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "contract": {
+     "const": "sitate.restore-dest/v1"
+    },
+    "done": {
+     "const": true
+    },
+    "connect": {
+     "type": "object",
+     "required": [
+      "host",
+      "port",
+      "host_key_fp"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "host": {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/host"
+      },
+      "port": {
+       "type": "integer",
+       "minimum": 1,
+       "maximum": 65535
+      },
+      "host_key_fp": {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/fp"
+      }
+     }
+    }
+   }
+  },
+  "result_release": {
+   "type": "object",
+   "required": [
+    "contract",
+    "done",
+    "released"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "contract": {
+     "const": "sitate.restore-dest/v1"
+    },
+    "done": {
+     "const": true
+    },
+    "released": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/adapter/common.json#/$defs/resource"
+     }
+    }
+   }
+  },
+  "result": {
+   "oneOf": [
+    {
+     "$ref": "#/$defs/result_create"
+    },
+    {
+     "$ref": "#/$defs/result_destroy"
+    },
+    {
+     "$ref": "#/$defs/result_enroll"
+    },
+    {
+     "$ref": "#/$defs/result_inspect"
+    },
+    {
+     "$ref": "#/$defs/result_expose"
+    },
+    {
+     "$ref": "#/$defs/result_release"
+    }
+   ]
+  },
+  "error": {
+   "type": "object",
+   "required": [
+    "code",
+    "detail"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "code": {
+     "anyOf": [
+      {
+       "enum": [
+        "auth",
+        "quota",
+        "capacity",
+        "unreachable",
+        "disk_short",
+        "hostkey_mismatch",
+        "enroll_mismatch",
+        "prereq_missing",
+        "enroll_failed",
+        "INTERNAL",
+        "NOT_IMPLEMENTED"
+       ]
+      },
+      {
+       "$ref": "https://sitate.invalid/schema/adapter/common.json#/$defs/adapter_code"
+      }
+     ]
+    },
+    "detail": {
+     "$ref": "https://sitate.invalid/schema/adapter/common.json#/$defs/generic_detail"
+    },
+    "resources": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/adapter/common.json#/$defs/resource"
+     }
+    },
+    "seen_fp": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/fp"
+    }
+   },
+   "allOf": [
+    {
+     "if": {
+      "properties": {
+       "code": {
+        "const": "INTERNAL"
+       }
+      },
+      "required": [
+       "code"
+      ]
+     },
+     "then": {
+      "properties": {
+       "detail": {
+        "$ref": "https://sitate.invalid/schema/adapter/common.json#/$defs/internal_detail"
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "code": {
+        "const": "NOT_IMPLEMENTED"
+       }
+      },
+      "required": [
+       "code"
+      ]
+     },
+     "then": {
+      "properties": {
+       "detail": {
+        "$ref": "https://sitate.invalid/schema/adapter/common.json#/$defs/not_implemented_detail"
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "code": {
+        "const": "unreachable"
+       }
+      },
+      "required": [
+       "code"
+      ]
+     },
+     "then": {
+      "properties": {
+       "detail": {
+        "type": "object",
+        "required": [
+         "reason"
+        ],
+        "additionalProperties": false,
+        "properties": {
+         "reason": {
+          "enum": [
+           "connect",
+           "timeout"
+          ]
+         }
+        }
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "code": {
+        "const": "prereq_missing"
+       }
+      },
+      "required": [
+       "code"
+      ]
+     },
+     "then": {
+      "properties": {
+       "detail": {
+        "type": "object",
+        "required": [
+         "prereq"
+        ],
+        "additionalProperties": false,
+        "properties": {
+         "prereq": {
+          "type": "array",
+          "items": {
+           "type": "object",
+           "required": [
+            "name",
+            "ok"
+           ],
+           "additionalProperties": false,
+           "properties": {
+            "name": {
+             "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+            },
+            "ok": {
+             "type": "boolean"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "code": {
+        "const": "hostkey_mismatch"
+       }
+      },
+      "required": [
+       "code"
+      ]
+     },
+     "then": {
+      "properties": {
+       "detail": {
+        "type": "object",
+        "maxProperties": 0
+       }
+      }
+     }
+    }
+   ]
+  },
+  "response": {
+   "oneOf": [
+    {
+     "type": "object",
+     "required": [
+      "contract",
+      "error"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "contract": {
+       "const": "sitate.restore-dest/v1"
+      },
+      "error": {
+       "$ref": "#/$defs/error"
+      }
+     }
+    },
+    {
+     "$ref": "#/$defs/result"
+    }
+   ]
+  }
+ }
+}

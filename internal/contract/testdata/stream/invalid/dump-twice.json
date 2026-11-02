@@ -1,0 +1,47 @@
+{
+ "description": "同じ format の dump が 2 回",
+ "frames": [
+  {
+   "h": {
+    "type": "dump",
+    "format": "globals"
+   }
+  },
+  {
+   "h": {
+    "type": "item_end",
+    "bytes": 0,
+    "hash": "blake3:af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+    "status": "ok",
+    "exit_status": 0
+   }
+  },
+  {
+   "h": {
+    "type": "dump",
+    "format": "globals"
+   }
+  },
+  {
+   "h": {
+    "type": "item_end",
+    "bytes": 0,
+    "hash": "blake3:af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+    "status": "ok",
+    "exit_status": 0
+   }
+  },
+  {
+   "h": {
+    "type": "end",
+    "bytes": 0,
+    "hash": "blake3:6842244eea0cf134afa7fc9d4e8310f57234e0fb2d7b3dfc066e714b8bce5bf5",
+    "exit_status": 0
+   }
+  }
+ ],
+ "error": {
+  "kind": "contract",
+  "reason": "order"
+ }
+}

@@ -1,0 +1,72 @@
+{
+ "$comment": "JCS(RFC 8785)の正規化と def_hash のベクトル(spec 4.1)。canonical は JCS の出力、sha256 はその SHA-256(`sha256:` を除く16進)。def_hash_cases は同じ hash になる/ならない定義の対。",
+ "cases": [
+  {
+   "name": "key-order",
+   "input": "{\"b\":1,\"a\":2}",
+   "canonical": "{\"a\":2,\"b\":1}",
+   "sha256": "d3626ac30a87e6f7a6428233b3c68299976865fa5508e4267c5415c76af7a772"
+  },
+  {
+   "name": "nested",
+   "input": "{\"z\":{\"y\":[3,2,1],\"x\":null},\"a\":true}",
+   "canonical": "{\"a\":true,\"z\":{\"x\":null,\"y\":[3,2,1]}}",
+   "sha256": "4dab6fd72ff8e185f7ae5eab80835755543d7f75f951cdfb5c190013ebc782b1"
+  },
+  {
+   "name": "number-exp",
+   "input": "{\"n\":1e30}",
+   "canonical": "{\"n\":1e+30}",
+   "sha256": "53bcca850cd9028c384aef303539ce41d82d7fb56fbfa1e5289fe51caef28f93"
+  },
+  {
+   "name": "number-trailing-zero",
+   "input": "{\"n\":4.50}",
+   "canonical": "{\"n\":4.5}",
+   "sha256": "b3ccf096aa1a16f7f3d09252c1eacaa1e4be5a827c273f1112b537ce81182b11"
+  },
+  {
+   "name": "number-small",
+   "input": "{\"n\":0.000001}",
+   "canonical": "{\"n\":0.000001}",
+   "sha256": "28343867a0be00aee19f81aa90cfd6c646878b9303fa15410d16bfd3f8894578"
+  },
+  {
+   "name": "string-escape",
+   "input": "{\"s\":\"a\\u0062\\n\\u00e9\"}",
+   "canonical": "{\"s\":\"ab\\né\"}",
+   "sha256": "1ee847fbba2fd0affd5175504a61ea681f507fb6492dea46c15ec9acf721f336"
+  },
+  {
+   "name": "whitespace",
+   "input": "{ \"a\" : [ 1 , 2 ] }",
+   "canonical": "{\"a\":[1,2]}",
+   "sha256": "01530d164d479cf08e26d3b1ad9bdba927120d97e2d057a6d792db778780d720"
+  },
+  {
+   "name": "empty",
+   "input": "{}",
+   "canonical": "{}",
+   "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+  }
+ ],
+ "def_hash_equal": [
+  {
+   "name": "key-order-and-space",
+   "a": "{\"checks\":{\"x\":1},\"timezone\":\"Asia/Tokyo\"}",
+   "b": "{ \"timezone\" : \"Asia/Tokyo\", \"checks\" : {\"x\":1} }"
+  }
+ ],
+ "def_hash_differ": [
+  {
+   "name": "default-written-vs-omitted",
+   "a": "{\"timezone\":\"Asia/Tokyo\"}",
+   "b": "{\"timezone\":\"Asia/Tokyo\",\"auto_hold_days\":14}"
+  },
+  {
+   "name": "threshold-written-vs-omitted",
+   "a": "{\"timezone\":\"Asia/Tokyo\",\"checks\":{}}",
+   "b": "{\"timezone\":\"Asia/Tokyo\",\"checks\":{\"entropy_min_file_bytes\":2000}}"
+  }
+ ]
+}

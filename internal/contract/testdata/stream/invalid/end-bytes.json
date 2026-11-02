@@ -1,0 +1,44 @@
+{
+ "description": "end の bytes が data の合計と違う(対象を failed)",
+ "frames": [
+  {
+   "h": {
+    "type": "file",
+    "path": "a",
+    "size": 1,
+    "mode": 420,
+    "uid": 1000,
+    "gid": 1000,
+    "mtime_ns": 1760808600123456789
+   }
+  },
+  {
+   "h": {
+    "type": "data",
+    "size": 1
+   },
+   "body": "x"
+  },
+  {
+   "h": {
+    "type": "item_end",
+    "bytes": 1,
+    "hash": "blake3:3ae7d805f6789a6402acb70ad4096a85a56bf6804eaf25c0493ac697548d30b5",
+    "status": "ok",
+    "exit_status": null
+   }
+  },
+  {
+   "h": {
+    "type": "end",
+    "bytes": 2,
+    "hash": "blake3:9596c239728f323cb07ed0b50717f22bfc6979b9f4327ca47e0a5f7cbe196240",
+    "exit_status": 0
+   }
+  }
+ ],
+ "error": {
+  "kind": "end_mismatch",
+  "reason": "bytes"
+ }
+}

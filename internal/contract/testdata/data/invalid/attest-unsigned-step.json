@@ -1,0 +1,20 @@
+{
+ "change_id": "c-20261018-0010",
+ "op": "attest",
+ "args": {
+  "step": "admin_access_closed",
+  "note": "x"
+ },
+ "target": null,
+ "precondition_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+ "plan": {
+  "reversible": false,
+  "errors": [],
+  "step": "R3",
+  "old_key_ids": []
+ },
+ "proposed_at": "2026-11-02T10:00:00Z",
+ "delay_hours": 0,
+ "expires_at": "2026-11-09T10:00:00Z",
+ "canonical_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+}

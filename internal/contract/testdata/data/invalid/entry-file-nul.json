@@ -1,0 +1,23 @@
+{
+ "ref": "f:8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c",
+ "t": "t1",
+ "path": "t1/a\u0000b",
+ "type": "file",
+ "mode": 420,
+ "uid": 1000,
+ "gid": 1000,
+ "mtime_ns": 1,
+ "size": 3,
+ "hash": "blake3:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+ "ranges": [
+  [
+   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "3HL4kqtJlcpXroDTDmJ+rmSpXd3dIbrHY+MTRCxf3vjVBH40Nr8X8gdRQBpUMLUo",
+   0,
+   3
+  ]
+ ],
+ "flags": [
+  "changed_during_read"
+ ]
+}

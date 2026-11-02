@@ -1,0 +1,9 @@
+{
+ "kind": "acquire",
+ "name": "files",
+ "version": "1.0.0",
+ "contract": "sitate.acquire/v1",
+ "exe": "files",
+ "secrets": [],
+ "network": true
+}

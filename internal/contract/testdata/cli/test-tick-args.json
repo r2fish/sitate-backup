@@ -1,0 +1,108 @@
+{
+ "valid": [
+  {
+   "name": "days-35",
+   "argv": [
+    "--days",
+    "35"
+   ]
+  },
+  {
+   "name": "days-1",
+   "argv": [
+    "--days",
+    "1"
+   ]
+  },
+  {
+   "name": "set-start",
+   "argv": [
+    "--set-start",
+    "2027-03-01T00:00:00Z"
+   ]
+  },
+  {
+   "name": "set-start-offset",
+   "argv": [
+    "--set-start",
+    "2027-03-01T09:00:00+09:00"
+   ]
+  }
+ ],
+ "invalid": [
+  {
+   "name": "empty",
+   "argv": []
+  },
+  {
+   "name": "days-zero",
+   "argv": [
+    "--days",
+    "0"
+   ]
+  },
+  {
+   "name": "days-negative",
+   "argv": [
+    "--days",
+    "-1"
+   ]
+  },
+  {
+   "name": "days-missing-value",
+   "argv": [
+    "--days"
+   ]
+  },
+  {
+   "name": "days-eq-form",
+   "argv": [
+    "--days=35"
+   ]
+  },
+  {
+   "name": "both",
+   "argv": [
+    "--days",
+    "1",
+    "--set-start"
+   ]
+  },
+  {
+   "name": "unknown",
+   "argv": [
+    "--set-time",
+    "2027-03-01T00:00:00Z"
+   ]
+  },
+  {
+   "name": "common-flag",
+   "argv": [
+    "--days",
+    "1",
+    "--run-id",
+    "r-20270301T000000Z-abcd"
+   ]
+  },
+  {
+   "name": "leading-zero",
+   "argv": [
+    "--days",
+    "01"
+   ]
+  },
+  {
+   "name": "set-start-no-value",
+   "argv": [
+    "--set-start"
+   ]
+  },
+  {
+   "name": "set-start-not-rfc3339",
+   "argv": [
+    "--set-start",
+    "2027-03-01"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,4 @@
+#!/bin/sh
+# 元サーバーの設定の骨格(U2a が実装する)。
+echo "NOT_IMPLEMENTED: source-setup" >&2
+exit 1

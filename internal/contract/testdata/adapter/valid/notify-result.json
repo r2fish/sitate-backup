@@ -1,0 +1,8 @@
+{
+ "contract": "sitate.notify/v1",
+ "delivered": true,
+ "channel": "webhook",
+ "reason": null,
+ "http_status": 200,
+ "provider_ref": null
+}

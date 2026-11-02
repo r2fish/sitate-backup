@@ -1,0 +1,10 @@
+{
+ "record_id": "x1",
+ "kind": "issued_key",
+ "run_id": "r-20261018T173000Z-3f9a",
+ "adapter": "b2",
+ "role": "write",
+ "key_id": "K1",
+ "revoked_at": null,
+ "orphaned": true
+}

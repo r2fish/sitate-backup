@@ -1,0 +1,111 @@
+{
+ "description": "置き場の固定名(spec 3.1.2.4)。<to>/<target-id>/ の下。dump は db.dump(custom)・globals.sql(globals)。want が null のものは書き出しを始める前に INTERNAL(component: restore)で止める",
+ "names": {
+  "custom": "db.dump",
+  "globals": "globals.sql"
+ },
+ "vectors": [
+  {
+   "type": "file",
+   "path": "t1/a/b.txt",
+   "format": "",
+   "want": "t1/a/b.txt"
+  },
+  {
+   "type": "dir",
+   "path": "t1",
+   "format": "",
+   "want": "t1"
+  },
+  {
+   "type": "dump",
+   "path": "t2/db.dump",
+   "format": "custom",
+   "want": "t2/db.dump"
+  },
+  {
+   "type": "dump",
+   "path": "t2/globals.sql",
+   "format": "globals",
+   "want": "t2/globals.sql"
+  },
+  {
+   "type": "file",
+   "path": "/t1/a",
+   "format": null,
+   "want": null
+  },
+  {
+   "type": "file",
+   "path": "a/b",
+   "format": null,
+   "want": null
+  },
+  {
+   "type": "file",
+   "path": "t1/../x",
+   "format": null,
+   "want": null
+  },
+  {
+   "type": "file",
+   "path": "t1//x",
+   "format": null,
+   "want": null
+  },
+  {
+   "type": "file",
+   "path": "t1/./x",
+   "format": null,
+   "want": null
+  },
+  {
+   "type": "file",
+   "path": "./t1",
+   "format": null,
+   "want": null
+  },
+  {
+   "type": "file",
+   "path": "",
+   "format": null,
+   "want": null
+  },
+  {
+   "type": "dump",
+   "path": "t2/other.dump",
+   "format": "custom",
+   "want": null
+  },
+  {
+   "type": "dump",
+   "path": "t2/db.dump",
+   "format": "globals",
+   "want": null
+  },
+  {
+   "type": "dump",
+   "path": "t2/sub/db.dump",
+   "format": "custom",
+   "want": null
+  },
+  {
+   "type": "dump",
+   "path": "t2",
+   "format": "custom",
+   "want": null
+  },
+  {
+   "type": "file",
+   "path": "T1/a",
+   "format": null,
+   "want": null
+  },
+  {
+   "type": "file",
+   "path": "t0/a",
+   "format": null,
+   "want": null
+  }
+ ]
+}

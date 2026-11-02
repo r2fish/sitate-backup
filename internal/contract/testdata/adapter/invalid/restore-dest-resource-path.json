@@ -1,0 +1,11 @@
+{
+ "contract": "sitate.restore-dest/v1",
+ "done": true,
+ "verified_by": "ssh",
+ "remaining": [
+  {
+   "type": "workdir",
+   "id": "/home/x/.sitate"
+  }
+ ]
+}

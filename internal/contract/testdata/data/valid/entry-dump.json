@@ -1,0 +1,17 @@
+{
+ "ref": "d:t3:custom",
+ "t": "t3",
+ "path": "t3/db.dump",
+ "type": "dump",
+ "format": "custom",
+ "size": 9,
+ "hash": "blake3:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+ "ranges": [
+  [
+   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "3HL4kqtJlcpXroDTDmJ+rmSpXd3dIbrHY+MTRCxf3vjVBH40Nr8X8gdRQBpUMLUo",
+   0,
+   9
+  ]
+ ]
+}

@@ -1,0 +1,17 @@
+{
+ "format": "sitate.recv-selftest/v1",
+ "version": "0.1.0",
+ "receiver_hash": "sha256:zz",
+ "authorized_keys": {
+  "lines": 1,
+  "match": true
+ },
+ "targets": [
+  {
+   "id": "t1",
+   "kind": "files",
+   "root": "/srv/app/data",
+   "root_state": "ok"
+  }
+ ]
+}

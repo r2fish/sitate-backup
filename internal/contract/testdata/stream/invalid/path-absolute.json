@@ -1,0 +1,37 @@
+{
+ "description": "絶対パス",
+ "frames": [
+  {
+   "h": {
+    "type": "file",
+    "path": "/etc/passwd",
+    "size": 0,
+    "mode": 420,
+    "uid": 1000,
+    "gid": 1000,
+    "mtime_ns": 1760808600123456789
+   }
+  },
+  {
+   "h": {
+    "type": "item_end",
+    "bytes": 0,
+    "hash": "blake3:af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+    "status": "ok",
+    "exit_status": null
+   }
+  },
+  {
+   "h": {
+    "type": "end",
+    "bytes": 0,
+    "hash": "blake3:ddf896ae920987d95e858c8cd102dbb39dd7810a89f7343cd2bac29986f0cb1e",
+    "exit_status": 0
+   }
+  }
+ ],
+ "error": {
+  "kind": "contract",
+  "reason": "path"
+ }
+}

@@ -1,0 +1,21 @@
+{
+ "contract": "sitate.check/v1",
+ "phase": "ingest",
+ "target_id": "t1",
+ "input": {
+  "kind": "stream",
+  "fd": 3
+ },
+ "baseline": {
+  "snapshot_ref": "m-77777777777777777777777777777777",
+  "files": 10,
+  "bytes": 100,
+  "ext_hist": {
+   ".pdf": 0.21,
+   "*": 0.79
+  }
+ },
+ "params": {
+  "ratio_warn": 0.3
+ }
+}

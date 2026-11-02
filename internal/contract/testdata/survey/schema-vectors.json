@@ -1,0 +1,25 @@
+{
+ "valid": [
+  {"schema": "source_survey", "name": "full", "doc": {"format": "sitate.source-survey/v1", "scope": "full",
+   "mounts": [{"path": "/data", "fs_type": "ext4", "bytes": 10, "touches_raw": false}],
+   "dirs": [{"path": "/home/a", "parent": "/home", "fs_type": "ext4", "bytes": null, "touches_raw": false}],
+   "clusters": [{"socket_dir": "/run/postgresql", "port": 5432, "major": 16, "raw_paths": ["/var/lib/postgresql/16/main"], "readable": true, "names_readable": true}],
+   "databases": [{"name": "app", "port": 5432, "bytes": 5, "large_objects": false}],
+   "databases_complete": true, "prereq_missing": ["psql"]}},
+  {"schema": "source_survey", "name": "db-only", "doc": {"format": "sitate.source-survey/v1", "scope": "db_only",
+   "mounts": [], "dirs": [], "clusters": [{"socket_dir": "/run/postgresql", "port": 5432, "major": null, "raw_paths": [], "readable": false, "names_readable": false}],
+   "databases": [], "databases_complete": true, "prereq_missing": []}},
+  {"schema": "recv_survey", "name": "basic", "doc": {"format": "sitate.recv-survey/v1", "mounts": [{"path": "/data", "fs_type": "ext4"}], "clusters": [{"port": 5432, "names": ["app"]}, {"port": 5433, "names": null}]}}
+ ],
+ "invalid": [
+  {"schema": "source_survey", "name": "db-only-with-mounts", "doc": {"format": "sitate.source-survey/v1", "scope": "db_only",
+   "mounts": [{"path": "/data", "fs_type": "ext4", "bytes": 10, "touches_raw": false}], "dirs": [], "clusters": [], "databases": [], "databases_complete": true, "prereq_missing": []}},
+  {"schema": "source_survey", "name": "wrong-format", "doc": {"format": "sitate.source-survey/v2", "scope": "full", "mounts": [], "dirs": [], "clusters": [], "databases": [], "databases_complete": true, "prereq_missing": []}},
+  {"schema": "source_survey", "name": "judgement-field-class", "doc": {"format": "sitate.source-survey/v1", "scope": "full",
+   "mounts": [{"path": "/data", "fs_type": "ext4", "bytes": 10, "touches_raw": false, "class": "candidate"}], "dirs": [], "clusters": [], "databases": [], "databases_complete": true, "prereq_missing": []}},
+  {"schema": "source_survey", "name": "unknown-prereq", "doc": {"format": "sitate.source-survey/v1", "scope": "full", "mounts": [], "dirs": [], "clusters": [], "databases": [], "databases_complete": true, "prereq_missing": ["curl"]}},
+  {"schema": "source_survey", "name": "relative-path", "doc": {"format": "sitate.source-survey/v1", "scope": "full", "mounts": [{"path": "data", "fs_type": "ext4", "bytes": 1, "touches_raw": false}], "dirs": [], "clusters": [], "databases": [], "databases_complete": true, "prereq_missing": []}},
+  {"schema": "recv_survey", "name": "class-field", "doc": {"format": "sitate.recv-survey/v1", "mounts": [{"path": "/data", "fs_type": "ext4", "class": "candidate"}], "clusters": []}},
+  {"schema": "recv_survey", "name": "missing-names", "doc": {"format": "sitate.recv-survey/v1", "mounts": [], "clusters": [{"port": 5432}]}}
+ ]
+}

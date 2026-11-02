@@ -1,0 +1,11 @@
+[Unit]
+Description=Sitate-backup report-weekly timer
+
+[Timer]
+OnCalendar=Mon *-*-* 09:00:00 Asia/Tokyo
+Persistent=false
+RandomizedDelaySec=0
+Unit=sitate-report-weekly.service
+
+[Install]
+WantedBy=timers.target

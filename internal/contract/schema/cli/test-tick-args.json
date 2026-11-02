@@ -1,0 +1,36 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://sitate.invalid/schema/cli/test-tick-args.json",
+ "$comment": "test-tick の引数(試験ビルドだけ。作業指示書 3.3『1 模擬日』『模擬時間の起点』)。argv はサブコマンド名の後ろの語の列。--days N(N は 1 以上の 10 進)は共有の値を 1 模擬日ずつ進めながら、init が登録したタイマー列(internal/contract/timers/timers.json)を周期どおりに子プロセスで起動する。結果は cli/results.json の test_tick で days は N、now は進めた後の模擬の今。--set-start <RFC 3339> は共有の値を、与えた時刻に置くだけで、単位は起動しない(結果の days は 0)。init の前は定義の timezone が分からないため、起動定数 TestTickStart(定義の timezone で月曜かつ 1 日の 00:00、31 日の月)は台本が値として渡す。共有の値が既にあり、与えた時刻がそれより前なら ARG_INVALID(reason: range)で、戻さない。値の形が RFC 3339 でなければ ARG_INVALID(reason: format)。どちらか一方を 1 つだけ受ける。--run-id・--dry-run などの共通の引数は受けない。",
+ "oneOf": [
+  {
+   "type": "array",
+   "prefixItems": [
+    {
+     "const": "--days"
+    },
+    {
+     "type": "string",
+     "pattern": "^[1-9][0-9]{0,5}$"
+    }
+   ],
+   "items": false,
+   "minItems": 2
+  },
+  {
+   "type": "array",
+   "prefixItems": [
+    {
+     "const": "--set-start"
+    },
+    {
+     "type": "string",
+     "format": "date-time",
+     "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?(Z|[+-][0-9]{2}:[0-9]{2})$"
+    }
+   ],
+   "items": false,
+   "minItems": 2
+  }
+ ]
+}

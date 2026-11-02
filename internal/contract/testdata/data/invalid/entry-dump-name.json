@@ -1,0 +1,10 @@
+{
+ "ref": "d:t3:custom",
+ "t": "t3",
+ "path": "t3/secret.dump",
+ "type": "dump",
+ "format": "custom",
+ "size": 9,
+ "hash": "blake3:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+ "ranges": []
+}

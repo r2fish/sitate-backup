@@ -1,0 +1,36 @@
+{
+ "description": "end が無いまま終わる(対象を failed)",
+ "frames": [
+  {
+   "h": {
+    "type": "file",
+    "path": "a",
+    "size": 1,
+    "mode": 420,
+    "uid": 1000,
+    "gid": 1000,
+    "mtime_ns": 1760808600123456789
+   }
+  },
+  {
+   "h": {
+    "type": "data",
+    "size": 1
+   },
+   "body": "x"
+  },
+  {
+   "h": {
+    "type": "item_end",
+    "bytes": 1,
+    "hash": "blake3:3ae7d805f6789a6402acb70ad4096a85a56bf6804eaf25c0493ac697548d30b5",
+    "status": "ok",
+    "exit_status": null
+   }
+  }
+ ],
+ "error": {
+  "kind": "no_end",
+  "reason": "truncated"
+ }
+}

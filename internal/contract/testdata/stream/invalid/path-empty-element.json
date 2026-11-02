@@ -1,0 +1,37 @@
+{
+ "description": "path に空の要素(//)",
+ "frames": [
+  {
+   "h": {
+    "type": "file",
+    "path": "a//b",
+    "size": 0,
+    "mode": 420,
+    "uid": 1000,
+    "gid": 1000,
+    "mtime_ns": 1760808600123456789
+   }
+  },
+  {
+   "h": {
+    "type": "item_end",
+    "bytes": 0,
+    "hash": "blake3:af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+    "status": "ok",
+    "exit_status": null
+   }
+  },
+  {
+   "h": {
+    "type": "end",
+    "bytes": 0,
+    "hash": "blake3:b3a4c9c6342d3fa9bc829279693377d385811ae720d3bad6969d833fd0c6202f",
+    "exit_status": 0
+   }
+  }
+ ],
+ "error": {
+  "kind": "contract",
+  "reason": "path"
+ }
+}

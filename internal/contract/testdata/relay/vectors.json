@@ -1,0 +1,89 @@
+{
+ "description": "sitate.relay/v1。raw は標準入力に流れるバイト列(スナップショット鍵の行の後ろ)そのまま。keys は fn に渡る順",
+ "vectors": [
+  {
+   "name": "manifest-and-chunks",
+   "ok": true,
+   "raw": "{\"format\":\"sitate.relay/v1\"}\n{\"kind\":\"manifest\",\"key\":\"manifests/m-0123456789abcdef0123456789abcdef\",\"version_id\":\"3Lg2dK.u9wQ-x_1\",\"size\":9}\nSITM-body{\"kind\":\"chunk\",\"key\":\"chunks/ab/abcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"version_id\":\"v2\",\"size\":6}\nSITC-1{\"kind\":\"chunk\",\"key\":\"chunks/cd/cdcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"version_id\":\"v3\",\"size\":0}\n{\"kind\":\"end\",\"objects\":3,\"bytes\":15}\n",
+   "keys": [
+    "manifests/m-0123456789abcdef0123456789abcdef",
+    "chunks/ab/abcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "chunks/cd/cdcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+   ]
+  },
+  {
+   "name": "empty",
+   "ok": true,
+   "raw": "{\"format\":\"sitate.relay/v1\"}\n{\"kind\":\"end\",\"objects\":0,\"bytes\":0}\n",
+   "keys": []
+  },
+  {
+   "name": "binary-newline-in-body",
+   "ok": true,
+   "raw": "{\"format\":\"sitate.relay/v1\"}\n{\"kind\":\"chunk\",\"key\":\"chunks/ab/abcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"version_id\":\"3Lg2dK.u9wQ-x_1\",\"size\":18}\na\n{\"kind\":\"end\"}\nb{\"kind\":\"end\",\"objects\":1,\"bytes\":18}\n",
+   "keys": [
+    "chunks/ab/abcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+   ]
+  },
+  {
+   "name": "no-end-cancel",
+   "ok": false,
+   "raw": "{\"format\":\"sitate.relay/v1\"}\n{\"kind\":\"chunk\",\"key\":\"chunks/ab/abcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"version_id\":\"3Lg2dK.u9wQ-x_1\",\"size\":3}\nabc",
+   "why": "end が無いまま閉じた = 取り消し"
+  },
+  {
+   "name": "body-truncated",
+   "ok": false,
+   "raw": "{\"format\":\"sitate.relay/v1\"}\n{\"kind\":\"chunk\",\"key\":\"chunks/ab/abcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"version_id\":\"v\",\"size\":10}\nabc",
+   "why": "本体の途中で閉じた = 取り消し"
+  },
+  {
+   "name": "end-count",
+   "ok": false,
+   "raw": "{\"format\":\"sitate.relay/v1\"}\n{\"kind\":\"chunk\",\"key\":\"chunks/ab/abcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"version_id\":\"3Lg2dK.u9wQ-x_1\",\"size\":3}\nabc{\"kind\":\"end\",\"objects\":2,\"bytes\":3}\n",
+   "why": "件数が違う"
+  },
+  {
+   "name": "end-bytes",
+   "ok": false,
+   "raw": "{\"format\":\"sitate.relay/v1\"}\n{\"kind\":\"chunk\",\"key\":\"chunks/ab/abcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"version_id\":\"3Lg2dK.u9wQ-x_1\",\"size\":3}\nabc{\"kind\":\"end\",\"objects\":1,\"bytes\":4}\n",
+   "why": "合計が違う"
+  },
+  {
+   "name": "no-start",
+   "ok": false,
+   "raw": "{\"kind\":\"chunk\",\"key\":\"chunks/ab/abcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"version_id\":\"3Lg2dK.u9wQ-x_1\",\"size\":3}\nabc{\"kind\":\"end\",\"objects\":1,\"bytes\":3}\n",
+   "why": "1 行目が start でない"
+  },
+  {
+   "name": "wrong-format",
+   "ok": false,
+   "raw": "{\"format\":\"sitate.relay/v2\"}\n{\"kind\":\"end\",\"objects\":0,\"bytes\":0}\n",
+   "why": "形式の版が違う"
+  },
+  {
+   "name": "key-traversal",
+   "ok": false,
+   "raw": "{\"format\":\"sitate.relay/v1\"}\n{\"kind\":\"chunk\",\"key\":\"chunks/ab/../../repo.json\",\"version_id\":\"3Lg2dK.u9wQ-x_1\",\"size\":3}\nabc{\"kind\":\"end\",\"objects\":1,\"bytes\":3}\n",
+   "why": "キーが manifests/・chunks/ の形でない"
+  },
+  {
+   "name": "key-kind-mismatch",
+   "ok": false,
+   "raw": "{\"format\":\"sitate.relay/v1\"}\n{\"kind\":\"manifest\",\"key\":\"chunks/ab/abcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"version_id\":\"3Lg2dK.u9wQ-x_1\",\"size\":3}\nabc{\"kind\":\"end\",\"objects\":1,\"bytes\":3}\n",
+   "why": "kind と key の種類が合わない"
+  },
+  {
+   "name": "unknown-kind",
+   "ok": false,
+   "raw": "{\"format\":\"sitate.relay/v1\"}\n{\"kind\":\"config\",\"key\":\"config/x\",\"version_id\":\"3Lg2dK.u9wQ-x_1\",\"size\":3}\nabc{\"kind\":\"end\",\"objects\":1,\"bytes\":3}\n",
+   "why": "kind は manifest か chunk だけ"
+  },
+  {
+   "name": "extra-field",
+   "ok": false,
+   "raw": "{\"format\":\"sitate.relay/v1\"}\n{\"kind\":\"chunk\",\"key\":\"chunks/ab/abcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"version_id\":\"v\",\"size\":1,\"x\":1}\na{\"kind\":\"end\",\"objects\":1,\"bytes\":1}\n",
+   "why": "未知の項目"
+  }
+ ]
+}

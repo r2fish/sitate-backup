@@ -1,0 +1,3 @@
+{"schema":"sitate.out/v1","command":["backup"],"ok":false,"dry_run":false,"run_id":"r-20261018T173000Z-3f9a","result":null,"warnings":[],
+ "error":{"code":"NOT_SEALED","class":"precondition","retryable":false,"detail":{},
+  "next":[{"argv":["sitate","status"],"requires_human":false,"requires_approval":false,"why":"バックアップを先に取ってください"}]}}

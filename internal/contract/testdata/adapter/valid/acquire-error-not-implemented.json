@@ -1,0 +1,9 @@
+{
+ "contract": "sitate.acquire/v1",
+ "error": {
+  "code": "NOT_IMPLEMENTED",
+  "detail": {
+   "feature": "mysql"
+  }
+ }
+}

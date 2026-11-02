@@ -1,0 +1,829 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://sitate.invalid/schema/data/manifest.json",
+ "$defs": {
+  "manifest_id": {
+   "type": "string",
+   "pattern": "^m-[0-9a-f]{32}$"
+  },
+  "repo_id": {
+   "type": "string",
+   "pattern": "^rp-[0-9a-f]{32}$"
+  },
+  "key_id": {
+   "type": "string",
+   "pattern": "^k[0-9]{1,10}$"
+  },
+  "version_id": {
+   "type": "string",
+   "pattern": "^[^\\x00-\\x1f]+$",
+   "maxLength": 1024
+  },
+  "chunk_key": {
+   "type": "string",
+   "pattern": "^[A-Za-z0-9+/]{43}=$"
+  },
+  "entry_ref": {
+   "type": "string",
+   "pattern": "^(f:[0-9a-f]{32}|d:t[1-9][0-9]{0,3}:(globals|custom))$"
+  },
+  "blake3": {
+   "type": "string",
+   "pattern": "^blake3:[0-9a-f]{64}$"
+  },
+  "chunk_ref": {
+   "type": "object",
+   "required": [
+    "id",
+    "version_id",
+    "key"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "id": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/hex64"
+    },
+    "version_id": {
+     "$ref": "#/$defs/version_id"
+    },
+    "key": {
+     "$ref": "#/$defs/chunk_key"
+    }
+   }
+  },
+  "entries_ref": {
+   "type": "object",
+   "required": [
+    "format",
+    "count",
+    "chunks"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "format": {
+     "const": "sitate.entries/v1"
+    },
+    "count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "chunks": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/chunk_ref"
+     }
+    }
+   }
+  },
+  "chunkkeys_ref": {
+   "type": "object",
+   "required": [
+    "format",
+    "count",
+    "chunks"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "format": {
+     "const": "sitate.chunkkeys/v1"
+    },
+    "count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "chunks": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/chunk_ref"
+     }
+    }
+   }
+  },
+  "table_rows": {
+   "type": "object",
+   "required": [
+    "name",
+    "rows",
+    "previous_rows"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "name": {
+     "type": "string",
+     "maxLength": 256,
+     "x-sitate-data": true
+    },
+    "rows": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "previous_rows": {
+     "anyOf": [
+      {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    }
+   }
+  },
+  "manifest_finding": {
+   "type": "object",
+   "required": [
+    "item_ref",
+    "code"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "item_ref": {
+     "$ref": "#/$defs/entry_ref"
+    },
+    "code": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+    }
+   }
+  },
+  "manifest_check": {
+   "type": "object",
+   "required": [
+    "name",
+    "version",
+    "phase",
+    "result",
+    "findings",
+    "findings_total"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "name": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+    },
+    "version": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+    },
+    "phase": {
+     "const": "ingest"
+    },
+    "result": {
+     "enum": [
+      "pass",
+      "warn",
+      "fail",
+      "error"
+     ]
+    },
+    "reason": {
+     "enum": [
+      "exited",
+      "no_result",
+      "timeout"
+     ]
+    },
+    "findings": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/manifest_finding"
+     }
+    },
+    "findings_total": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "inherited": {
+     "const": true
+    },
+    "inherited_from": {
+     "$ref": "#/$defs/manifest_id"
+    },
+    "tables": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/table_rows"
+     }
+    }
+   },
+   "allOf": [
+    {
+     "if": {
+      "properties": {
+       "result": {
+        "const": "error"
+       }
+      },
+      "required": [
+       "result"
+      ]
+     },
+     "then": {
+      "required": [
+       "reason"
+      ],
+      "properties": {
+       "findings": {
+        "maxItems": 0
+       },
+       "findings_total": {
+        "const": 0
+       }
+      }
+     },
+     "else": {
+      "not": {
+       "required": [
+        "reason"
+       ]
+      }
+     }
+    },
+    {
+     "if": {
+      "required": [
+       "inherited"
+      ]
+     },
+     "then": {
+      "required": [
+       "inherited_from"
+      ],
+      "properties": {
+       "result": {
+        "const": "fail"
+       },
+       "findings": {
+        "maxItems": 0
+       },
+       "findings_total": {
+        "const": 0
+       }
+      }
+     },
+     "else": {
+      "not": {
+       "required": [
+        "inherited_from"
+       ]
+      }
+     }
+    }
+   ]
+  },
+  "manifest_dump": {
+   "type": "object",
+   "required": [
+    "format"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "format": {
+     "enum": [
+      "globals",
+      "custom"
+     ]
+    }
+   }
+  },
+  "manifest_target_files": {
+   "type": "object",
+   "required": [
+    "id",
+    "status",
+    "bytes",
+    "kind",
+    "files",
+    "changed_during_read"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "id": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/target_id"
+    },
+    "status": {
+     "enum": [
+      "ok",
+      "partial",
+      "failed"
+     ]
+    },
+    "bytes": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "kind": {
+     "const": "files"
+    },
+    "files": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "changed_during_read": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    }
+   }
+  },
+  "manifest_target_pg": {
+   "type": "object",
+   "required": [
+    "id",
+    "status",
+    "bytes",
+    "kind",
+    "dumps"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "id": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/target_id"
+    },
+    "status": {
+     "enum": [
+      "ok",
+      "partial",
+      "failed"
+     ]
+    },
+    "bytes": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "kind": {
+     "const": "postgresql"
+    },
+    "dumps": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/manifest_dump"
+     }
+    }
+   }
+  },
+  "manifest_target": {
+   "oneOf": [
+    {
+     "$ref": "#/$defs/manifest_target_files"
+    },
+    {
+     "$ref": "#/$defs/manifest_target_pg"
+    }
+   ]
+  },
+  "stats": {
+   "type": "object",
+   "required": [
+    "chunks_referenced",
+    "chunks_new",
+    "bytes_new"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "chunks_referenced": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "chunks_new": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "bytes_new": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    }
+   }
+  },
+  "manifest": {
+   "type": "object",
+   "required": [
+    "format",
+    "manifest_id",
+    "repo_id",
+    "created_at",
+    "parent",
+    "def_hash",
+    "binary_version",
+    "key_id",
+    "retention_class",
+    "definition",
+    "targets",
+    "entries",
+    "chunk_keys",
+    "checks",
+    "health",
+    "stats"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "format": {
+     "const": "sitate.manifest/v1"
+    },
+    "manifest_id": {
+     "$ref": "#/$defs/manifest_id"
+    },
+    "repo_id": {
+     "$ref": "#/$defs/repo_id"
+    },
+    "created_at": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "parent": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/manifest_id"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "def_hash": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/sha256"
+    },
+    "binary_version": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+    },
+    "key_id": {
+     "$ref": "#/$defs/key_id"
+    },
+    "retention_class": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/retention_class"
+    },
+    "definition": {
+     "$ref": "https://sitate.invalid/schema/data/definition.json#/$defs/definition"
+    },
+    "targets": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/manifest_target"
+     }
+    },
+    "entries": {
+     "$ref": "#/$defs/entries_ref"
+    },
+    "chunk_keys": {
+     "$ref": "#/$defs/chunkkeys_ref"
+    },
+    "checks": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/manifest_check"
+     }
+    },
+    "health": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/health"
+    },
+    "stats": {
+     "$ref": "#/$defs/stats"
+    }
+   }
+  },
+  "entry_path": {
+   "oneOf": [
+    {
+     "required": [
+      "path"
+     ],
+     "not": {
+      "required": [
+       "path_b64"
+      ]
+     }
+    },
+    {
+     "required": [
+      "path_b64"
+     ],
+     "not": {
+      "required": [
+       "path"
+      ]
+     }
+    }
+   ],
+   "not": {
+    "properties": {
+     "path": {
+      "pattern": "(^|/)\\.\\.?(/|$)"
+     }
+    },
+    "required": [
+     "path"
+    ]
+   }
+  },
+  "range": {
+   "type": "array",
+   "prefixItems": [
+    {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/hex64"
+    },
+    {
+     "$ref": "#/$defs/version_id"
+    },
+    {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    }
+   ],
+   "items": false,
+   "minItems": 4
+  },
+  "entry_common": {
+   "ref": {
+    "$ref": "#/$defs/entry_ref"
+   },
+   "t": {
+    "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/target_id"
+   }
+  },
+  "entry_file": {
+   "type": "object",
+   "required": [
+    "ref",
+    "t",
+    "type",
+    "uid",
+    "gid",
+    "mtime_ns",
+    "mode",
+    "size",
+    "hash",
+    "ranges"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "ref": {
+     "type": "string",
+     "pattern": "^f:[0-9a-f]{32}$"
+    },
+    "t": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/target_id"
+    },
+    "path": {
+     "type": "string",
+     "pattern": "^t[1-9][0-9]{0,3}(/[^/\\x00]+)+$",
+     "maxLength": 4096
+    },
+    "path_b64": {
+     "type": "string",
+     "pattern": "^[A-Za-z0-9+/]*={0,2}$",
+     "maxLength": 16384
+    },
+    "type": {
+     "const": "file"
+    },
+    "uid": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "gid": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "mtime_ns": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/int"
+    },
+    "mode": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 4095
+    },
+    "size": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "hash": {
+     "$ref": "#/$defs/blake3"
+    },
+    "ranges": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/range"
+     }
+    },
+    "flags": {
+     "type": "array",
+     "items": {
+      "enum": [
+       "changed_during_read"
+      ]
+     }
+    }
+   },
+   "allOf": [
+    {
+     "$ref": "#/$defs/entry_path"
+    }
+   ]
+  },
+  "entry_dir": {
+   "type": "object",
+   "required": [
+    "ref",
+    "t",
+    "type",
+    "uid",
+    "gid",
+    "mtime_ns",
+    "mode"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "ref": {
+     "type": "string",
+     "pattern": "^f:[0-9a-f]{32}$"
+    },
+    "t": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/target_id"
+    },
+    "path": {
+     "type": "string",
+     "pattern": "^t[1-9][0-9]{0,3}(/[^/\\x00]+)*$",
+     "maxLength": 4096
+    },
+    "path_b64": {
+     "type": "string",
+     "pattern": "^[A-Za-z0-9+/]*={0,2}$",
+     "maxLength": 16384
+    },
+    "type": {
+     "const": "dir"
+    },
+    "uid": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "gid": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "mtime_ns": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/int"
+    },
+    "mode": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 4095
+    }
+   },
+   "allOf": [
+    {
+     "$ref": "#/$defs/entry_path"
+    }
+   ]
+  },
+  "entry_symlink": {
+   "type": "object",
+   "required": [
+    "ref",
+    "t",
+    "type",
+    "uid",
+    "gid",
+    "mtime_ns"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "ref": {
+     "type": "string",
+     "pattern": "^f:[0-9a-f]{32}$"
+    },
+    "t": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/target_id"
+    },
+    "path": {
+     "type": "string",
+     "pattern": "^t[1-9][0-9]{0,3}(/[^/\\x00]+)+$",
+     "maxLength": 4096
+    },
+    "path_b64": {
+     "type": "string",
+     "pattern": "^[A-Za-z0-9+/]*={0,2}$",
+     "maxLength": 16384
+    },
+    "type": {
+     "const": "symlink"
+    },
+    "uid": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "gid": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "mtime_ns": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/int"
+    },
+    "target": {
+     "type": "string",
+     "maxLength": 4096,
+     "x-sitate-data": true
+    },
+    "target_b64": {
+     "type": "string",
+     "pattern": "^[A-Za-z0-9+/]*={0,2}$",
+     "maxLength": 16384
+    }
+   },
+   "allOf": [
+    {
+     "$ref": "#/$defs/entry_path"
+    },
+    {
+     "oneOf": [
+      {
+       "required": [
+        "target"
+       ],
+       "not": {
+        "required": [
+         "target_b64"
+        ]
+       }
+      },
+      {
+       "required": [
+        "target_b64"
+       ],
+       "not": {
+        "required": [
+         "target"
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  },
+  "entry_dump": {
+   "type": "object",
+   "required": [
+    "ref",
+    "t",
+    "path",
+    "type",
+    "format",
+    "size",
+    "hash",
+    "ranges"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "ref": {
+     "type": "string",
+     "pattern": "^d:t[1-9][0-9]{0,3}:(globals|custom)$"
+    },
+    "t": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/target_id"
+    },
+    "path": {
+     "type": "string",
+     "pattern": "^t[1-9][0-9]{0,3}/(globals\\.sql|db\\.dump)$"
+    },
+    "type": {
+     "const": "dump"
+    },
+    "format": {
+     "enum": [
+      "globals",
+      "custom"
+     ]
+    },
+    "size": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "hash": {
+     "$ref": "#/$defs/blake3"
+    },
+    "ranges": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/range"
+     }
+    }
+   }
+  },
+  "entry": {
+   "oneOf": [
+    {
+     "$ref": "#/$defs/entry_file"
+    },
+    {
+     "$ref": "#/$defs/entry_dir"
+    },
+    {
+     "$ref": "#/$defs/entry_symlink"
+    },
+    {
+     "$ref": "#/$defs/entry_dump"
+    }
+   ]
+  },
+  "chunkkey_row": {
+   "type": "object",
+   "required": [
+    "id",
+    "v",
+    "k"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "id": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/hex64"
+    },
+    "v": {
+     "$ref": "#/$defs/version_id"
+    },
+    "k": {
+     "$ref": "#/$defs/chunk_key"
+    }
+   }
+  }
+ },
+ "$ref": "#/$defs/manifest"
+}

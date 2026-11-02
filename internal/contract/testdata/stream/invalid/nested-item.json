@@ -1,0 +1,39 @@
+{
+ "description": "item_end の前に次の file",
+ "frames": [
+  {
+   "h": {
+    "type": "file",
+    "path": "a",
+    "size": 1,
+    "mode": 420,
+    "uid": 1000,
+    "gid": 1000,
+    "mtime_ns": 1760808600123456789
+   }
+  },
+  {
+   "h": {
+    "type": "file",
+    "path": "b",
+    "size": 1,
+    "mode": 420,
+    "uid": 1000,
+    "gid": 1000,
+    "mtime_ns": 1760808600123456789
+   }
+  },
+  {
+   "h": {
+    "type": "end",
+    "bytes": 0,
+    "hash": "blake3:fa252911d2f4080663e8d9e5b8307b00a6f91105a8dd525eb1ef2061a9d25b63",
+    "exit_status": 0
+   }
+  }
+ ],
+ "error": {
+  "kind": "contract",
+  "reason": "order"
+ }
+}

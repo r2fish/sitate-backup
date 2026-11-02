@@ -1,0 +1,10 @@
+{
+ "contract": "sitate.check/v1",
+ "error": {
+  "code": "INTERNAL",
+  "detail": {
+   "component": "adapter",
+   "reason": "request"
+  }
+ }
+}

@@ -1,0 +1,106 @@
+{
+ "description": "dir・file・0 バイトの file・unchanged・symlink を含む標準的な列",
+ "frames": [
+  {
+   "h": {
+    "type": "dir",
+    "path": ".",
+    "mode": 493,
+    "uid": 1000,
+    "gid": 1000,
+    "mtime_ns": 1760808600000000000
+   }
+  },
+  {
+   "h": {
+    "type": "file",
+    "path": "a.txt",
+    "size": 5,
+    "mode": 420,
+    "uid": 1000,
+    "gid": 1000,
+    "mtime_ns": 1760808600123456789
+   }
+  },
+  {
+   "h": {
+    "type": "data",
+    "size": 5
+   },
+   "body": "hello"
+  },
+  {
+   "h": {
+    "type": "item_end",
+    "bytes": 5,
+    "hash": "blake3:ea8f163db38682925e4491c5e58d4bb3506ef8c14eb78a86e908c5624a67200f",
+    "status": "ok",
+    "exit_status": null
+   }
+  },
+  {
+   "h": {
+    "type": "file",
+    "path": "empty",
+    "size": 0,
+    "mode": 420,
+    "uid": 1000,
+    "gid": 1000,
+    "mtime_ns": 1760808600123456789
+   }
+  },
+  {
+   "h": {
+    "type": "item_end",
+    "bytes": 0,
+    "hash": "blake3:af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+    "status": "ok",
+    "exit_status": null
+   }
+  },
+  {
+   "h": {
+    "type": "unchanged",
+    "path": "same",
+    "size": 3,
+    "mode": 420,
+    "uid": 1000,
+    "gid": 1000,
+    "mtime_ns": 1760808600123456789
+   }
+  },
+  {
+   "h": {
+    "type": "symlink",
+    "path": "ln",
+    "target": "a.txt",
+    "uid": 1000,
+    "gid": 1000,
+    "mtime_ns": 1760808600000000000
+   }
+  },
+  {
+   "h": {
+    "type": "end",
+    "bytes": 5,
+    "hash": "blake3:dad4f8f2b0e87f12e0f587337dbe52375e1ea284ef8863a395819c981b9b689c",
+    "exit_status": 0
+   }
+  }
+ ],
+ "result": {
+  "contract": "sitate.acquire/v1",
+  "status": "ok",
+  "stats": {
+   "files": 1,
+   "bytes": 5,
+   "errors": 0,
+   "errors_omitted": 0,
+   "warnings_omitted": 0,
+   "changed_during_read": 0
+  },
+  "errors": [],
+  "warnings": []
+ },
+ "error": null
+}

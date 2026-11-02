@@ -1,0 +1,37 @@
+{
+ "description": "file の item_end が exit_status を持つ",
+ "frames": [
+  {
+   "h": {
+    "type": "file",
+    "path": "a",
+    "size": 0,
+    "mode": 420,
+    "uid": 1000,
+    "gid": 1000,
+    "mtime_ns": 1760808600123456789
+   }
+  },
+  {
+   "h": {
+    "type": "item_end",
+    "bytes": 0,
+    "hash": "blake3:af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+    "status": "ok",
+    "exit_status": 0
+   }
+  },
+  {
+   "h": {
+    "type": "end",
+    "bytes": 0,
+    "hash": "blake3:a392853c4894bbd792ed9ca23333c01afd212c4a5dd4e55645e53e5d6c06fcd9",
+    "exit_status": 0
+   }
+  }
+ ],
+ "error": {
+  "kind": "contract",
+  "reason": "item"
+ }
+}

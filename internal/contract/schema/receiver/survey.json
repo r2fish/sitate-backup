@@ -1,0 +1,297 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://sitate.invalid/schema/receiver/survey.json",
+ "$defs": {
+  "source_survey": {
+   "$comment": "sitate.source-survey/v1(spec 3.3 の元サーバーの調査の出力)。調査の処理は材料だけを出し、候補の判定(class・label・supported・db_data・fs_type の other への置き換え・主版 13 の線)は持たない。判定は核の Surveyor(U1c)。範囲 db_only は clusters だけを持ち、mounts・dirs・databases は空、databases_complete は true、prereq_missing は空。touches_raw は『生のファイルの場所に触れる』(spec 3.3)の事実で、判定ではない。dirs[] の要素は /home・/srv の直下(parent がそのパス)と、touches_raw が true のマウントの直下(parent がそのマウントの根)。bytes が null は du の打ち切り(SURVEY_DU_TIMEOUT_S)か数え切れなかったもの。",
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "format",
+    "scope",
+    "mounts",
+    "dirs",
+    "clusters",
+    "databases",
+    "databases_complete",
+    "prereq_missing"
+   ],
+   "properties": {
+    "format": {
+     "const": "sitate.source-survey/v1"
+    },
+    "scope": {
+     "enum": [
+      "full",
+      "db_only"
+     ]
+    },
+    "mounts": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "required": [
+       "path",
+       "fs_type",
+       "bytes",
+       "touches_raw"
+      ],
+      "additionalProperties": false,
+      "properties": {
+       "path": {
+        "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/path"
+       },
+       "fs_type": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9_.+-]{0,63}$"
+       },
+       "bytes": {
+        "anyOf": [
+         {
+          "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "touches_raw": {
+        "type": "boolean"
+       }
+      }
+     }
+    },
+    "dirs": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "required": [
+       "path",
+       "parent",
+       "fs_type",
+       "bytes",
+       "touches_raw"
+      ],
+      "additionalProperties": false,
+      "properties": {
+       "path": {
+        "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/path"
+       },
+       "parent": {
+        "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/path"
+       },
+       "fs_type": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9_.+-]{0,63}$"
+       },
+       "bytes": {
+        "anyOf": [
+         {
+          "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "touches_raw": {
+        "type": "boolean"
+       }
+      }
+     }
+    },
+    "clusters": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "required": [
+       "socket_dir",
+       "port",
+       "major",
+       "raw_paths",
+       "readable",
+       "names_readable"
+      ],
+      "additionalProperties": false,
+      "properties": {
+       "socket_dir": {
+        "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/path"
+       },
+       "port": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 65535
+       },
+       "major": {
+        "anyOf": [
+         {
+          "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "raw_paths": {
+        "type": "array",
+        "items": {
+         "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/path"
+        }
+       },
+       "readable": {
+        "type": "boolean"
+       },
+       "names_readable": {
+        "type": "boolean"
+       }
+      },
+      "$comment": "readable=false は root の作るディレクトリのソケットでロックファイルか PG_VERSION を読めないクラスタ(major は null、raw_paths は空)。信じる条件を満たさないソケットは要素にしない。names_readable は DB 名を読めたか。"
+     }
+    },
+    "databases": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "required": [
+       "name",
+       "port",
+       "bytes",
+       "large_objects"
+      ],
+      "additionalProperties": false,
+      "properties": {
+       "name": {
+        "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/anypath"
+       },
+       "port": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 65535
+       },
+       "bytes": {
+        "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+       },
+       "large_objects": {
+        "type": "boolean"
+       }
+      },
+      "$comment": "テンプレートと postgres を除いた DB。主版の線は核が引く。"
+     }
+    },
+    "databases_complete": {
+     "type": "boolean"
+    },
+    "prereq_missing": {
+     "type": "array",
+     "items": {
+      "enum": [
+       "findutils",
+       "tar",
+       "setfacl",
+       "sha256sum",
+       "runuser",
+       "psql"
+      ]
+     },
+     "uniqueItems": true
+    }
+   },
+   "allOf": [
+    {
+     "if": {
+      "properties": {
+       "scope": {
+        "const": "db_only"
+       }
+      }
+     },
+     "then": {
+      "properties": {
+       "mounts": {
+        "maxItems": 0
+       },
+       "dirs": {
+        "maxItems": 0
+       },
+       "databases": {
+        "maxItems": 0
+       },
+       "prereq_missing": {
+        "maxItems": 0
+       },
+       "databases_complete": {
+        "const": true
+       }
+      }
+     }
+    }
+   ]
+  },
+  "recv_survey": {
+   "$comment": "sitate.recv-survey/v1(受け口の操作 survey の出力。spec 3.3)。材料だけ: マウント(根・種類)と 3 か所のソケットのポート。names は sitate-ro のロールで接続できるクラスタの DB 名(テンプレートと postgres を除く)、ロールの無いクラスタは null。class・db_data・主版は持たない。",
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "format",
+    "mounts",
+    "clusters"
+   ],
+   "properties": {
+    "format": {
+     "const": "sitate.recv-survey/v1"
+    },
+    "mounts": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "required": [
+       "path",
+       "fs_type"
+      ],
+      "additionalProperties": false,
+      "properties": {
+       "path": {
+        "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/path"
+       },
+       "fs_type": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9_.+-]{0,63}$"
+       }
+      }
+     }
+    },
+    "clusters": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "required": [
+       "port",
+       "names"
+      ],
+      "additionalProperties": false,
+      "properties": {
+       "port": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 65535
+       },
+       "names": {
+        "anyOf": [
+         {
+          "type": "array",
+          "items": {
+           "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/anypath"
+          }
+         },
+         {
+          "type": "null"
+         }
+        ]
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}

@@ -1,0 +1,55 @@
+{
+ "description": "読みかけの file を item_end の status error で閉じてから end(受け口の終了状態 5)",
+ "frames": [
+  {
+   "h": {
+    "type": "file",
+    "path": "a",
+    "size": 10,
+    "mode": 420,
+    "uid": 1000,
+    "gid": 1000,
+    "mtime_ns": 1760808600123456789
+   }
+  },
+  {
+   "h": {
+    "type": "data",
+    "size": 3
+   },
+   "body": "abc"
+  },
+  {
+   "h": {
+    "type": "item_end",
+    "bytes": 3,
+    "hash": "blake3:6437b3ac38465133ffb63b75273a8db548c558465d79db03fd359c6cd5bd9d85",
+    "status": "error",
+    "exit_status": null
+   }
+  },
+  {
+   "h": {
+    "type": "end",
+    "bytes": 3,
+    "hash": "blake3:3458eb61162f4cbecccb5e70b21d0fb105c744aa17ae07441878d4bf4f93e0f0",
+    "exit_status": 5
+   }
+  }
+ ],
+ "result": {
+  "contract": "sitate.acquire/v1",
+  "status": "ok",
+  "stats": {
+   "files": 1,
+   "bytes": 5,
+   "errors": 0,
+   "errors_omitted": 0,
+   "warnings_omitted": 0,
+   "changed_during_read": 0
+  },
+  "errors": [],
+  "warnings": []
+ },
+ "error": null
+}

@@ -1,0 +1,5 @@
+SHELL=/bin/sh
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
+CRON_TZ={{.TZ}}
+{{range .Lines}}{{.}}
+{{end}}

@@ -1,0 +1,309 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://sitate.invalid/schema/data/definition.json",
+ "$defs": {
+  "target": {
+   "type": "object",
+   "required": [
+    "id"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "id": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/target_id"
+    },
+    "files": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/path"
+    },
+    "postgresql": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/anypath"
+    },
+    "port": {
+     "type": "integer",
+     "minimum": 1,
+     "maximum": 65535
+    }
+   },
+   "oneOf": [
+    {
+     "required": [
+      "files"
+     ],
+     "not": {
+      "required": [
+       "postgresql"
+      ]
+     }
+    },
+    {
+     "required": [
+      "postgresql"
+     ],
+     "not": {
+      "required": [
+       "files"
+      ]
+     }
+    }
+   ],
+   "dependentSchemas": {
+    "port": {
+     "required": [
+      "postgresql"
+     ]
+    }
+   }
+  },
+  "declined": {
+   "type": "object",
+   "required": [
+    "id"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "id": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/declined_id"
+    },
+    "mount": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/path"
+    },
+    "postgresql_cluster": {
+     "type": "integer",
+     "minimum": 1,
+     "maximum": 65535
+    }
+   },
+   "oneOf": [
+    {
+     "required": [
+      "mount"
+     ],
+     "not": {
+      "required": [
+       "postgresql_cluster"
+      ]
+     }
+    },
+    {
+     "required": [
+      "postgresql_cluster"
+     ],
+     "not": {
+      "required": [
+       "mount"
+      ]
+     }
+    }
+   ]
+  },
+  "definition": {
+   "type": "object",
+   "required": [
+    "version",
+    "source",
+    "storage",
+    "restore",
+    "notify"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "version": {
+     "const": 1
+    },
+    "source": {
+     "type": "object",
+     "required": [
+      "host",
+      "targets"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "host": {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/host"
+      },
+      "targets": {
+       "type": "array",
+       "items": {
+        "$ref": "#/$defs/target"
+       },
+       "minItems": 1
+      },
+      "declined": {
+       "type": "array",
+       "items": {
+        "$ref": "#/$defs/declined"
+       }
+      }
+     }
+    },
+    "storage": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "required": [
+       "endpoint",
+       "bucket",
+       "key_ref"
+      ],
+      "additionalProperties": false,
+      "properties": {
+       "endpoint": {
+        "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/url"
+       },
+       "bucket": {
+        "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+       },
+       "key_ref": {
+        "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+       },
+       "prefix": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9._/-]{0,255}$"
+       },
+       "region": {
+        "type": "string",
+        "pattern": "^[a-z0-9-]{1,64}$"
+       },
+       "addressing": {
+        "enum": [
+         "path",
+         "virtual"
+        ]
+       }
+      }
+     },
+     "minItems": 1,
+     "maxItems": 1
+    },
+    "restore": {
+     "type": "object",
+     "required": [
+      "dest"
+     ],
+     "additionalProperties": false,
+     "if": {
+      "properties": {
+       "adapter": {
+        "const": "ssh-host"
+       }
+      },
+      "required": [
+       "adapter"
+      ]
+     },
+     "then": {
+      "properties": {
+       "dest": {
+        "properties": {
+         "at": {
+          "pattern": "^ssh://[A-Za-z0-9._-]+@[A-Za-z0-9._:\\[\\]-]+(:[0-9]{1,5})?$"
+         }
+        }
+       }
+      }
+     },
+     "properties": {
+      "adapter": {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+      },
+      "dest": {
+       "type": "object",
+       "required": [
+        "at",
+        "key_ref"
+       ],
+       "additionalProperties": false,
+       "properties": {
+        "at": {
+         "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/anypath"
+        },
+        "key_ref": {
+         "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+        }
+       }
+      },
+      "ssh_from": {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/anypath"
+      }
+     }
+    },
+    "notify": {
+     "type": "object",
+     "required": [
+      "to"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "to": {
+       "type": "array",
+       "items": {
+        "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/data"
+       },
+       "minItems": 1
+      },
+      "smtp_ref": {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+      },
+      "heartbeat_ref": {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+      },
+      "lang": {
+       "enum": [
+        "ja",
+        "en"
+       ]
+      }
+     }
+    },
+    "schedule": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/hhmm"
+    },
+    "timezone": {
+     "type": "string",
+     "pattern": "^[A-Za-z0-9_+/-]{1,64}$"
+    },
+    "restore_test": {
+     "enum": [
+      "monthly",
+      "weekly"
+     ]
+    },
+    "approval_delay_hours": {
+     "type": "integer",
+     "minimum": 7,
+     "maximum": 9223372036854775807
+    },
+    "auto_hold_days": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "cost_ceiling_yen": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "server_monthly_yen": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "checks": {
+     "type": "object",
+     "propertyNames": {
+      "pattern": "^[a-z][a-z0-9-]{0,63}$"
+     },
+     "additionalProperties": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+       "enabled": {
+        "type": "boolean"
+       },
+       "params": {
+        "type": "object",
+        "additionalProperties": {
+         "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/defvalue"
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}

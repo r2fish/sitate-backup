@@ -1,0 +1,16 @@
+{
+ "contract": "sitate.check/v1",
+ "name": "entropy-ratio",
+ "version": "1.0.0",
+ "result": "warn",
+ "metrics": {
+  "ratio": 0.4
+ },
+ "findings": [
+  {
+   "code": "HIGH_ENTROPY_RATIO",
+   "item_ref": "f:8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c"
+  }
+ ],
+ "findings_total": 1
+}

@@ -1,0 +1,14 @@
+{
+ "contract": "sitate.restore-dest/v1",
+ "error": {
+  "code": "prereq_missing",
+  "detail": {
+   "prereq": [
+    {
+     "name": "gocryptfs",
+     "ok": false
+    }
+   ]
+  }
+ }
+}

@@ -1,0 +1,194 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://sitate.invalid/schema/data/kit-fields.json",
+ "$defs": {
+  "fields": {
+   "type": "object",
+   "required": [
+    "kit_version",
+    "issued_on",
+    "core_version",
+    "format_version",
+    "distribution_url",
+    "core_sha256",
+    "sbom_sha256",
+    "source_sha256",
+    "signing_keys",
+    "storage",
+    "host_key_fp",
+    "bin_path",
+    "steps",
+    "provider_hints"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "kit_version": {
+     "type": "string",
+     "pattern": "^[0-9a-f]{12}$"
+    },
+    "issued_on": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/date"
+    },
+    "core_version": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+    },
+    "format_version": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "distribution_url": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/url"
+    },
+    "core_sha256": {
+     "type": "object",
+     "required": [
+      "linux_x86_64",
+      "linux_arm64"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "linux_x86_64": {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/hex64"
+      },
+      "linux_arm64": {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/hex64"
+      }
+     }
+    },
+    "sbom_sha256": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/hex64"
+    },
+    "source_sha256": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/hex64"
+    },
+    "signing_keys": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "required": [
+       "public_key",
+       "fp"
+      ],
+      "additionalProperties": false,
+      "properties": {
+       "public_key": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9+/=]{40,120}$"
+       },
+       "fp": {
+        "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/fp"
+       }
+      }
+     },
+     "minItems": 1
+    },
+    "storage": {
+     "type": "object",
+     "required": [
+      "provider",
+      "country",
+      "endpoint",
+      "bucket",
+      "prefix",
+      "repo_id",
+      "keyring_id",
+      "key_ref"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "provider": {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+      },
+      "country": {
+       "anyOf": [
+        {
+         "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/country"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "endpoint": {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/url"
+      },
+      "bucket": {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+      },
+      "prefix": {
+       "type": "string",
+       "pattern": "^[A-Za-z0-9._/-]{0,255}$"
+      },
+      "repo_id": {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+      },
+      "keyring_id": {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+      },
+      "key_ref": {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+      }
+     }
+    },
+    "host_key_fp": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/fp"
+    },
+    "bin_path": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/anypath"
+    },
+    "steps": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "required": [
+       "id",
+       "argv"
+      ],
+      "additionalProperties": false,
+      "properties": {
+       "id": {
+        "enum": [
+         "1",
+         "2",
+         "2-no-app",
+         "3",
+         "3-no-adapter",
+         "4-journal",
+         "4",
+         "5",
+         "6"
+        ]
+       },
+       "argv": {
+        "type": "array",
+        "items": {
+         "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/data"
+        }
+       }
+      }
+     },
+     "minItems": 1
+    },
+    "provider_hints": {
+     "type": "object",
+     "required": [
+      "kind",
+      "key_name",
+      "bin_prefix"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "kind": {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+      },
+      "key_name": {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+      },
+      "bin_prefix": {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/anypath"
+      }
+     }
+    }
+   }
+  }
+ }
+}

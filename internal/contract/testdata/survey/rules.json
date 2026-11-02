@@ -1,0 +1,267 @@
+{
+ "$comment": "候補の規則(spec 3.3)の判定の試験ベクトル。survey は source survey(材料 sitate.source-survey/v1 の判定に使う部分 → 3.1.2 の結果の配列と sizes_complete・databases_complete)、check は source check(受け口の survey、状態ファイルの source_clusters、定義の対象と source.declined → uncovered[])。check の expect は kind・path・port の昇順(製品の返す順は問わず、試験は並べ替えて比べる)。large_object は selftest の材料から来るため、ここでは作らない。同じファイルシステムの複数のマウントは調査の処理が最初のマウント点だけを出す(判定の前)。同じクラスタのソケットが複数の場所にあるときも、source-survey は 1 クラスタの要素にする(recv-survey は同じ port の要素が重なっても 1 つに数える)。",
+ "survey": [
+  {
+   "name": "mounts-basic",
+   "in": {
+    "mounts": [
+     {"path": "/", "fs_type": "ext4", "bytes": 100, "touches_raw": false},
+     {"path": "/boot", "fs_type": "ext4", "bytes": 10, "touches_raw": false},
+     {"path": "/home", "fs_type": "ext4", "bytes": 500, "touches_raw": false},
+     {"path": "/data", "fs_type": "xfs", "bytes": 2000, "touches_raw": false},
+     {"path": "/mnt/nas", "fs_type": "nfs4", "bytes": 3000, "touches_raw": false},
+     {"path": "/mnt/usb", "fs_type": "vfat", "bytes": 10, "touches_raw": false},
+     {"path": "/mnt/z", "fs_type": "zfs", "bytes": 20, "touches_raw": false},
+     {"path": "/mnt/ram", "fs_type": "tmpfs", "bytes": 0, "touches_raw": false},
+     {"path": "/run/user/1000", "fs_type": "tmpfs", "bytes": 0, "touches_raw": false},
+     {"path": "/var/tmp/x", "fs_type": "ext4", "bytes": 1, "touches_raw": false},
+     {"path": "/srv", "fs_type": "btrfs", "bytes": 700, "touches_raw": false}
+    ],
+    "dirs": [], "clusters": [], "databases": [], "databases_complete": true
+   },
+   "expect": {
+    "mounts": [
+     {"path": "/home", "fs_type": "ext4", "bytes": 500, "class": "parent"},
+     {"path": "/data", "fs_type": "xfs", "bytes": 2000, "class": "candidate"},
+     {"path": "/mnt/nas", "fs_type": "nfs4", "bytes": 3000, "class": "unsupported"},
+     {"path": "/mnt/usb", "fs_type": "vfat", "bytes": 10, "class": "unsupported"},
+     {"path": "/mnt/z", "fs_type": "other", "bytes": 20, "class": "unsupported"},
+     {"path": "/srv", "fs_type": "btrfs", "bytes": 700, "class": "parent"}
+    ],
+    "dirs": [], "databases": [], "clusters": [], "sizes_complete": true, "databases_complete": true
+   }
+  },
+  {
+   "name": "wal-and-tablespace-on-separate-mounts",
+   "in": {
+    "mounts": [
+     {"path": "/mnt/wal", "fs_type": "ext4", "bytes": 300, "touches_raw": true},
+     {"path": "/mnt/ts1", "fs_type": "xfs", "bytes": 400, "touches_raw": true},
+     {"path": "/mnt/data", "fs_type": "ext4", "bytes": 900, "touches_raw": false}
+    ],
+    "dirs": [
+     {"path": "/mnt/wal/archive", "parent": "/mnt/wal", "fs_type": "ext4", "bytes": 100, "touches_raw": false},
+     {"path": "/mnt/wal/pg_wal", "parent": "/mnt/wal", "fs_type": "ext4", "bytes": 200, "touches_raw": true},
+     {"path": "/mnt/ts1/space", "parent": "/mnt/ts1", "fs_type": "xfs", "bytes": 400, "touches_raw": true}
+    ],
+    "clusters": [
+     {"socket_dir": "/var/run/postgresql", "port": 5432, "major": 16, "raw_paths": ["/var/lib/postgresql/16/main", "/mnt/wal/pg_wal", "/mnt/ts1/space"], "readable": true, "names_readable": true}
+    ],
+    "databases": [{"name": "app", "port": 5432, "bytes": 1000, "large_objects": false}],
+    "databases_complete": true
+   },
+   "expect": {
+    "mounts": [
+     {"path": "/mnt/wal", "fs_type": "ext4", "bytes": 300, "class": "db_data"},
+     {"path": "/mnt/ts1", "fs_type": "xfs", "bytes": 400, "class": "db_data"},
+     {"path": "/mnt/data", "fs_type": "ext4", "bytes": 900, "class": "candidate"}
+    ],
+    "dirs": [
+     {"path": "/mnt/wal/archive", "label": "db_mount", "bytes": 100, "fs_type": "ext4", "supported": true, "db_data": false},
+     {"path": "/mnt/wal/pg_wal", "label": "db_mount", "bytes": 200, "fs_type": "ext4", "supported": true, "db_data": true},
+     {"path": "/mnt/ts1/space", "label": "db_mount", "bytes": 400, "fs_type": "xfs", "supported": true, "db_data": true}
+    ],
+    "databases": [{"name": "app", "port": 5432, "major": 16, "bytes": 1000, "large_objects": false}],
+    "clusters": [{"port": 5432, "major": 16, "names_readable": true, "supported": true}],
+    "sizes_complete": true, "databases_complete": true
+   }
+  },
+  {
+   "name": "var-is-a-separate-volume-and-db-is-under-it",
+   "in": {
+    "mounts": [{"path": "/var", "fs_type": "xfs", "bytes": 9000, "touches_raw": true}],
+    "dirs": [{"path": "/var/www", "parent": "/var", "fs_type": "xfs", "bytes": 10, "touches_raw": false}],
+    "clusters": [
+     {"socket_dir": "/run/postgresql", "port": 5432, "major": 15, "raw_paths": ["/var/lib/postgresql/15/main"], "readable": true, "names_readable": true}
+    ],
+    "databases": [{"name": "app", "port": 5432, "bytes": 50, "large_objects": true}],
+    "databases_complete": true
+   },
+   "expect": {
+    "mounts": [{"path": "/var", "fs_type": "xfs", "bytes": 9000, "class": "parent"}],
+    "dirs": [],
+    "databases": [{"name": "app", "port": 5432, "major": 15, "bytes": 50, "large_objects": true}],
+    "clusters": [{"port": 5432, "major": 15, "names_readable": true, "supported": true}],
+    "sizes_complete": true, "databases_complete": true
+   }
+  },
+  {
+   "name": "same-db-name-in-two-clusters-and-an-old-cluster",
+   "in": {
+    "mounts": [], "dirs": [],
+    "clusters": [
+     {"socket_dir": "/run/postgresql", "port": 5432, "major": 16, "raw_paths": ["/var/lib/postgresql/16/main"], "readable": true, "names_readable": true},
+     {"socket_dir": "/run/postgresql", "port": 5433, "major": 13, "raw_paths": ["/var/lib/postgresql/15/main"], "readable": true, "names_readable": true},
+     {"socket_dir": "/run/postgresql", "port": 5434, "major": 12, "raw_paths": ["/var/lib/postgresql/12/main"], "readable": true, "names_readable": true}
+    ],
+    "databases": [
+     {"name": "app", "port": 5432, "bytes": 10, "large_objects": false},
+     {"name": "app", "port": 5433, "bytes": 20, "large_objects": false},
+     {"name": "legacy", "port": 5434, "bytes": 30, "large_objects": false}
+    ],
+    "databases_complete": true
+   },
+   "expect": {
+    "mounts": [], "dirs": [],
+    "databases": [
+     {"name": "app", "port": 5432, "major": 16, "bytes": 10, "large_objects": false},
+     {"name": "app", "port": 5433, "major": 13, "bytes": 20, "large_objects": false}
+    ],
+    "clusters": [
+     {"port": 5432, "major": 16, "names_readable": true, "supported": true},
+     {"port": 5433, "major": 13, "names_readable": true, "supported": true},
+     {"port": 5434, "major": 12, "names_readable": true, "supported": false}
+    ],
+    "sizes_complete": true, "databases_complete": true
+   }
+  },
+  {
+   "name": "unreadable-cluster-makes-databases-incomplete",
+   "in": {
+    "mounts": [], "dirs": [],
+    "clusters": [{"socket_dir": "/run/postgresql", "port": 5432, "major": null, "raw_paths": [], "readable": false, "names_readable": false}],
+    "databases": [], "databases_complete": true
+   },
+   "expect": {
+    "mounts": [], "dirs": [], "databases": [],
+    "clusters": [{"port": 5432, "major": null, "names_readable": false, "supported": false}],
+    "sizes_complete": true, "databases_complete": false
+   }
+  },
+  {
+   "name": "du-timeout-and-dir-labels",
+   "in": {
+    "mounts": [], "clusters": [], "databases": [], "databases_complete": true,
+    "dirs": [
+     {"path": "/home/alice", "parent": "/home", "fs_type": "ext4", "bytes": 100, "touches_raw": false},
+     {"path": "/home/bob", "parent": "/home", "fs_type": "ext4", "bytes": null, "touches_raw": false},
+     {"path": "/srv/shop", "parent": "/srv", "fs_type": "zfs", "bytes": 50, "touches_raw": false},
+     {"path": "/opt/x", "parent": "/opt", "fs_type": "ext4", "bytes": 5, "touches_raw": false}
+    ]
+   },
+   "expect": {
+    "mounts": [],
+    "dirs": [
+     {"path": "/home/alice", "label": "home", "bytes": 100, "fs_type": "ext4", "supported": true, "db_data": false},
+     {"path": "/home/bob", "label": "home", "bytes": null, "fs_type": "ext4", "supported": true, "db_data": false},
+     {"path": "/srv/shop", "label": "srv", "bytes": 50, "fs_type": "other", "supported": false, "db_data": false}
+    ],
+    "databases": [], "clusters": [], "sizes_complete": false, "databases_complete": true
+   }
+  }
+ ],
+ "check": [
+  {
+   "name": "not-enrolled-cluster-is-db-cluster",
+   "in": {"mounts": [], "clusters": [{"port": 5432, "names": ["app"]}], "source_clusters": [], "target_roots": [], "target_dbs": [], "declined": []},
+   "expect": [{"kind": "db_cluster", "path": null, "port": 5432}]
+  },
+  {
+   "name": "declined-cluster-is-not-counted",
+   "in": {
+    "mounts": [], "clusters": [{"port": 5432, "names": ["app"]}, {"port": 5433, "names": ["crm"]}],
+    "source_clusters": [
+     {"socket_dir": "/run/postgresql", "port": 5432, "major": 16, "raw_paths": []},
+     {"socket_dir": "/run/postgresql", "port": 5433, "major": 16, "raw_paths": []}
+    ],
+    "target_roots": [], "target_dbs": [], "declined": [{"postgresql_cluster": 5433}]
+   },
+   "expect": [{"kind": "db", "path": "app", "port": 5432}]
+  },
+  {
+   "name": "same-db-name-in-two-clusters-target-has-port",
+   "in": {
+    "mounts": [], "clusters": [{"port": 5432, "names": ["app"]}, {"port": 5433, "names": ["app"]}],
+    "source_clusters": [
+     {"socket_dir": "/run/postgresql", "port": 5432, "major": 16, "raw_paths": []},
+     {"socket_dir": "/run/postgresql", "port": 5433, "major": 15, "raw_paths": []}
+    ],
+    "target_roots": [], "target_dbs": [{"name": "app", "port": 5433}], "declined": []
+   },
+   "expect": [{"kind": "db", "path": "app", "port": 5432}]
+  },
+  {
+   "name": "target-without-port-covers-the-name",
+   "in": {
+    "mounts": [], "clusters": [{"port": 5432, "names": ["app"]}],
+    "source_clusters": [{"socket_dir": "/run/postgresql", "port": 5432, "major": 16, "raw_paths": []}],
+    "target_roots": [], "target_dbs": [{"name": "app", "port": null}], "declined": []
+   },
+   "expect": []
+  },
+  {
+   "name": "old-major-is-db-unsupported-without-names",
+   "in": {
+    "mounts": [], "clusters": [{"port": 5434, "names": ["legacy"]}],
+    "source_clusters": [{"socket_dir": "/run/postgresql", "port": 5434, "major": 12, "raw_paths": []}],
+    "target_roots": [], "target_dbs": [], "declined": []
+   },
+   "expect": [{"kind": "db_unsupported", "path": null, "port": 5434}]
+  },
+  {
+   "name": "cluster-that-appeared-after-enroll",
+   "in": {
+    "mounts": [], "clusters": [{"port": 5432, "names": ["app"]}, {"port": 5440, "names": null}],
+    "source_clusters": [{"socket_dir": "/run/postgresql", "port": 5432, "major": 16, "raw_paths": []}],
+    "target_roots": [], "target_dbs": [{"name": "app", "port": null}], "declined": []
+   },
+   "expect": [{"kind": "db_cluster", "path": null, "port": 5440}]
+  },
+  {
+   "name": "cluster-without-role-has-null-names",
+   "in": {
+    "mounts": [], "clusters": [{"port": 5432, "names": null}],
+    "source_clusters": [{"socket_dir": "/run/postgresql", "port": 5432, "major": 16, "raw_paths": []}],
+    "target_roots": [], "target_dbs": [], "declined": []
+   },
+   "expect": [{"kind": "db_cluster", "path": null, "port": 5432}]
+  },
+  {
+   "name": "same-cluster-with-sockets-in-two-places-counts-once",
+   "in": {
+    "mounts": [], "clusters": [{"port": 5432, "names": ["app"]}, {"port": 5432, "names": ["app"]}],
+    "source_clusters": [{"socket_dir": "/run/postgresql", "port": 5432, "major": 16, "raw_paths": []}],
+    "target_roots": [], "target_dbs": [], "declined": []
+   },
+   "expect": [{"kind": "db", "path": "app", "port": 5432}]
+  },
+  {
+   "name": "postgres-db-is-not-a-candidate",
+   "in": {
+    "mounts": [], "clusters": [{"port": 5432, "names": ["postgres", "app"]}],
+    "source_clusters": [{"socket_dir": "/run/postgresql", "port": 5432, "major": 16, "raw_paths": []}],
+    "target_roots": [], "target_dbs": [], "declined": []
+   },
+   "expect": [{"kind": "db", "path": "app", "port": 5432}]
+  },
+  {
+   "name": "mount-kinds",
+   "in": {
+    "mounts": [
+     {"path": "/var", "fs_type": "xfs"}, {"path": "/data", "fs_type": "ext4"}, {"path": "/data2", "fs_type": "ext4"},
+     {"path": "/mnt/nas", "fs_type": "nfs4"}, {"path": "/mnt/wal", "fs_type": "ext4"}, {"path": "/mnt/ram", "fs_type": "tmpfs"},
+     {"path": "/home", "fs_type": "ext4"}, {"path": "/boot", "fs_type": "ext4"}
+    ],
+    "clusters": [],
+    "source_clusters": [{"socket_dir": "/run/postgresql", "port": 5432, "major": 16, "raw_paths": ["/var/lib/postgresql/16/main", "/mnt/wal/pg_wal"]}],
+    "target_roots": ["/var/www/app", "/data2/files"],
+    "target_dbs": [],
+    "declined": [{"mount": "/home"}]
+   },
+   "expect": [
+    {"kind": "mount", "path": "/data", "port": null},
+    {"kind": "mount_parent", "path": "/mnt/wal", "port": null},
+    {"kind": "mount_unsupported", "path": "/mnt/nas", "port": null}
+   ]
+  },
+  {
+   "name": "var-volume-without-target-root-is-mount-parent",
+   "in": {
+    "mounts": [{"path": "/var", "fs_type": "xfs"}], "clusters": [],
+    "source_clusters": [{"socket_dir": "/run/postgresql", "port": 5432, "major": 16, "raw_paths": ["/var/lib/postgresql/16/main"]}],
+    "target_roots": [], "target_dbs": [], "declined": []
+   },
+   "expect": [{"kind": "mount_parent", "path": "/var", "port": null}]
+  }
+ ]
+}

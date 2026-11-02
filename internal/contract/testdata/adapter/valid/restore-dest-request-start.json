@@ -1,0 +1,24 @@
+{
+ "contract": "sitate.restore-dest/v1",
+ "op": "start",
+ "session_id": "r-20261103T010203Z-3f9a",
+ "dest": {
+  "at": "dest.example.invalid",
+  "key_ref": "dest-key"
+ },
+ "needs": {
+  "disk_gb": 10
+ },
+ "host_key_fp": "SHA256:abcDEF123",
+ "authorized_key": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIexample",
+ "allow_ssh_from": [
+  "192.0.2.1"
+ ],
+ "egress_allow": [
+  "198.51.100.7"
+ ],
+ "egress_host": "s3.example.invalid",
+ "secrets": {
+  "restore-dest-ssh": "x"
+ }
+}

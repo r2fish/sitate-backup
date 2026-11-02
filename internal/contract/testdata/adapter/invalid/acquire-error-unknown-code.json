@@ -1,0 +1,7 @@
+{
+ "contract": "sitate.acquire/v1",
+ "error": {
+  "code": "WHATEVER",
+  "detail": {}
+ }
+}

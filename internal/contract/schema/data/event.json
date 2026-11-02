@@ -1,0 +1,3503 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://sitate.invalid/schema/data/event.json",
+ "$defs": {
+  "event_backup_failed": {
+   "type": "object",
+   "required": [
+    "schema",
+    "id",
+    "time",
+    "severity",
+    "type",
+    "repo_id",
+    "facts",
+    "suppressed_count",
+    "next"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.event/v1"
+    },
+    "id": {
+     "type": "string",
+     "pattern": "^e-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}-[0-9]{2,}$"
+    },
+    "time": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "severity": {
+     "const": "critical"
+    },
+    "type": {
+     "const": "backup.failed"
+    },
+    "repo_id": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^rp-[0-9a-f]{32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/facts_backup_failed"
+    },
+    "suppressed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
+    }
+   }
+  },
+  "event_backup_partial": {
+   "type": "object",
+   "required": [
+    "schema",
+    "id",
+    "time",
+    "severity",
+    "type",
+    "repo_id",
+    "facts",
+    "suppressed_count",
+    "next"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.event/v1"
+    },
+    "id": {
+     "type": "string",
+     "pattern": "^e-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}-[0-9]{2,}$"
+    },
+    "time": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "severity": {
+     "const": "warn"
+    },
+    "type": {
+     "const": "backup.partial"
+    },
+    "repo_id": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^rp-[0-9a-f]{32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/facts_backup_failed"
+    },
+    "suppressed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
+    }
+   }
+  },
+  "event_check_failed": {
+   "type": "object",
+   "required": [
+    "schema",
+    "id",
+    "time",
+    "severity",
+    "type",
+    "repo_id",
+    "facts",
+    "suppressed_count",
+    "next"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.event/v1"
+    },
+    "id": {
+     "type": "string",
+     "pattern": "^e-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}-[0-9]{2,}$"
+    },
+    "time": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "severity": {
+     "const": "critical"
+    },
+    "type": {
+     "const": "check.failed"
+    },
+    "repo_id": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^rp-[0-9a-f]{32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/facts_check_failed"
+    },
+    "suppressed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
+    }
+   }
+  },
+  "event_check_error": {
+   "type": "object",
+   "required": [
+    "schema",
+    "id",
+    "time",
+    "severity",
+    "type",
+    "repo_id",
+    "facts",
+    "suppressed_count",
+    "next"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.event/v1"
+    },
+    "id": {
+     "type": "string",
+     "pattern": "^e-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}-[0-9]{2,}$"
+    },
+    "time": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "severity": {
+     "const": "critical"
+    },
+    "type": {
+     "const": "check.error"
+    },
+    "repo_id": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^rp-[0-9a-f]{32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/facts_check_error"
+    },
+    "suppressed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
+    }
+   }
+  },
+  "event_verify_failed": {
+   "type": "object",
+   "required": [
+    "schema",
+    "id",
+    "time",
+    "severity",
+    "type",
+    "repo_id",
+    "facts",
+    "suppressed_count",
+    "next"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.event/v1"
+    },
+    "id": {
+     "type": "string",
+     "pattern": "^e-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}-[0-9]{2,}$"
+    },
+    "time": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "severity": {
+     "const": "critical"
+    },
+    "type": {
+     "const": "verify.failed"
+    },
+    "repo_id": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^rp-[0-9a-f]{32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/facts_verify_failed"
+    },
+    "suppressed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
+    }
+   }
+  },
+  "event_storage_unexpected_version": {
+   "type": "object",
+   "required": [
+    "schema",
+    "id",
+    "time",
+    "severity",
+    "type",
+    "repo_id",
+    "facts",
+    "suppressed_count",
+    "next"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.event/v1"
+    },
+    "id": {
+     "type": "string",
+     "pattern": "^e-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}-[0-9]{2,}$"
+    },
+    "time": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "severity": {
+     "const": "critical"
+    },
+    "type": {
+     "const": "storage.unexpected_version"
+    },
+    "repo_id": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^rp-[0-9a-f]{32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/facts_storage_unexpected_version"
+    },
+    "suppressed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
+    }
+   }
+  },
+  "event_storage_noncurrent_surge": {
+   "type": "object",
+   "required": [
+    "schema",
+    "id",
+    "time",
+    "severity",
+    "type",
+    "repo_id",
+    "facts",
+    "suppressed_count",
+    "next"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.event/v1"
+    },
+    "id": {
+     "type": "string",
+     "pattern": "^e-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}-[0-9]{2,}$"
+    },
+    "time": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "severity": {
+     "const": "critical"
+    },
+    "type": {
+     "const": "storage.noncurrent_surge"
+    },
+    "repo_id": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^rp-[0-9a-f]{32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/facts_storage_unexpected_version"
+    },
+    "suppressed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
+    }
+   }
+  },
+  "event_storage_size_drift": {
+   "type": "object",
+   "required": [
+    "schema",
+    "id",
+    "time",
+    "severity",
+    "type",
+    "repo_id",
+    "facts",
+    "suppressed_count",
+    "next"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.event/v1"
+    },
+    "id": {
+     "type": "string",
+     "pattern": "^e-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}-[0-9]{2,}$"
+    },
+    "time": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "severity": {
+     "const": "critical"
+    },
+    "type": {
+     "const": "storage.size_drift"
+    },
+    "repo_id": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^rp-[0-9a-f]{32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/facts_storage_size_drift"
+    },
+    "suppressed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
+    }
+   }
+  },
+  "event_storage_retention_long": {
+   "type": "object",
+   "required": [
+    "schema",
+    "id",
+    "time",
+    "severity",
+    "type",
+    "repo_id",
+    "facts",
+    "suppressed_count",
+    "next"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.event/v1"
+    },
+    "id": {
+     "type": "string",
+     "pattern": "^e-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}-[0-9]{2,}$"
+    },
+    "time": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "severity": {
+     "const": "critical"
+    },
+    "type": {
+     "const": "storage.retention_long"
+    },
+    "repo_id": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^rp-[0-9a-f]{32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/facts_storage_retention_long"
+    },
+    "suppressed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
+    }
+   }
+  },
+  "event_journal_chain_broken": {
+   "type": "object",
+   "required": [
+    "schema",
+    "id",
+    "time",
+    "severity",
+    "type",
+    "repo_id",
+    "facts",
+    "suppressed_count",
+    "next"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.event/v1"
+    },
+    "id": {
+     "type": "string",
+     "pattern": "^e-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}-[0-9]{2,}$"
+    },
+    "time": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "severity": {
+     "const": "critical"
+    },
+    "type": {
+     "const": "journal.chain_broken"
+    },
+    "repo_id": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^rp-[0-9a-f]{32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/facts_journal_chain_broken"
+    },
+    "suppressed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
+    }
+   }
+  },
+  "event_storage_unreachable": {
+   "type": "object",
+   "required": [
+    "schema",
+    "id",
+    "time",
+    "severity",
+    "type",
+    "repo_id",
+    "facts",
+    "suppressed_count",
+    "next"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.event/v1"
+    },
+    "id": {
+     "type": "string",
+     "pattern": "^e-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}-[0-9]{2,}$"
+    },
+    "time": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "severity": {
+     "const": "warn"
+    },
+    "type": {
+     "const": "storage.unreachable"
+    },
+    "repo_id": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^rp-[0-9a-f]{32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/facts_storage_unreachable"
+    },
+    "suppressed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
+    }
+   }
+  },
+  "event_keyring_mismatch": {
+   "type": "object",
+   "required": [
+    "schema",
+    "id",
+    "time",
+    "severity",
+    "type",
+    "repo_id",
+    "facts",
+    "suppressed_count",
+    "next"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.event/v1"
+    },
+    "id": {
+     "type": "string",
+     "pattern": "^e-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}-[0-9]{2,}$"
+    },
+    "time": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "severity": {
+     "const": "critical"
+    },
+    "type": {
+     "const": "keyring.mismatch"
+    },
+    "repo_id": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^rp-[0-9a-f]{32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/facts_keyring_mismatch"
+    },
+    "suppressed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
+    }
+   }
+  },
+  "event_retention_extension_failed": {
+   "type": "object",
+   "required": [
+    "schema",
+    "id",
+    "time",
+    "severity",
+    "type",
+    "repo_id",
+    "facts",
+    "suppressed_count",
+    "next"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.event/v1"
+    },
+    "id": {
+     "type": "string",
+     "pattern": "^e-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}-[0-9]{2,}$"
+    },
+    "time": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "severity": {
+     "const": "critical"
+    },
+    "type": {
+     "const": "retention.extension_failed"
+    },
+    "repo_id": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^rp-[0-9a-f]{32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/facts_retention_extension_failed"
+    },
+    "suppressed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
+    }
+   }
+  },
+  "event_restore_test_passed": {
+   "type": "object",
+   "required": [
+    "schema",
+    "id",
+    "time",
+    "severity",
+    "type",
+    "repo_id",
+    "facts",
+    "suppressed_count",
+    "next"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.event/v1"
+    },
+    "id": {
+     "type": "string",
+     "pattern": "^e-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}-[0-9]{2,}$"
+    },
+    "time": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "severity": {
+     "const": "info"
+    },
+    "type": {
+     "const": "restore_test.passed"
+    },
+    "repo_id": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^rp-[0-9a-f]{32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/facts_restore_test_passed"
+    },
+    "suppressed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
+    }
+   }
+  },
+  "event_restore_test_failed": {
+   "type": "object",
+   "required": [
+    "schema",
+    "id",
+    "time",
+    "severity",
+    "type",
+    "repo_id",
+    "facts",
+    "suppressed_count",
+    "next"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.event/v1"
+    },
+    "id": {
+     "type": "string",
+     "pattern": "^e-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}-[0-9]{2,}$"
+    },
+    "time": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "severity": {
+     "const": "critical"
+    },
+    "type": {
+     "const": "restore_test.failed"
+    },
+    "repo_id": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^rp-[0-9a-f]{32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/facts_restore_test_passed"
+    },
+    "suppressed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
+    }
+   }
+  },
+  "event_restore_test_overdue": {
+   "type": "object",
+   "required": [
+    "schema",
+    "id",
+    "time",
+    "severity",
+    "type",
+    "repo_id",
+    "facts",
+    "suppressed_count",
+    "next"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.event/v1"
+    },
+    "id": {
+     "type": "string",
+     "pattern": "^e-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}-[0-9]{2,}$"
+    },
+    "time": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "severity": {
+     "const": "critical"
+    },
+    "type": {
+     "const": "restore_test.overdue"
+    },
+    "repo_id": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^rp-[0-9a-f]{32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/facts_restore_test_passed"
+    },
+    "suppressed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
+    }
+   }
+  },
+  "event_restore_test_deferred": {
+   "type": "object",
+   "required": [
+    "schema",
+    "id",
+    "time",
+    "severity",
+    "type",
+    "repo_id",
+    "facts",
+    "suppressed_count",
+    "next"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.event/v1"
+    },
+    "id": {
+     "type": "string",
+     "pattern": "^e-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}-[0-9]{2,}$"
+    },
+    "time": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "severity": {
+     "const": "warn"
+    },
+    "type": {
+     "const": "restore_test.deferred"
+    },
+    "repo_id": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^rp-[0-9a-f]{32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/facts_restore_test_deferred"
+    },
+    "suppressed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
+    }
+   }
+  },
+  "event_restore_session_opened": {
+   "type": "object",
+   "required": [
+    "schema",
+    "id",
+    "time",
+    "severity",
+    "type",
+    "repo_id",
+    "facts",
+    "suppressed_count",
+    "next"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.event/v1"
+    },
+    "id": {
+     "type": "string",
+     "pattern": "^e-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}-[0-9]{2,}$"
+    },
+    "time": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "severity": {
+     "const": "warn"
+    },
+    "type": {
+     "const": "restore_session.opened"
+    },
+    "repo_id": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^rp-[0-9a-f]{32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/facts_restore_session_opened"
+    },
+    "suppressed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
+    }
+   }
+  },
+  "event_restore_session_expiring": {
+   "type": "object",
+   "required": [
+    "schema",
+    "id",
+    "time",
+    "severity",
+    "type",
+    "repo_id",
+    "facts",
+    "suppressed_count",
+    "next"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.event/v1"
+    },
+    "id": {
+     "type": "string",
+     "pattern": "^e-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}-[0-9]{2,}$"
+    },
+    "time": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "severity": {
+     "const": "warn"
+    },
+    "type": {
+     "const": "restore_session.expiring"
+    },
+    "repo_id": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^rp-[0-9a-f]{32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/facts_restore_session_opened"
+    },
+    "suppressed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
+    }
+   }
+  },
+  "event_restore_session_closed": {
+   "type": "object",
+   "required": [
+    "schema",
+    "id",
+    "time",
+    "severity",
+    "type",
+    "repo_id",
+    "facts",
+    "suppressed_count",
+    "next"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.event/v1"
+    },
+    "id": {
+     "type": "string",
+     "pattern": "^e-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}-[0-9]{2,}$"
+    },
+    "time": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "severity": {
+     "const": "info"
+    },
+    "type": {
+     "const": "restore_session.closed"
+    },
+    "repo_id": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^rp-[0-9a-f]{32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/facts_restore_session_opened"
+    },
+    "suppressed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
+    }
+   }
+  },
+  "event_restore_session_released": {
+   "type": "object",
+   "required": [
+    "schema",
+    "id",
+    "time",
+    "severity",
+    "type",
+    "repo_id",
+    "facts",
+    "suppressed_count",
+    "next"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.event/v1"
+    },
+    "id": {
+     "type": "string",
+     "pattern": "^e-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}-[0-9]{2,}$"
+    },
+    "time": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "severity": {
+     "const": "warn"
+    },
+    "type": {
+     "const": "restore_session.released"
+    },
+    "repo_id": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^rp-[0-9a-f]{32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/facts_restore_session_opened"
+    },
+    "suppressed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
+    }
+   }
+  },
+  "event_teardown_unverified": {
+   "type": "object",
+   "required": [
+    "schema",
+    "id",
+    "time",
+    "severity",
+    "type",
+    "repo_id",
+    "facts",
+    "suppressed_count",
+    "next"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.event/v1"
+    },
+    "id": {
+     "type": "string",
+     "pattern": "^e-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}-[0-9]{2,}$"
+    },
+    "time": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "severity": {
+     "const": "critical"
+    },
+    "type": {
+     "const": "teardown.unverified"
+    },
+    "repo_id": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^rp-[0-9a-f]{32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/facts_teardown_unverified"
+    },
+    "suppressed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
+    }
+   }
+  },
+  "event_change_proposed": {
+   "type": "object",
+   "required": [
+    "schema",
+    "id",
+    "time",
+    "severity",
+    "type",
+    "repo_id",
+    "facts",
+    "suppressed_count",
+    "next"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.event/v1"
+    },
+    "id": {
+     "type": "string",
+     "pattern": "^e-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}-[0-9]{2,}$"
+    },
+    "time": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "severity": {
+     "const": "warn"
+    },
+    "type": {
+     "const": "change.proposed"
+    },
+    "repo_id": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^rp-[0-9a-f]{32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/facts_change_proposed"
+    },
+    "suppressed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
+    }
+   }
+  },
+  "event_change_approved": {
+   "type": "object",
+   "required": [
+    "schema",
+    "id",
+    "time",
+    "severity",
+    "type",
+    "repo_id",
+    "facts",
+    "suppressed_count",
+    "next"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.event/v1"
+    },
+    "id": {
+     "type": "string",
+     "pattern": "^e-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}-[0-9]{2,}$"
+    },
+    "time": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "severity": {
+     "const": "warn"
+    },
+    "type": {
+     "const": "change.approved"
+    },
+    "repo_id": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^rp-[0-9a-f]{32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/facts_change_proposed"
+    },
+    "suppressed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
+    }
+   }
+  },
+  "event_change_applying_soon": {
+   "type": "object",
+   "required": [
+    "schema",
+    "id",
+    "time",
+    "severity",
+    "type",
+    "repo_id",
+    "facts",
+    "suppressed_count",
+    "next"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.event/v1"
+    },
+    "id": {
+     "type": "string",
+     "pattern": "^e-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}-[0-9]{2,}$"
+    },
+    "time": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "severity": {
+     "const": "warn"
+    },
+    "type": {
+     "const": "change.applying_soon"
+    },
+    "repo_id": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^rp-[0-9a-f]{32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/facts_change_proposed"
+    },
+    "suppressed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
+    }
+   }
+  },
+  "event_change_applied": {
+   "type": "object",
+   "required": [
+    "schema",
+    "id",
+    "time",
+    "severity",
+    "type",
+    "repo_id",
+    "facts",
+    "suppressed_count",
+    "next"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.event/v1"
+    },
+    "id": {
+     "type": "string",
+     "pattern": "^e-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}-[0-9]{2,}$"
+    },
+    "time": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "severity": {
+     "const": "info"
+    },
+    "type": {
+     "const": "change.applied"
+    },
+    "repo_id": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^rp-[0-9a-f]{32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/facts_change_proposed"
+    },
+    "suppressed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
+    }
+   }
+  },
+  "event_change_expired": {
+   "type": "object",
+   "required": [
+    "schema",
+    "id",
+    "time",
+    "severity",
+    "type",
+    "repo_id",
+    "facts",
+    "suppressed_count",
+    "next"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.event/v1"
+    },
+    "id": {
+     "type": "string",
+     "pattern": "^e-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}-[0-9]{2,}$"
+    },
+    "time": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "severity": {
+     "const": "info"
+    },
+    "type": {
+     "const": "change.expired"
+    },
+    "repo_id": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^rp-[0-9a-f]{32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/facts_change_proposed"
+    },
+    "suppressed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
+    }
+   }
+  },
+  "event_change_failed": {
+   "type": "object",
+   "required": [
+    "schema",
+    "id",
+    "time",
+    "severity",
+    "type",
+    "repo_id",
+    "facts",
+    "suppressed_count",
+    "next"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.event/v1"
+    },
+    "id": {
+     "type": "string",
+     "pattern": "^e-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}-[0-9]{2,}$"
+    },
+    "time": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "severity": {
+     "enum": [
+      "warn",
+      "critical"
+     ]
+    },
+    "type": {
+     "const": "change.failed"
+    },
+    "repo_id": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^rp-[0-9a-f]{32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/facts_change_failed"
+    },
+    "suppressed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
+    }
+   }
+  },
+  "event_hold_set": {
+   "type": "object",
+   "required": [
+    "schema",
+    "id",
+    "time",
+    "severity",
+    "type",
+    "repo_id",
+    "facts",
+    "suppressed_count",
+    "next"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.event/v1"
+    },
+    "id": {
+     "type": "string",
+     "pattern": "^e-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}-[0-9]{2,}$"
+    },
+    "time": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "severity": {
+     "const": "critical"
+    },
+    "type": {
+     "const": "hold.set"
+    },
+    "repo_id": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^rp-[0-9a-f]{32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/facts_hold_set"
+    },
+    "suppressed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
+    }
+   }
+  },
+  "event_notify_test": {
+   "type": "object",
+   "required": [
+    "schema",
+    "id",
+    "time",
+    "severity",
+    "type",
+    "repo_id",
+    "facts",
+    "suppressed_count",
+    "next"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.event/v1"
+    },
+    "id": {
+     "type": "string",
+     "pattern": "^e-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}-[0-9]{2,}$"
+    },
+    "time": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "severity": {
+     "const": "info"
+    },
+    "type": {
+     "const": "notify.test"
+    },
+    "repo_id": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^rp-[0-9a-f]{32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/facts_notify_test"
+    },
+    "suppressed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
+    }
+   }
+  },
+  "event_kit_outdated": {
+   "type": "object",
+   "required": [
+    "schema",
+    "id",
+    "time",
+    "severity",
+    "type",
+    "repo_id",
+    "facts",
+    "suppressed_count",
+    "next"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.event/v1"
+    },
+    "id": {
+     "type": "string",
+     "pattern": "^e-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}-[0-9]{2,}$"
+    },
+    "time": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "severity": {
+     "const": "warn"
+    },
+    "type": {
+     "const": "kit.outdated"
+    },
+    "repo_id": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^rp-[0-9a-f]{32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/facts_kit_outdated"
+    },
+    "suppressed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
+    }
+   }
+  },
+  "event_phrase_unconfirmed": {
+   "type": "object",
+   "required": [
+    "schema",
+    "id",
+    "time",
+    "severity",
+    "type",
+    "repo_id",
+    "facts",
+    "suppressed_count",
+    "next"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.event/v1"
+    },
+    "id": {
+     "type": "string",
+     "pattern": "^e-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}-[0-9]{2,}$"
+    },
+    "time": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "severity": {
+     "const": "warn"
+    },
+    "type": {
+     "const": "phrase.unconfirmed"
+    },
+    "repo_id": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^rp-[0-9a-f]{32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/facts_phrase_unconfirmed"
+    },
+    "suppressed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
+    }
+   }
+  },
+  "event_kit_location_check_due": {
+   "type": "object",
+   "required": [
+    "schema",
+    "id",
+    "time",
+    "severity",
+    "type",
+    "repo_id",
+    "facts",
+    "suppressed_count",
+    "next"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.event/v1"
+    },
+    "id": {
+     "type": "string",
+     "pattern": "^e-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}-[0-9]{2,}$"
+    },
+    "time": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "severity": {
+     "const": "info"
+    },
+    "type": {
+     "const": "kit.location_check_due"
+    },
+    "repo_id": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^rp-[0-9a-f]{32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/facts_kit_location_check_due"
+    },
+    "suppressed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
+    }
+   }
+  },
+  "event_run_interrupted": {
+   "type": "object",
+   "required": [
+    "schema",
+    "id",
+    "time",
+    "severity",
+    "type",
+    "repo_id",
+    "facts",
+    "suppressed_count",
+    "next"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.event/v1"
+    },
+    "id": {
+     "type": "string",
+     "pattern": "^e-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}-[0-9]{2,}$"
+    },
+    "time": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "severity": {
+     "const": "warn"
+    },
+    "type": {
+     "const": "run.interrupted"
+    },
+    "repo_id": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^rp-[0-9a-f]{32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/facts_run_interrupted"
+    },
+    "suppressed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
+    }
+   }
+  },
+  "event_run_stuck": {
+   "type": "object",
+   "required": [
+    "schema",
+    "id",
+    "time",
+    "severity",
+    "type",
+    "repo_id",
+    "facts",
+    "suppressed_count",
+    "next"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.event/v1"
+    },
+    "id": {
+     "type": "string",
+     "pattern": "^e-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}-[0-9]{2,}$"
+    },
+    "time": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "severity": {
+     "const": "critical"
+    },
+    "type": {
+     "const": "run.stuck"
+    },
+    "repo_id": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^rp-[0-9a-f]{32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/facts_run_stuck"
+    },
+    "suppressed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
+    }
+   }
+  },
+  "event_time_skew": {
+   "type": "object",
+   "required": [
+    "schema",
+    "id",
+    "time",
+    "severity",
+    "type",
+    "repo_id",
+    "facts",
+    "suppressed_count",
+    "next"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.event/v1"
+    },
+    "id": {
+     "type": "string",
+     "pattern": "^e-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}-[0-9]{2,}$"
+    },
+    "time": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "severity": {
+     "const": "critical"
+    },
+    "type": {
+     "const": "time.skew"
+    },
+    "repo_id": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^rp-[0-9a-f]{32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/facts_time_skew"
+    },
+    "suppressed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
+    }
+   }
+  },
+  "event_storage_permission_drift": {
+   "type": "object",
+   "required": [
+    "schema",
+    "id",
+    "time",
+    "severity",
+    "type",
+    "repo_id",
+    "facts",
+    "suppressed_count",
+    "next"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.event/v1"
+    },
+    "id": {
+     "type": "string",
+     "pattern": "^e-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}-[0-9]{2,}$"
+    },
+    "time": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "severity": {
+     "const": "critical"
+    },
+    "type": {
+     "const": "storage.permission_drift"
+    },
+    "repo_id": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^rp-[0-9a-f]{32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/facts_storage_permission_drift"
+    },
+    "suppressed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
+    }
+   }
+  },
+  "event_cost_ceiling_exceeded": {
+   "type": "object",
+   "required": [
+    "schema",
+    "id",
+    "time",
+    "severity",
+    "type",
+    "repo_id",
+    "facts",
+    "suppressed_count",
+    "next"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.event/v1"
+    },
+    "id": {
+     "type": "string",
+     "pattern": "^e-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}-[0-9]{2,}$"
+    },
+    "time": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "severity": {
+     "const": "warn"
+    },
+    "type": {
+     "const": "cost.ceiling_exceeded"
+    },
+    "repo_id": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^rp-[0-9a-f]{32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/facts_cost_ceiling_exceeded"
+    },
+    "suppressed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
+    }
+   }
+  },
+  "event_source_uncovered": {
+   "type": "object",
+   "required": [
+    "schema",
+    "id",
+    "time",
+    "severity",
+    "type",
+    "repo_id",
+    "facts",
+    "suppressed_count",
+    "next"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.event/v1"
+    },
+    "id": {
+     "type": "string",
+     "pattern": "^e-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}-[0-9]{2,}$"
+    },
+    "time": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "severity": {
+     "const": "warn"
+    },
+    "type": {
+     "const": "source.uncovered"
+    },
+    "repo_id": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^rp-[0-9a-f]{32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/facts_source_uncovered"
+    },
+    "suppressed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
+    }
+   }
+  },
+  "event_report_monthly": {
+   "type": "object",
+   "required": [
+    "schema",
+    "id",
+    "time",
+    "severity",
+    "type",
+    "repo_id",
+    "facts",
+    "suppressed_count",
+    "next"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.event/v1"
+    },
+    "id": {
+     "type": "string",
+     "pattern": "^e-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}-[0-9]{2,}$"
+    },
+    "time": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "severity": {
+     "const": "info"
+    },
+    "type": {
+     "const": "report.monthly"
+    },
+    "repo_id": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^rp-[0-9a-f]{32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/facts_report_monthly"
+    },
+    "suppressed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
+    }
+   }
+  },
+  "event_digest_weekly": {
+   "type": "object",
+   "required": [
+    "schema",
+    "id",
+    "time",
+    "severity",
+    "type",
+    "repo_id",
+    "facts",
+    "suppressed_count",
+    "next"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "schema": {
+     "const": "sitate.event/v1"
+    },
+    "id": {
+     "type": "string",
+     "pattern": "^e-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}-[0-9]{2,}$"
+    },
+    "time": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "severity": {
+     "const": "info"
+    },
+    "type": {
+     "const": "digest.weekly"
+    },
+    "repo_id": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^rp-[0-9a-f]{32}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/facts_digest_weekly"
+    },
+    "suppressed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
+    }
+   }
+  },
+  "facts_backup_failed": {
+   "type": "object",
+   "required": [
+    "run_id",
+    "error_code",
+    "warning_codes",
+    "snapshot_ref",
+    "targets_total",
+    "targets_failed",
+    "chunk_keys_missing",
+    "reason",
+    "skipped_backups_count"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "run_id": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/run_id"
+    },
+    "error_code": {
+     "anyOf": [
+      {
+       "$ref": "https://sitate.invalid/schema/cli/codes.json#/$defs/code"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "warning_codes": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/codes.json#/$defs/code"
+     }
+    },
+    "snapshot_ref": {
+     "anyOf": [
+      {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "targets_total": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "targets_failed": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "chunk_keys_missing": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "reason": {
+     "anyOf": [
+      {
+       "enum": [
+        "index_rebuild"
+       ]
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "skipped_backups_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    }
+   }
+  },
+  "facts_check_failed": {
+   "type": "object",
+   "required": [
+    "snapshot_ref",
+    "failed_checks",
+    "hold_set"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "snapshot_ref": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+    },
+    "failed_checks": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+     }
+    },
+    "hold_set": {
+     "type": "boolean"
+    }
+   }
+  },
+  "facts_check_error": {
+   "type": "object",
+   "required": [
+    "snapshot_ref",
+    "error_checks"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "snapshot_ref": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+    },
+    "error_checks": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+     }
+    }
+   }
+  },
+  "facts_verify_failed": {
+   "type": "object",
+   "required": [
+    "run_id",
+    "missing_count",
+    "retention_short_count",
+    "delete_markers"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "run_id": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/run_id"
+    },
+    "missing_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "retention_short_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "delete_markers": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    }
+   }
+  },
+  "facts_storage_unexpected_version": {
+   "type": "object",
+   "required": [
+    "run_id",
+    "count",
+    "previous"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "run_id": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/run_id"
+    },
+    "count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "previous": {
+     "anyOf": [
+      {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    }
+   }
+  },
+  "facts_storage_size_drift": {
+   "type": "object",
+   "required": [
+    "written_bytes",
+    "bucket_bytes",
+    "threshold_bytes"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "written_bytes": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "bucket_bytes": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "threshold_bytes": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    }
+   }
+  },
+  "facts_storage_retention_long": {
+   "type": "object",
+   "required": [
+    "count",
+    "latest_actual"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "latest_actual": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    }
+   }
+  },
+  "facts_journal_chain_broken": {
+   "type": "object",
+   "required": [
+    "chain",
+    "command",
+    "kind",
+    "seq",
+    "discarded"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "chain": {
+     "enum": [
+      "journal",
+      "pending"
+     ]
+    },
+    "command": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+     }
+    },
+    "kind": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+    },
+    "seq": {
+     "anyOf": [
+      {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "discarded": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+     }
+    }
+   }
+  },
+  "facts_storage_unreachable": {
+   "type": "object",
+   "required": [
+    "command",
+    "error_code",
+    "reason",
+    "last_extend_ok_at",
+    "protection_ends_at"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "command": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+     }
+    },
+    "error_code": {
+     "enum": [
+      "STORAGE_UNREACHABLE",
+      "STORAGE_DENIED"
+     ]
+    },
+    "reason": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+    },
+    "last_extend_ok_at": {
+     "anyOf": [
+      {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "protection_ends_at": {
+     "anyOf": [
+      {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    }
+   }
+  },
+  "facts_keyring_mismatch": {
+   "type": "object",
+   "required": [
+    "backup_ref",
+    "reason",
+    "keyring_version"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "backup_ref": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+    },
+    "reason": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+    },
+    "keyring_version": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+    }
+   }
+  },
+  "facts_retention_extension_failed": {
+   "type": "object",
+   "required": [
+    "run_id",
+    "failed_count",
+    "error_code",
+    "min_retain_until",
+    "last_extend_ok_at",
+    "protection_ends_at"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "run_id": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/run_id"
+    },
+    "failed_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "error_code": {
+     "$ref": "https://sitate.invalid/schema/cli/codes.json#/$defs/code"
+    },
+    "min_retain_until": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "last_extend_ok_at": {
+     "anyOf": [
+      {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "protection_ends_at": {
+     "anyOf": [
+      {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    }
+   }
+  },
+  "facts_restore_test_passed": {
+   "type": "object",
+   "required": [
+    "backup_ref",
+    "error_code",
+    "days_since_last_ok",
+    "counted_as_restore_test",
+    "teardown_pending",
+    "warning_codes"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "backup_ref": {
+     "anyOf": [
+      {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "error_code": {
+     "anyOf": [
+      {
+       "$ref": "https://sitate.invalid/schema/cli/codes.json#/$defs/code"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "days_since_last_ok": {
+     "anyOf": [
+      {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "counted_as_restore_test": {
+     "anyOf": [
+      {
+       "type": "boolean"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "teardown_pending": {
+     "anyOf": [
+      {
+       "type": "boolean"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "warning_codes": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/codes.json#/$defs/code"
+     }
+    }
+   }
+  },
+  "facts_restore_test_deferred": {
+   "type": "object",
+   "required": [
+    "reason",
+    "backup_ref"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "reason": {
+     "enum": [
+      "session_open",
+      "teardown_pending",
+      "counted_restore"
+     ]
+    },
+    "backup_ref": {
+     "anyOf": [
+      {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    }
+   }
+  },
+  "facts_restore_session_opened": {
+   "type": "object",
+   "required": [
+    "session_id",
+    "backup_ref",
+    "expires_at",
+    "closed_by",
+    "authorized_key_fp",
+    "allow_ssh_from"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "session_id": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+    },
+    "backup_ref": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+    },
+    "expires_at": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "closed_by": {
+     "anyOf": [
+      {
+       "enum": [
+        "expiry",
+        "teardown"
+       ]
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "authorized_key_fp": {
+     "anyOf": [
+      {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/fp"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "allow_ssh_from": {
+     "type": "array",
+     "items": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F:./]{1,64}$"
+     }
+    }
+   }
+  },
+  "facts_teardown_unverified": {
+   "type": "object",
+   "required": [
+    "sessions",
+    "remaining_count"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "sessions": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "required": [
+       "session_id",
+       "remaining"
+      ],
+      "additionalProperties": false,
+      "properties": {
+       "session_id": {
+        "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+       },
+       "remaining": {
+        "type": "array",
+        "items": {
+         "$ref": "https://sitate.invalid/schema/cli/results.json#/$defs/remaining"
+        }
+       }
+      }
+     }
+    },
+    "remaining_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    }
+   }
+  },
+  "facts_change_proposed": {
+   "type": "object",
+   "required": [
+    "change_id",
+    "op",
+    "not_before",
+    "expired_reason"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "change_id": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+    },
+    "op": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+    },
+    "not_before": {
+     "anyOf": [
+      {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "expired_reason": {
+     "anyOf": [
+      {
+       "enum": [
+        "unapproved",
+        "undelivered",
+        "unapplied"
+       ]
+      },
+      {
+       "type": "null"
+      }
+     ]
+    }
+   }
+  },
+  "facts_change_failed": {
+   "type": "object",
+   "required": [
+    "change_id",
+    "op",
+    "error_code",
+    "state"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "change_id": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+    },
+    "op": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+    },
+    "error_code": {
+     "$ref": "https://sitate.invalid/schema/cli/codes.json#/$defs/code"
+    },
+    "state": {
+     "enum": [
+      "failed",
+      "applying"
+     ]
+    }
+   }
+  },
+  "facts_hold_set": {
+   "type": "object",
+   "required": [
+    "reason",
+    "code",
+    "days"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "reason": {
+     "enum": [
+      "check_failed",
+      "check_error",
+      "no_healthy_backup",
+      "restore_failed",
+      "manual"
+     ]
+    },
+    "code": {
+     "anyOf": [
+      {
+       "$ref": "https://sitate.invalid/schema/cli/codes.json#/$defs/code"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "days": {
+     "anyOf": [
+      {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    }
+   }
+  },
+  "facts_notify_test": {
+   "type": "object",
+   "required": [
+    "confirmation_word",
+    "change_id"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "confirmation_word": {
+     "anyOf": [
+      {
+       "type": "string",
+       "maxLength": 256,
+       "x-sitate-data": true
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "change_id": {
+     "anyOf": [
+      {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    }
+   }
+  },
+  "facts_kit_outdated": {
+   "type": "object",
+   "required": [
+    "kit_version",
+    "confirmed_kit_version"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "kit_version": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+    },
+    "confirmed_kit_version": {
+     "anyOf": [
+      {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    }
+   }
+  },
+  "facts_phrase_unconfirmed": {
+   "type": "object",
+   "required": [],
+   "additionalProperties": false
+  },
+  "facts_kit_location_check_due": {
+   "type": "object",
+   "required": [
+    "location_checked_at"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "location_checked_at": {
+     "anyOf": [
+      {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    }
+   }
+  },
+  "facts_run_interrupted": {
+   "type": "object",
+   "required": [
+    "run_id",
+    "command",
+    "reason"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "run_id": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/run_id"
+    },
+    "command": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+     }
+    },
+    "reason": {
+     "enum": [
+      "unfinished",
+      "max_duration",
+      "signal",
+      "deadline"
+     ]
+    }
+   }
+  },
+  "facts_run_stuck": {
+   "type": "object",
+   "required": [
+    "holder_run_id",
+    "holder_command",
+    "holder_pid",
+    "elapsed_s"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "holder_run_id": {
+     "anyOf": [
+      {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/run_id"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "holder_command": {
+     "anyOf": [
+      {
+       "type": "array",
+       "items": {
+        "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+       }
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "holder_pid": {
+     "anyOf": [
+      {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "elapsed_s": {
+     "anyOf": [
+      {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    }
+   }
+  },
+  "facts_time_skew": {
+   "type": "object",
+   "required": [
+    "skew_s",
+    "max_s"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "skew_s": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/int"
+    },
+    "max_s": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    }
+   }
+  },
+  "facts_storage_permission_drift": {
+   "type": "object",
+   "required": [
+    "role",
+    "direction",
+    "ops",
+    "error_code"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "role": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/key_role"
+    },
+    "direction": {
+     "enum": [
+      "denied",
+      "allowed"
+     ]
+    },
+    "ops": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/op"
+     }
+    },
+    "error_code": {
+     "anyOf": [
+      {
+       "$ref": "https://sitate.invalid/schema/cli/codes.json#/$defs/code"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    }
+   }
+  },
+  "facts_cost_ceiling_exceeded": {
+   "type": "object",
+   "required": [
+    "monthly_jpy",
+    "cost_ceiling_yen"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "monthly_jpy": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "cost_ceiling_yen": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    }
+   }
+  },
+  "facts_source_uncovered": {
+   "type": "object",
+   "required": [
+    "run_id",
+    "count",
+    "new_count"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "run_id": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/run_id"
+    },
+    "count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "new_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    }
+   }
+  },
+  "facts_report_monthly": {
+   "type": "object",
+   "required": [
+    "period_start_at",
+    "period_end_at",
+    "storage_bytes",
+    "monthly_jpy",
+    "restore_tests_passed",
+    "restore_tests_failed"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "period_start_at": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "period_end_at": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "storage_bytes": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "monthly_jpy": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "restore_tests_passed": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "restore_tests_failed": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    }
+   }
+  },
+  "facts_digest_weekly": {
+   "type": "object",
+   "required": [
+    "period_start_at",
+    "period_end_at",
+    "backups",
+    "last_restore_ok_at",
+    "cost_over_approved",
+    "uncovered_count",
+    "declined_count",
+    "declined_ids"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "period_start_at": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "period_end_at": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "backups": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "required": [
+       "snapshot_ref",
+       "created_at",
+       "health",
+       "targets_ok",
+       "changed_during_read"
+      ],
+      "additionalProperties": false,
+      "properties": {
+       "snapshot_ref": {
+        "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+       },
+       "created_at": {
+        "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+       },
+       "health": {
+        "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/health"
+       },
+       "targets_ok": {
+        "type": "boolean"
+       },
+       "changed_during_read": {
+        "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+       }
+      }
+     }
+    },
+    "last_restore_ok_at": {
+     "anyOf": [
+      {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "cost_over_approved": {
+     "type": "boolean"
+    },
+    "uncovered_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "declined_count": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "declined_ids": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/declined_id"
+     }
+    }
+   }
+  },
+  "event": {
+   "oneOf": [
+    {
+     "$ref": "#/$defs/event_backup_failed"
+    },
+    {
+     "$ref": "#/$defs/event_backup_partial"
+    },
+    {
+     "$ref": "#/$defs/event_check_failed"
+    },
+    {
+     "$ref": "#/$defs/event_check_error"
+    },
+    {
+     "$ref": "#/$defs/event_verify_failed"
+    },
+    {
+     "$ref": "#/$defs/event_storage_unexpected_version"
+    },
+    {
+     "$ref": "#/$defs/event_storage_noncurrent_surge"
+    },
+    {
+     "$ref": "#/$defs/event_storage_size_drift"
+    },
+    {
+     "$ref": "#/$defs/event_storage_retention_long"
+    },
+    {
+     "$ref": "#/$defs/event_journal_chain_broken"
+    },
+    {
+     "$ref": "#/$defs/event_storage_unreachable"
+    },
+    {
+     "$ref": "#/$defs/event_keyring_mismatch"
+    },
+    {
+     "$ref": "#/$defs/event_retention_extension_failed"
+    },
+    {
+     "$ref": "#/$defs/event_restore_test_passed"
+    },
+    {
+     "$ref": "#/$defs/event_restore_test_failed"
+    },
+    {
+     "$ref": "#/$defs/event_restore_test_overdue"
+    },
+    {
+     "$ref": "#/$defs/event_restore_test_deferred"
+    },
+    {
+     "$ref": "#/$defs/event_restore_session_opened"
+    },
+    {
+     "$ref": "#/$defs/event_restore_session_expiring"
+    },
+    {
+     "$ref": "#/$defs/event_restore_session_closed"
+    },
+    {
+     "$ref": "#/$defs/event_restore_session_released"
+    },
+    {
+     "$ref": "#/$defs/event_teardown_unverified"
+    },
+    {
+     "$ref": "#/$defs/event_change_proposed"
+    },
+    {
+     "$ref": "#/$defs/event_change_approved"
+    },
+    {
+     "$ref": "#/$defs/event_change_applying_soon"
+    },
+    {
+     "$ref": "#/$defs/event_change_applied"
+    },
+    {
+     "$ref": "#/$defs/event_change_expired"
+    },
+    {
+     "$ref": "#/$defs/event_change_failed"
+    },
+    {
+     "$ref": "#/$defs/event_hold_set"
+    },
+    {
+     "$ref": "#/$defs/event_notify_test"
+    },
+    {
+     "$ref": "#/$defs/event_kit_outdated"
+    },
+    {
+     "$ref": "#/$defs/event_phrase_unconfirmed"
+    },
+    {
+     "$ref": "#/$defs/event_kit_location_check_due"
+    },
+    {
+     "$ref": "#/$defs/event_run_interrupted"
+    },
+    {
+     "$ref": "#/$defs/event_run_stuck"
+    },
+    {
+     "$ref": "#/$defs/event_time_skew"
+    },
+    {
+     "$ref": "#/$defs/event_storage_permission_drift"
+    },
+    {
+     "$ref": "#/$defs/event_cost_ceiling_exceeded"
+    },
+    {
+     "$ref": "#/$defs/event_source_uncovered"
+    },
+    {
+     "$ref": "#/$defs/event_report_monthly"
+    },
+    {
+     "$ref": "#/$defs/event_digest_weekly"
+    }
+   ]
+  },
+  "delivery": {
+   "type": "object",
+   "required": [
+    "to",
+    "channel",
+    "delivered",
+    "attempts",
+    "reason",
+    "accepted_at"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "to": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+    },
+    "channel": {
+     "enum": [
+      "webhook",
+      "email"
+     ]
+    },
+    "delivered": {
+     "type": "boolean"
+    },
+    "attempts": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "reason": {
+     "anyOf": [
+      {
+       "enum": [
+        "url_invalid",
+        "connect",
+        "tls",
+        "timeout",
+        "redirect",
+        "http_status",
+        "rejected",
+        "adapter_failed"
+       ]
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "accepted_at": {
+     "anyOf": [
+      {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    }
+   }
+  }
+ },
+ "$ref": "#/$defs/event"
+}

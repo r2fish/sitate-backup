@@ -1,0 +1,14 @@
+{
+  "kind": "check",
+  "name": "entropy-ratio",
+  "version": "0.0.0",
+  "contract": "sitate.check/v1",
+  "exe": "entropy-ratio",
+  "secrets": [],
+  "network": false,
+  "inputs": [],
+  "phases": [],
+  "params": [],
+  "metrics": [],
+  "finding_codes": []
+}

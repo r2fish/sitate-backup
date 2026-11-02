@@ -1,0 +1,14 @@
+{
+ "contract": "sitate.provision/v1",
+ "op": "check",
+ "endpoint": "https://s3.example.invalid",
+ "bucket": "b1",
+ "prefix": "sitate/",
+ "key_role": "read",
+ "secrets": {
+  "key": {
+   "key_id": "K2",
+   "secret": "s"
+  }
+ }
+}

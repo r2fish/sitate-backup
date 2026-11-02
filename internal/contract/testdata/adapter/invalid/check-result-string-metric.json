@@ -1,0 +1,11 @@
+{
+ "contract": "sitate.check/v1",
+ "name": "x",
+ "version": "1.0.0",
+ "result": "pass",
+ "metrics": {
+  "a": "1"
+ },
+ "findings": [],
+ "findings_total": 0
+}

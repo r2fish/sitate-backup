@@ -1,0 +1,10 @@
+{
+ "contract": "sitate.restore-dest/v1",
+ "op": "poweroff",
+ "session_id": "r-20261103T010203Z-3f9a",
+ "dest": {
+  "at": "dest.example.invalid",
+  "key_ref": "dest-key"
+ },
+ "secrets": {}
+}

@@ -1,0 +1,58 @@
+{
+ "description": "断片の最大長(StreamFragmentMax = 1048576)ちょうど",
+ "frames": [
+  {
+   "h": {
+    "type": "file",
+    "path": "max",
+    "size": 1048576,
+    "mode": 420,
+    "uid": 1000,
+    "gid": 1000,
+    "mtime_ns": 1760808600123456789
+   }
+  },
+  {
+   "h": {
+    "type": "data",
+    "size": 1048576
+   },
+   "fill": {
+    "byte": "x",
+    "count": 1048576
+   }
+  },
+  {
+   "h": {
+    "type": "item_end",
+    "bytes": 1048576,
+    "hash": "blake3:ee4badf0134a6e1deca8a3e18d8d66fbcd3057d479da8bd77ba54ef3ee1c1782",
+    "status": "ok",
+    "exit_status": null
+   }
+  },
+  {
+   "h": {
+    "type": "end",
+    "bytes": 1048576,
+    "hash": "blake3:faaf334a29a44619c1973e479e461a2a9448f2e2564b764b00efda78d6a6a100",
+    "exit_status": 0
+   }
+  }
+ ],
+ "result": {
+  "contract": "sitate.acquire/v1",
+  "status": "ok",
+  "stats": {
+   "files": 1,
+   "bytes": 5,
+   "errors": 0,
+   "errors_omitted": 0,
+   "warnings_omitted": 0,
+   "changed_during_read": 0
+  },
+  "errors": [],
+  "warnings": []
+ },
+ "error": null
+}

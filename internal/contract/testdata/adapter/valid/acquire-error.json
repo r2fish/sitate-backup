@@ -1,0 +1,10 @@
+{
+ "contract": "sitate.acquire/v1",
+ "error": {
+  "code": "STORAGE_UNREACHABLE",
+  "detail": {
+   "target": "source",
+   "reason": "connect"
+  }
+ }
+}

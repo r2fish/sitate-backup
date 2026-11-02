@@ -1,0 +1,82 @@
+{
+ "description": "読み取り中に変化: file の後に同じ path の file-retry。読み直してもなお変化なら item_end は changed",
+ "frames": [
+  {
+   "h": {
+    "type": "file",
+    "path": "a",
+    "size": 3,
+    "mode": 420,
+    "uid": 1000,
+    "gid": 1000,
+    "mtime_ns": 1760808600123456789
+   }
+  },
+  {
+   "h": {
+    "type": "data",
+    "size": 3
+   },
+   "body": "abc"
+  },
+  {
+   "h": {
+    "type": "item_end",
+    "bytes": 3,
+    "hash": "blake3:6437b3ac38465133ffb63b75273a8db548c558465d79db03fd359c6cd5bd9d85",
+    "status": "ok",
+    "exit_status": null
+   }
+  },
+  {
+   "h": {
+    "type": "file-retry",
+    "path": "a",
+    "size": 3,
+    "mode": 420,
+    "uid": 1000,
+    "gid": 1000,
+    "mtime_ns": 1760808600123456789
+   }
+  },
+  {
+   "h": {
+    "type": "data",
+    "size": 3
+   },
+   "body": "abd"
+  },
+  {
+   "h": {
+    "type": "item_end",
+    "bytes": 3,
+    "hash": "blake3:90bfae301eb52a7298ef6a1408b29b37ce9d9a83f00fba3ddaa21e0550edf8fa",
+    "status": "changed",
+    "exit_status": null
+   }
+  },
+  {
+   "h": {
+    "type": "end",
+    "bytes": 6,
+    "hash": "blake3:c4b7b0ab88ffff6e38e7a615326e5e7ed33789daefc699ed016279cc39de5d5b",
+    "exit_status": 0
+   }
+  }
+ ],
+ "result": {
+  "contract": "sitate.acquire/v1",
+  "status": "ok",
+  "stats": {
+   "files": 1,
+   "bytes": 5,
+   "errors": 0,
+   "errors_omitted": 0,
+   "warnings_omitted": 0,
+   "changed_during_read": 0
+  },
+  "errors": [],
+  "warnings": []
+ },
+ "error": null
+}

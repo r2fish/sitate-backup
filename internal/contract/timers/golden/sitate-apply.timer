@@ -1,0 +1,11 @@
+[Unit]
+Description=Sitate-backup apply timer
+
+[Timer]
+OnCalendar=*-*-* *:00:00 Asia/Tokyo
+Persistent=false
+RandomizedDelaySec=0
+Unit=sitate-apply.service
+
+[Install]
+WantedBy=timers.target

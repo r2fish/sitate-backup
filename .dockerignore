@@ -1,0 +1,7 @@
+.claude/
+.git/
+node_modules/
+bundle/
+dist/
+test/env/.run/
+test/env/state-snapshots/

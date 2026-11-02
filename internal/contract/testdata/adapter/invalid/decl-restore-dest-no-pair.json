@@ -1,0 +1,9 @@
+{
+ "kind": "restore-dest",
+ "name": "ssh-host",
+ "version": "1.0.0",
+ "contract": "sitate.restore-dest/v1",
+ "exe": "ssh-host",
+ "secrets": [],
+ "network": true
+}

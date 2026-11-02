@@ -1,0 +1,12 @@
+{
+ "contract": "sitate.provision/v1",
+ "error": {
+  "code": "STORAGE_UNREACHABLE",
+  "detail": {
+   "target": "storage"
+  },
+  "orphaned_key_ids": [
+   "K9"
+  ]
+ }
+}

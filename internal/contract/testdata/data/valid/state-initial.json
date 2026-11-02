@@ -1,0 +1,95 @@
+{
+ "initialized": true,
+ "repo_id": "rp-91919191919191919191919191919191",
+ "sealed": false,
+ "sealed_at": null,
+ "approved_def": null,
+ "phrase_confirmed": false,
+ "last_phrase_verify": null,
+ "kit": {
+  "version": "kit-1",
+  "confirmed_version": null,
+  "location_checked_at": null,
+  "confirmed_core_version": null
+ },
+ "key_rotate_required": false,
+ "approval_key": null,
+ "host_keys": [
+  {
+   "role": "source",
+   "host": "src.example.invalid",
+   "host_key_fp": "SHA256:abc",
+   "session_id": null
+  }
+ ],
+ "objects": [],
+ "snapshots": [],
+ "protected": [],
+ "hold": {
+  "active": false,
+  "since": null,
+  "auto": false,
+  "reason": null,
+  "causes": [],
+  "suppressed": []
+ },
+ "last_verify": null,
+ "notify": {
+  "last_test_at": null,
+  "test_proofs": [],
+  "all_delivered": false,
+  "proof_confirmed": false,
+  "change_proofs": [],
+  "last_digest_at": null,
+  "last_digest_accepted_at": null,
+  "merge": [],
+  "pending": []
+ },
+ "storage_reads": {
+  "month": "2026-11",
+  "read_bytes": 0,
+  "reserved_used": 0
+ },
+ "restore_test_plan": {
+  "period_start": "2026-11-01",
+  "passed": false,
+  "failed_after_read": false,
+  "read_started": null,
+  "read_settled": null,
+  "deferred_month": null
+ },
+ "cost_accepted": null,
+ "last_bucket_check": null,
+ "last_extend_ok_at": null,
+ "uncovered_seen": [],
+ "last_runs": [],
+ "timers": null,
+ "last_restore_test": null,
+ "last_proof": null,
+ "delays": [],
+ "admin_access_closed_at": null,
+ "admin_access_opened_at": null,
+ "restore_dest_enrollment": null,
+ "source_clusters": {
+  "host": "src.example.invalid",
+  "clusters": [
+   {
+    "socket_dir": "/var/run/postgresql",
+    "port": 5432,
+    "major": 16,
+    "raw_paths": [
+     "/var/lib/postgresql/16/main"
+    ]
+   }
+  ]
+ },
+ "source_seen": [
+  {
+   "host": "src.example.invalid",
+   "host_key_fp": "SHA256:abc",
+   "at": "2026-11-03T00:00:00Z"
+  }
+ ],
+ "receiver_hash": null,
+ "warnings_since": []
+}

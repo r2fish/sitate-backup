@@ -1,0 +1,832 @@
+{
+ "$comment": "標準出力の 2 レコードの試験ベクトル(spec 3.1.4)。stdout は1行1レコードの JSON の並び。words は明らかに合成の語(fake…)で、実のフレーズではない。want が ok なら secret_record の有無と phrase_emitted が一致、discard はアプリが破棄する形(error は 3.7 のアプリの原因コード)。 null・数・文字列だけのレコードは封筒でないので ENVELOPE_INVALID。ENVELOPE_INVALID は秘密のレコードが先頭に見えていない出力だけ。秘密が先頭に見えていて次が封筒でない([秘密,秘密]・[秘密,別の schema]・[秘密,null])は ENVELOPE_SECRET_MISMATCH、先頭が封筒で次が秘密([封筒,秘密])は先頭が秘密でないので ENVELOPE_INVALID。raw は途中で切れた行を含む出力(1 行ずつ)、end は出力の終わり方で、ssh_disconnected(SSH が切れた)は秘密の有無に関わらず SSH_DISCONNECTED、complete(接続は正常に終わった)で封筒が切れていれば、秘密が見えていれば ENVELOPE_SECRET_MISMATCH、見えていなければ ENVELOPE_INVALID。",
+ "cases": [
+  {
+   "name": "envelope-only",
+   "stdout": [
+    {
+     "schema": "sitate.out/v1",
+     "command": [
+      "version"
+     ],
+     "ok": true,
+     "dry_run": false,
+     "run_id": "r-20261018T173000Z-3f9a",
+     "result": {
+      "version": "1.0.0",
+      "format_versions": {
+       "write": 1,
+       "read": [
+        1
+       ],
+       "test": true
+      },
+      "signing_key_fp": "SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "build": "test",
+      "sim_time": "2026-11-02T10:00:00Z"
+     },
+     "warnings": [],
+     "error": null
+    }
+   ],
+   "want": "ok",
+   "has_secret": false
+  },
+  {
+   "name": "secret-then-envelope",
+   "stdout": [
+    {
+     "schema": "sitate.secret-string/v1",
+     "kind": "recovery_phrase",
+     "words": [
+      "fakealph",
+      "fakebrav",
+      "fakechar",
+      "fakedelt",
+      "fakeecho",
+      "fakefoxt",
+      "fakegolf",
+      "fakehote",
+      "fakeindi",
+      "fakejuli",
+      "fakekilo",
+      "fakelima",
+      "fakemike",
+      "fakenove",
+      "fakeosca",
+      "fakepapa",
+      "fakequeb",
+      "fakerome",
+      "fakesier",
+      "faketang",
+      "fakeunif",
+      "fakevict",
+      "fakewhis",
+      "fakexray"
+     ],
+     "keyring_version": 1
+    },
+    {
+     "schema": "sitate.out/v1",
+     "command": [
+      "init"
+     ],
+     "ok": true,
+     "dry_run": false,
+     "run_id": "r-20261018T173000Z-3f9a",
+     "result": {
+      "repo_id": "repo-1",
+      "keyring_id": "kr-1",
+      "committed": false,
+      "kit_version": "0123456789ab",
+      "approval_key_fp": "SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+     },
+     "warnings": [],
+     "error": null,
+     "phrase_emitted": true
+    }
+   ],
+   "want": "ok",
+   "has_secret": true
+  },
+  {
+   "name": "emitted-without-secret",
+   "stdout": [
+    {
+     "schema": "sitate.out/v1",
+     "command": [
+      "init"
+     ],
+     "ok": true,
+     "dry_run": false,
+     "run_id": "r-20261018T173000Z-3f9a",
+     "result": {
+      "repo_id": "repo-1",
+      "keyring_id": "kr-1",
+      "committed": false,
+      "kit_version": "0123456789ab",
+      "approval_key_fp": "SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+     },
+     "warnings": [],
+     "error": null,
+     "phrase_emitted": true
+    }
+   ],
+   "want": "discard",
+   "error": "ENVELOPE_SECRET_MISMATCH"
+  },
+  {
+   "name": "secret-only",
+   "stdout": [
+    {
+     "schema": "sitate.secret-string/v1",
+     "kind": "recovery_phrase",
+     "words": [
+      "fakealph",
+      "fakebrav",
+      "fakechar",
+      "fakedelt",
+      "fakeecho",
+      "fakefoxt",
+      "fakegolf",
+      "fakehote",
+      "fakeindi",
+      "fakejuli",
+      "fakekilo",
+      "fakelima",
+      "fakemike",
+      "fakenove",
+      "fakeosca",
+      "fakepapa",
+      "fakequeb",
+      "fakerome",
+      "fakesier",
+      "faketang",
+      "fakeunif",
+      "fakevict",
+      "fakewhis",
+      "fakexray"
+     ],
+     "keyring_version": 1
+    }
+   ],
+   "want": "discard",
+   "error": "ENVELOPE_SECRET_MISMATCH"
+  },
+  {
+   "name": "three-records",
+   "stdout": [
+    {
+     "schema": "sitate.secret-string/v1",
+     "kind": "recovery_phrase",
+     "words": [
+      "fakealph",
+      "fakebrav",
+      "fakechar",
+      "fakedelt",
+      "fakeecho",
+      "fakefoxt",
+      "fakegolf",
+      "fakehote",
+      "fakeindi",
+      "fakejuli",
+      "fakekilo",
+      "fakelima",
+      "fakemike",
+      "fakenove",
+      "fakeosca",
+      "fakepapa",
+      "fakequeb",
+      "fakerome",
+      "fakesier",
+      "faketang",
+      "fakeunif",
+      "fakevict",
+      "fakewhis",
+      "fakexray"
+     ],
+     "keyring_version": 1
+    },
+    {
+     "schema": "sitate.out/v1",
+     "command": [
+      "init"
+     ],
+     "ok": true,
+     "dry_run": false,
+     "run_id": "r-20261018T173000Z-3f9a",
+     "result": {
+      "repo_id": "repo-1",
+      "keyring_id": "kr-1",
+      "committed": false,
+      "kit_version": "0123456789ab",
+      "approval_key_fp": "SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+     },
+     "warnings": [],
+     "error": null,
+     "phrase_emitted": true
+    },
+    {
+     "schema": "sitate.out/v1",
+     "command": [
+      "version"
+     ],
+     "ok": true,
+     "dry_run": false,
+     "run_id": "r-20261018T173000Z-3f9a",
+     "result": {
+      "version": "1.0.0",
+      "format_versions": {
+       "write": 1,
+       "read": [
+        1
+       ],
+       "test": true
+      },
+      "signing_key_fp": "SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "build": "test",
+      "sim_time": "2026-11-02T10:00:00Z"
+     },
+     "warnings": [],
+     "error": null
+    }
+   ],
+   "want": "discard",
+   "error": "ENVELOPE_TOO_MANY_RECORDS"
+  },
+  {
+   "name": "envelope-only-phrase-false",
+   "stdout": [
+    {
+     "schema": "sitate.out/v1",
+     "command": [
+      "version"
+     ],
+     "ok": true,
+     "dry_run": false,
+     "run_id": "r-20261018T173000Z-3f9a",
+     "result": {
+      "version": "1.0.0",
+      "format_versions": {
+       "write": 1,
+       "read": [
+        1
+       ],
+       "test": true
+      },
+      "signing_key_fp": "SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "build": "test",
+      "sim_time": "2026-11-02T10:00:00Z"
+     },
+     "warnings": [],
+     "error": null,
+     "phrase_emitted": false
+    }
+   ],
+   "want": "ok",
+   "has_secret": false
+  },
+  {
+   "name": "secret-then-secret",
+   "stdout": [
+    {
+     "schema": "sitate.secret-string/v1",
+     "kind": "recovery_phrase",
+     "words": [
+      "fakealph",
+      "fakebrav",
+      "fakechar",
+      "fakedelt",
+      "fakeecho",
+      "fakefoxt",
+      "fakegolf",
+      "fakehote",
+      "fakeindi",
+      "fakejuli",
+      "fakekilo",
+      "fakelima",
+      "fakemike",
+      "fakenove",
+      "fakeosca",
+      "fakepapa",
+      "fakequeb",
+      "fakerome",
+      "fakesier",
+      "faketang",
+      "fakeunif",
+      "fakevict",
+      "fakewhis",
+      "fakexray"
+     ],
+     "keyring_version": 1
+    },
+    {
+     "schema": "sitate.secret-string/v1",
+     "kind": "recovery_phrase",
+     "words": [
+      "fakealph",
+      "fakebrav",
+      "fakechar",
+      "fakedelt",
+      "fakeecho",
+      "fakefoxt",
+      "fakegolf",
+      "fakehote",
+      "fakeindi",
+      "fakejuli",
+      "fakekilo",
+      "fakelima",
+      "fakemike",
+      "fakenove",
+      "fakeosca",
+      "fakepapa",
+      "fakequeb",
+      "fakerome",
+      "fakesier",
+      "faketang",
+      "fakeunif",
+      "fakevict",
+      "fakewhis",
+      "fakexray"
+     ],
+     "keyring_version": 1
+    }
+   ],
+   "want": "discard",
+   "error": "ENVELOPE_SECRET_MISMATCH"
+  },
+  {
+   "name": "envelope-then-secret",
+   "stdout": [
+    {
+     "schema": "sitate.out/v1",
+     "command": [
+      "init"
+     ],
+     "ok": true,
+     "dry_run": false,
+     "run_id": "r-20261018T173000Z-3f9a",
+     "result": {
+      "repo_id": "repo-1",
+      "keyring_id": "kr-1",
+      "committed": false,
+      "kit_version": "0123456789ab",
+      "approval_key_fp": "SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+     },
+     "warnings": [],
+     "error": null,
+     "phrase_emitted": true
+    },
+    {
+     "schema": "sitate.secret-string/v1",
+     "kind": "recovery_phrase",
+     "words": [
+      "fakealph",
+      "fakebrav",
+      "fakechar",
+      "fakedelt",
+      "fakeecho",
+      "fakefoxt",
+      "fakegolf",
+      "fakehote",
+      "fakeindi",
+      "fakejuli",
+      "fakekilo",
+      "fakelima",
+      "fakemike",
+      "fakenove",
+      "fakeosca",
+      "fakepapa",
+      "fakequeb",
+      "fakerome",
+      "fakesier",
+      "faketang",
+      "fakeunif",
+      "fakevict",
+      "fakewhis",
+      "fakexray"
+     ],
+     "keyring_version": 1
+    }
+   ],
+   "want": "discard",
+   "error": "ENVELOPE_INVALID"
+  },
+  {
+   "name": "secret-then-other-schema",
+   "stdout": [
+    {
+     "schema": "sitate.secret-string/v1",
+     "kind": "recovery_phrase",
+     "words": [
+      "fakealph",
+      "fakebrav",
+      "fakechar",
+      "fakedelt",
+      "fakeecho",
+      "fakefoxt",
+      "fakegolf",
+      "fakehote",
+      "fakeindi",
+      "fakejuli",
+      "fakekilo",
+      "fakelima",
+      "fakemike",
+      "fakenove",
+      "fakeosca",
+      "fakepapa",
+      "fakequeb",
+      "fakerome",
+      "fakesier",
+      "faketang",
+      "fakeunif",
+      "fakevict",
+      "fakewhis",
+      "fakexray"
+     ],
+     "keyring_version": 1
+    },
+    {
+     "schema": "sitate.other/v1"
+    }
+   ],
+   "want": "discard",
+   "error": "ENVELOPE_SECRET_MISMATCH"
+  },
+  {
+   "name": "secret-then-envelope-no-phrase-emitted",
+   "stdout": [
+    {
+     "schema": "sitate.secret-string/v1",
+     "kind": "recovery_phrase",
+     "words": [
+      "fakealph",
+      "fakebrav",
+      "fakechar",
+      "fakedelt",
+      "fakeecho",
+      "fakefoxt",
+      "fakegolf",
+      "fakehote",
+      "fakeindi",
+      "fakejuli",
+      "fakekilo",
+      "fakelima",
+      "fakemike",
+      "fakenove",
+      "fakeosca",
+      "fakepapa",
+      "fakequeb",
+      "fakerome",
+      "fakesier",
+      "faketang",
+      "fakeunif",
+      "fakevict",
+      "fakewhis",
+      "fakexray"
+     ],
+     "keyring_version": 1
+    },
+    {
+     "schema": "sitate.out/v1",
+     "command": [
+      "init"
+     ],
+     "ok": true,
+     "dry_run": false,
+     "run_id": "r-20261018T173000Z-3f9a",
+     "result": {
+      "repo_id": "repo-1",
+      "keyring_id": "kr-1",
+      "committed": false,
+      "kit_version": "0123456789ab",
+      "approval_key_fp": "SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+     },
+     "warnings": [],
+     "error": null
+    }
+   ],
+   "want": "discard",
+   "error": "ENVELOPE_SECRET_MISMATCH"
+  },
+  {
+   "name": "secret-then-envelope-phrase-emitted-false",
+   "stdout": [
+    {
+     "schema": "sitate.secret-string/v1",
+     "kind": "recovery_phrase",
+     "words": [
+      "fakealph",
+      "fakebrav",
+      "fakechar",
+      "fakedelt",
+      "fakeecho",
+      "fakefoxt",
+      "fakegolf",
+      "fakehote",
+      "fakeindi",
+      "fakejuli",
+      "fakekilo",
+      "fakelima",
+      "fakemike",
+      "fakenove",
+      "fakeosca",
+      "fakepapa",
+      "fakequeb",
+      "fakerome",
+      "fakesier",
+      "faketang",
+      "fakeunif",
+      "fakevict",
+      "fakewhis",
+      "fakexray"
+     ],
+     "keyring_version": 1
+    },
+    {
+     "schema": "sitate.out/v1",
+     "command": [
+      "init"
+     ],
+     "ok": true,
+     "dry_run": false,
+     "run_id": "r-20261018T173000Z-3f9a",
+     "result": {
+      "repo_id": "repo-1",
+      "keyring_id": "kr-1",
+      "committed": false,
+      "kit_version": "0123456789ab",
+      "approval_key_fp": "SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+     },
+     "warnings": [],
+     "error": null,
+     "phrase_emitted": false
+    }
+   ],
+   "want": "discard",
+   "error": "ENVELOPE_SECRET_MISMATCH"
+  },
+  {
+   "name": "null-only",
+   "stdout": [
+    null
+   ],
+   "want": "discard",
+   "error": "ENVELOPE_INVALID"
+  },
+  {
+   "name": "number-only",
+   "stdout": [
+    1
+   ],
+   "want": "discard",
+   "error": "ENVELOPE_INVALID"
+  },
+  {
+   "name": "string-only",
+   "stdout": [
+    "x"
+   ],
+   "want": "discard",
+   "error": "ENVELOPE_INVALID"
+  },
+  {
+   "name": "secret-then-null",
+   "stdout": [
+    {
+     "schema": "sitate.secret-string/v1",
+     "kind": "recovery_phrase",
+     "words": [
+      "fakealph",
+      "fakebrav",
+      "fakechar",
+      "fakedelt",
+      "fakeecho",
+      "fakefoxt",
+      "fakegolf",
+      "fakehote",
+      "fakeindi",
+      "fakejuli",
+      "fakekilo",
+      "fakelima",
+      "fakemike",
+      "fakenove",
+      "fakeosca",
+      "fakepapa",
+      "fakequeb",
+      "fakerome",
+      "fakesier",
+      "faketang",
+      "fakeunif",
+      "fakevict",
+      "fakewhis",
+      "fakexray"
+     ],
+     "keyring_version": 1
+    },
+    null
+   ],
+   "want": "discard",
+   "error": "ENVELOPE_SECRET_MISMATCH"
+  },
+  {
+   "name": "ssh-disconnected-secret-visible",
+   "raw": [
+    "{\"schema\":\"sitate.secret-string/v1\",\"kind\":\"recovery_phrase\",\"words\":[\"fakealph\",\"fakebrav\",\"fakechar\",\"fakedelt\",\"fakeecho\",\"fakefoxt\",\"fakegolf\",\"fakehote\",\"fakeindi\",\"fakejuli\",\"fakekilo\",\"fakelima\",\"fakemike\",\"fakenove\",\"fakeosca\",\"fakepapa\",\"fakequeb\",\"fakerome\",\"fakesier\",\"faketang\",\"fakeunif\",\"fakevict\",\"fakewhis\",\"fakexray\"],\"keyring_version\":1}",
+    "{\"schema\":\"sitate.out/v1\",\"com"
+   ],
+   "want": "discard",
+   "error": "SSH_DISCONNECTED",
+   "end": "ssh_disconnected",
+   "has_secret": true
+  },
+  {
+   "name": "ssh-disconnected-no-secret",
+   "raw": [
+    "{\"schema\":\"sitate.out/v1\",\"com"
+   ],
+   "want": "discard",
+   "error": "SSH_DISCONNECTED",
+   "end": "ssh_disconnected",
+   "has_secret": false
+  },
+  {
+   "name": "complete-truncated-envelope-secret-visible",
+   "raw": [
+    "{\"schema\":\"sitate.secret-string/v1\",\"kind\":\"recovery_phrase\",\"words\":[\"fakealph\",\"fakebrav\",\"fakechar\",\"fakedelt\",\"fakeecho\",\"fakefoxt\",\"fakegolf\",\"fakehote\",\"fakeindi\",\"fakejuli\",\"fakekilo\",\"fakelima\",\"fakemike\",\"fakenove\",\"fakeosca\",\"fakepapa\",\"fakequeb\",\"fakerome\",\"fakesier\",\"faketang\",\"fakeunif\",\"fakevict\",\"fakewhis\",\"fakexray\"],\"keyring_version\":1}",
+    "{\"schema\":\"sitate.out/v1\",\"com"
+   ],
+   "want": "discard",
+   "error": "ENVELOPE_SECRET_MISMATCH",
+   "end": "complete",
+   "has_secret": true
+  },
+  {
+   "name": "complete-truncated-envelope-no-secret",
+   "raw": [
+    "{\"schema\":\"sitate.out/v1\",\"com"
+   ],
+   "want": "discard",
+   "error": "ENVELOPE_INVALID",
+   "end": "complete",
+   "has_secret": false
+  }
+ ],
+ "secret_record_invalid": [
+  {
+   "name": "23-words",
+   "record": {
+    "schema": "sitate.secret-string/v1",
+    "kind": "recovery_phrase",
+    "words": [
+     "fakealph",
+     "fakebrav",
+     "fakechar",
+     "fakedelt",
+     "fakeecho",
+     "fakefoxt",
+     "fakegolf",
+     "fakehote",
+     "fakeindi",
+     "fakejuli",
+     "fakekilo",
+     "fakelima",
+     "fakemike",
+     "fakenove",
+     "fakeosca",
+     "fakepapa",
+     "fakequeb",
+     "fakerome",
+     "fakesier",
+     "faketang",
+     "fakeunif",
+     "fakevict",
+     "fakewhis"
+    ],
+    "keyring_version": 1
+   },
+   "error": "ENVELOPE_SECRET_MISMATCH"
+  },
+  {
+   "name": "extra-field",
+   "record": {
+    "schema": "sitate.secret-string/v1",
+    "kind": "recovery_phrase",
+    "words": [
+     "fakealph",
+     "fakebrav",
+     "fakechar",
+     "fakedelt",
+     "fakeecho",
+     "fakefoxt",
+     "fakegolf",
+     "fakehote",
+     "fakeindi",
+     "fakejuli",
+     "fakekilo",
+     "fakelima",
+     "fakemike",
+     "fakenove",
+     "fakeosca",
+     "fakepapa",
+     "fakequeb",
+     "fakerome",
+     "fakesier",
+     "faketang",
+     "fakeunif",
+     "fakevict",
+     "fakewhis",
+     "fakexray"
+    ],
+    "keyring_version": 1,
+    "note": "x"
+   },
+   "error": "ENVELOPE_SECRET_MISMATCH"
+  },
+  {
+   "name": "wrong-schema",
+   "record": {
+    "schema": "sitate.secret/v1",
+    "kind": "recovery_phrase",
+    "words": [
+     "fakealph",
+     "fakebrav",
+     "fakechar",
+     "fakedelt",
+     "fakeecho",
+     "fakefoxt",
+     "fakegolf",
+     "fakehote",
+     "fakeindi",
+     "fakejuli",
+     "fakekilo",
+     "fakelima",
+     "fakemike",
+     "fakenove",
+     "fakeosca",
+     "fakepapa",
+     "fakequeb",
+     "fakerome",
+     "fakesier",
+     "faketang",
+     "fakeunif",
+     "fakevict",
+     "fakewhis",
+     "fakexray"
+    ],
+    "keyring_version": 1
+   },
+   "error": "ENVELOPE_INVALID"
+  },
+  {
+   "name": "keyring-version-zero",
+   "record": {
+    "schema": "sitate.secret-string/v1",
+    "kind": "recovery_phrase",
+    "words": [
+     "fakealph",
+     "fakebrav",
+     "fakechar",
+     "fakedelt",
+     "fakeecho",
+     "fakefoxt",
+     "fakegolf",
+     "fakehote",
+     "fakeindi",
+     "fakejuli",
+     "fakekilo",
+     "fakelima",
+     "fakemike",
+     "fakenove",
+     "fakeosca",
+     "fakepapa",
+     "fakequeb",
+     "fakerome",
+     "fakesier",
+     "faketang",
+     "fakeunif",
+     "fakevict",
+     "fakewhis",
+     "fakexray"
+    ],
+    "keyring_version": 0
+   },
+   "error": "ENVELOPE_SECRET_MISMATCH"
+  },
+  {
+   "name": "wrong-kind",
+   "record": {
+    "schema": "sitate.secret-string/v1",
+    "kind": "other_kind",
+    "words": [
+     "fakealph",
+     "fakebrav",
+     "fakechar",
+     "fakedelt",
+     "fakeecho",
+     "fakefoxt",
+     "fakegolf",
+     "fakehote",
+     "fakeindi",
+     "fakejuli",
+     "fakekilo",
+     "fakelima",
+     "fakemike",
+     "fakenove",
+     "fakeosca",
+     "fakepapa",
+     "fakequeb",
+     "fakerome",
+     "fakesier",
+     "faketang",
+     "fakeunif",
+     "fakevict",
+     "fakewhis",
+     "fakexray"
+    ],
+    "keyring_version": 1
+   },
+   "error": "ENVELOPE_SECRET_MISMATCH"
+  }
+ ]
+}

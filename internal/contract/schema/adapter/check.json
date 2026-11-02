@@ -1,0 +1,349 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://sitate.invalid/schema/adapter/check.json",
+ "$defs": {
+  "baseline": {
+   "type": "object",
+   "required": [
+    "snapshot_ref",
+    "files",
+    "bytes",
+    "ext_hist"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "snapshot_ref": {
+     "$ref": "https://sitate.invalid/schema/data/manifest.json#/$defs/manifest_id"
+    },
+    "files": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "bytes": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    },
+    "ext_hist": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+     },
+     "maxProperties": 65
+    }
+   }
+  },
+  "input": {
+   "oneOf": [
+    {
+     "type": "object",
+     "required": [
+      "kind",
+      "fd"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "kind": {
+       "const": "stream"
+      },
+      "fd": {
+       "type": "integer",
+       "minimum": 3,
+       "maximum": 255
+      }
+     }
+    },
+    {
+     "type": "object",
+     "required": [
+      "kind",
+      "path"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "kind": {
+       "const": "tree"
+      },
+      "path": {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/path"
+      }
+     }
+    },
+    {
+     "type": "object",
+     "required": [
+      "kind",
+      "dumps"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "kind": {
+       "const": "db"
+      },
+      "dumps": {
+       "type": "array",
+       "items": {
+        "type": "object",
+        "required": [
+         "format",
+         "path"
+        ],
+        "additionalProperties": false,
+        "properties": {
+         "format": {
+          "enum": [
+           "globals",
+           "custom"
+          ]
+         },
+         "path": {
+          "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/path"
+         }
+        }
+       }
+      }
+     }
+    }
+   ]
+  },
+  "request": {
+   "type": "object",
+   "required": [
+    "contract",
+    "phase",
+    "target_id",
+    "input",
+    "baseline",
+    "params"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "contract": {
+     "const": "sitate.check/v1"
+    },
+    "phase": {
+     "enum": [
+      "ingest",
+      "restore-test"
+     ]
+    },
+    "target_id": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/target_id"
+    },
+    "input": {
+     "$ref": "#/$defs/input"
+    },
+    "baseline": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/baseline"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "params": {
+     "type": "object",
+     "additionalProperties": {
+      "type": [
+       "number",
+       "integer"
+      ]
+     },
+     "maxProperties": 64
+    }
+   }
+  },
+  "finding": {
+   "oneOf": [
+    {
+     "type": "object",
+     "required": [
+      "code",
+      "item_ref"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "code": {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/acode"
+      },
+      "item_ref": {
+       "$ref": "https://sitate.invalid/schema/data/manifest.json#/$defs/entry_ref"
+      }
+     }
+    },
+    {
+     "type": "object",
+     "required": [
+      "code",
+      "path"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "code": {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/acode"
+      },
+      "path": {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/anypath"
+      }
+     }
+    },
+    {
+     "type": "object",
+     "required": [
+      "code",
+      "path_b64"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "code": {
+       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/acode"
+      },
+      "path_b64": {
+       "type": "string",
+       "pattern": "^[A-Za-z0-9+/]*={0,2}$",
+       "maxLength": 16384
+      }
+     }
+    }
+   ]
+  },
+  "result": {
+   "type": "object",
+   "required": [
+    "contract",
+    "name",
+    "version",
+    "result",
+    "metrics",
+    "findings",
+    "findings_total"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "contract": {
+     "const": "sitate.check/v1"
+    },
+    "name": {
+     "$ref": "https://sitate.invalid/schema/adapter/common.json#/$defs/name"
+    },
+    "version": {
+     "$ref": "https://sitate.invalid/schema/adapter/common.json#/$defs/semver"
+    },
+    "result": {
+     "enum": [
+      "pass",
+      "warn",
+      "fail"
+     ]
+    },
+    "metrics": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "number"
+     },
+     "maxProperties": 64
+    },
+    "findings": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/finding"
+     },
+     "maxItems": 100
+    },
+    "findings_total": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/nonneg"
+    }
+   }
+  },
+  "error": {
+   "type": "object",
+   "required": [
+    "code",
+    "detail"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "code": {
+     "anyOf": [
+      {
+       "enum": [
+        "INTERNAL",
+        "NOT_IMPLEMENTED"
+       ]
+      },
+      {
+       "$ref": "https://sitate.invalid/schema/adapter/common.json#/$defs/adapter_code"
+      }
+     ]
+    },
+    "detail": {
+     "$ref": "https://sitate.invalid/schema/adapter/common.json#/$defs/generic_detail"
+    }
+   },
+   "allOf": [
+    {
+     "if": {
+      "properties": {
+       "code": {
+        "const": "INTERNAL"
+       }
+      },
+      "required": [
+       "code"
+      ]
+     },
+     "then": {
+      "properties": {
+       "detail": {
+        "$ref": "https://sitate.invalid/schema/adapter/common.json#/$defs/internal_detail"
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "code": {
+        "const": "NOT_IMPLEMENTED"
+       }
+      },
+      "required": [
+       "code"
+      ]
+     },
+     "then": {
+      "properties": {
+       "detail": {
+        "$ref": "https://sitate.invalid/schema/adapter/common.json#/$defs/not_implemented_detail"
+       }
+      }
+     }
+    }
+   ]
+  },
+  "response": {
+   "oneOf": [
+    {
+     "type": "object",
+     "required": [
+      "contract",
+      "error"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "contract": {
+       "const": "sitate.check/v1"
+      },
+      "error": {
+       "$ref": "#/$defs/error"
+      }
+     }
+    },
+    {
+     "$ref": "#/$defs/result"
+    }
+   ]
+  }
+ }
+}

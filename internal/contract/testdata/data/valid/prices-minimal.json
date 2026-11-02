@@ -1,0 +1,70 @@
+{
+ "schema": "sitate.prices/v1",
+ "generated_at": "2026-11-03T00:00:00Z",
+ "source": {
+  "file": "pricing.yaml",
+  "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ },
+ "fx_jpy": {
+  "USD": "150"
+ },
+ "rows": [
+  {
+   "row_id": "b2-payg",
+   "kind": "storage",
+   "provider": "b2",
+   "plan": "pay as you go",
+   "country": "US",
+   "region_country": {},
+   "endpoint_patterns": [
+    "s3.<region>.example.invalid"
+   ],
+   "endpoint_default": true,
+   "tax": "none",
+   "checked_on": "2026-11-02",
+   "source_url": "https://example.invalid/p",
+   "src": {
+    "section": "storage",
+    "index": 0
+   },
+   "minimums": {
+    "storage_quantity": null,
+    "storage_days": null,
+    "object_size_kb": null
+   },
+   "charges": [
+    {
+     "item": "storage",
+     "amount": "6.95",
+     "currency": "USD",
+     "unit": "tb_month",
+     "per": "1",
+     "per_src": null,
+     "tier_upto": null,
+     "free": null,
+     "condition": null,
+     "src_field": "storage_price_per_gb_month",
+     "src_text": "6.95 USD/TB"
+    }
+   ]
+  }
+ ],
+ "combos": [
+  {
+   "id": "A",
+   "storage": "b2-payg",
+   "server": "b2-payg",
+   "restore_dest": "x:y"
+  }
+ ],
+ "restore_dests": [
+  {
+   "at": "x:y",
+   "size_class": "standard",
+   "rows": [
+    "b2-payg"
+   ]
+  }
+ ],
+ "skipped": []
+}

@@ -1,0 +1,137 @@
+{
+ "format": "sitate.manifest/v1",
+ "manifest_id": "m-5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f5f",
+ "repo_id": "rp-91919191919191919191919191919191",
+ "created_at": "2026-11-03T17:30:00Z",
+ "parent": null,
+ "def_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+ "binary_version": "0.1.0",
+ "key_id": "k1",
+ "retention_class": "monthly",
+ "definition": {
+  "version": 1,
+  "source": {
+   "host": "src.example.invalid",
+   "targets": [
+    {
+     "id": "t1",
+     "files": "/srv/data"
+    }
+   ]
+  },
+  "storage": [
+   {
+    "endpoint": "https://s3.example.invalid",
+    "bucket": "b",
+    "key_ref": "w"
+   }
+  ],
+  "restore": {
+   "dest": {
+    "at": "dest.example.invalid",
+    "key_ref": "d"
+   }
+  },
+  "notify": {
+   "to": [
+    "ops@example.invalid"
+   ]
+  }
+ },
+ "targets": [
+  {
+   "id": "t1",
+   "kind": "files",
+   "status": "ok",
+   "files": 2,
+   "bytes": 10,
+   "changed_during_read": 0
+  },
+  {
+   "id": "t3",
+   "kind": "postgresql",
+   "status": "ok",
+   "dumps": [
+    {
+     "format": "globals"
+    },
+    {
+     "format": "custom"
+    }
+   ],
+   "bytes": 99
+  }
+ ],
+ "entries": {
+  "format": "sitate.entries/v1",
+  "count": 3,
+  "chunks": [
+   {
+    "id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "version_id": "3HL4kqtJlcpXroDTDmJ+rmSpXd3dIbrHY+MTRCxf3vjVBH40Nr8X8gdRQBpUMLUo",
+    "key": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+   }
+  ]
+ },
+ "chunk_keys": {
+  "format": "sitate.chunkkeys/v1",
+  "count": 1,
+  "chunks": [
+   {
+    "id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "version_id": "3HL4kqtJlcpXroDTDmJ+rmSpXd3dIbrHY+MTRCxf3vjVBH40Nr8X8gdRQBpUMLUo",
+    "key": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+   }
+  ]
+ },
+ "checks": [
+  {
+   "name": "entropy-ratio",
+   "version": "1.0.0",
+   "phase": "ingest",
+   "result": "pass",
+   "findings": [],
+   "findings_total": 0
+  },
+  {
+   "name": "db-restore",
+   "version": "1.0.0",
+   "phase": "ingest",
+   "result": "pass",
+   "findings": [],
+   "findings_total": 0,
+   "tables": [
+    {
+     "name": "public.t",
+     "rows": 5,
+     "previous_rows": null
+    }
+   ]
+  },
+  {
+   "name": "ransom-note",
+   "version": "1.0.0",
+   "phase": "ingest",
+   "result": "error",
+   "reason": "timeout",
+   "findings": [],
+   "findings_total": 0
+  },
+  {
+   "name": "entropy-ratio",
+   "version": "1.0.0",
+   "phase": "ingest",
+   "result": "fail",
+   "findings": [],
+   "findings_total": 0,
+   "inherited": true,
+   "inherited_from": "m-77777777777777777777777777777777"
+  }
+ ],
+ "health": "suspect",
+ "stats": {
+  "chunks_referenced": 1,
+  "chunks_new": 1,
+  "bytes_new": 10
+ }
+}

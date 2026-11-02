@@ -1,0 +1,12 @@
+{
+ "contract": "sitate.restore-dest/v1",
+ "op": "inspect",
+ "session_id": null,
+ "dest": {
+  "at": "dest.example.invalid",
+  "key_ref": "dest-key"
+ },
+ "host_key_fp": null,
+ "resources": [],
+ "secrets": {}
+}

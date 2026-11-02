@@ -1,0 +1,27 @@
+{
+ "description": "data の本体の途中で終わる",
+ "frames": [
+  {
+   "h": {
+    "type": "file",
+    "path": "a",
+    "size": 5,
+    "mode": 420,
+    "uid": 1000,
+    "gid": 1000,
+    "mtime_ns": 1760808600123456789
+   }
+  },
+  {
+   "h": {
+    "type": "data",
+    "size": 5
+   },
+   "body": "ab"
+  }
+ ],
+ "error": {
+  "kind": "no_end",
+  "reason": "truncated"
+ }
+}

@@ -1,0 +1,984 @@
+{
+ "$comment": "gate の許可リスト(spec 3.1.5 の字句規則 4・判定の規則)。許可リストは 3.1.2 の表から gate を除いたもの。command は 1 語か 2 語の名前、positional は位置引数の値域(null は位置引数を持たない)、flags は受ける --<名前> とその値の形。value: none=値なし、word=空でない 1 語、ref=参照名の正規表現(4.5)、json=JSON の 1 語、base64=空白なしの base64、int=10 進の整数、enum=enum の語、stdin_dash=値は - だけ(判定の規則 2)。common_flags は全サブコマンドが受け、secret_fd が true のサブコマンドだけ --secret-fd <10 進の非負整数> を受ける(判定の規則 3)。--invoked-by は常に拒否、restore の --to はバックアップサーバーの外の宛先だけ、--relay は拒否(判定の規則 1・2)。bootstrap と bootstrap-restore は引数の形が 3.7 の入力の表にあって --<名前> の形が仕様に無いため excluded に置く(未決。完了報告の設計への疑義)。test-tick は 3.1.2 の表に無い(試験ビルドだけ)ため載せない。",
+ "common_flags": [
+  {
+   "name": "dry-run",
+   "value": "none"
+  },
+  {
+   "name": "run-id",
+   "value": "word"
+  },
+  {
+   "name": "secrets-stdin",
+   "value": "none"
+  }
+ ],
+ "ref_pattern": "^[a-z0-9-]{1,27}(-next)?$",
+ "restore_to_prefixes": [
+  "restore-dest:",
+  "source:",
+  "ssh://"
+ ],
+ "subcommands": [
+  {
+   "command": [
+    "version"
+   ],
+   "flags": [],
+   "positional": null
+  },
+  {
+   "command": [
+    "doctor"
+   ],
+   "flags": [],
+   "positional": null
+  },
+  {
+   "command": [
+    "def",
+    "validate"
+   ],
+   "flags": [
+    {
+     "name": "file",
+     "value": "stdin_dash"
+    }
+   ],
+   "positional": null
+  },
+  {
+   "command": [
+    "def",
+    "show"
+   ],
+   "flags": [],
+   "positional": null
+  },
+  {
+   "command": [
+    "init-storage"
+   ],
+   "flags": [
+    {
+     "name": "endpoint",
+     "value": "word"
+    },
+    {
+     "name": "bucket",
+     "value": "word"
+    },
+    {
+     "name": "prefix",
+     "value": "word"
+    },
+    {
+     "name": "adapter",
+     "value": "word"
+    },
+    {
+     "name": "admin-ref",
+     "value": "ref"
+    },
+    {
+     "name": "reissue",
+     "value": "none"
+    }
+   ],
+   "positional": null
+  },
+  {
+   "command": [
+    "storage",
+    "issue-read-key"
+   ],
+   "flags": [
+    {
+     "name": "endpoint",
+     "value": "word"
+    },
+    {
+     "name": "bucket",
+     "value": "word"
+    },
+    {
+     "name": "prefix",
+     "value": "word"
+    },
+    {
+     "name": "adapter",
+     "value": "word"
+    },
+    {
+     "name": "admin-ref",
+     "value": "ref"
+    },
+    {
+     "name": "key-ref",
+     "value": "ref"
+    },
+    {
+     "name": "repo-id",
+     "value": "word"
+    }
+   ],
+   "positional": null
+  },
+  {
+   "command": [
+    "storage",
+    "revoke-read-key"
+   ],
+   "flags": [
+    {
+     "name": "endpoint",
+     "value": "word"
+    },
+    {
+     "name": "bucket",
+     "value": "word"
+    },
+    {
+     "name": "prefix",
+     "value": "word"
+    },
+    {
+     "name": "adapter",
+     "value": "word"
+    },
+    {
+     "name": "admin-ref",
+     "value": "ref"
+    },
+    {
+     "name": "key-ref",
+     "value": "ref"
+    }
+   ],
+   "positional": null
+  },
+  {
+   "command": [
+    "secrets",
+    "set"
+   ],
+   "flags": [
+    {
+     "name": "stdin",
+     "value": "none"
+    },
+    {
+     "name": "role",
+     "value": "enum",
+     "enum": [
+      "write",
+      "read"
+     ]
+    }
+   ],
+   "positional": {
+    "count": 1,
+    "ref": true
+   }
+  },
+  {
+   "command": [
+    "bucket",
+    "check"
+   ],
+   "flags": [
+    {
+     "name": "key-ref",
+     "value": "ref"
+    }
+   ],
+   "positional": null
+  },
+  {
+   "command": [
+    "init"
+   ],
+   "flags": [
+    {
+     "name": "approval-pubkey",
+     "value": "base64"
+    },
+    {
+     "name": "adopt",
+     "value": "none"
+    },
+    {
+     "name": "phrase-stdin",
+     "value": "none"
+    },
+    {
+     "name": "cause",
+     "value": "enum",
+     "enum": [
+      "compromise",
+      "unknown",
+      "benign"
+     ]
+    },
+    {
+     "name": "admin-ref",
+     "value": "ref"
+    },
+    {
+     "name": "backup",
+     "value": "word"
+    },
+    {
+     "name": "endpoint",
+     "value": "word"
+    },
+    {
+     "name": "bucket",
+     "value": "word"
+    },
+    {
+     "name": "prefix",
+     "value": "word"
+    },
+    {
+     "name": "keyring",
+     "value": "word"
+    },
+    {
+     "name": "key-ref",
+     "value": "ref"
+    },
+    {
+     "name": "repo-id",
+     "value": "word"
+    }
+   ],
+   "positional": null,
+   "secret_fd": true
+  },
+  {
+   "command": [
+    "phrase",
+    "verify"
+   ],
+   "flags": [
+    {
+     "name": "phrase-stdin",
+     "value": "none"
+    }
+   ],
+   "positional": null
+  },
+  {
+   "command": [
+    "kit"
+   ],
+   "flags": [],
+   "positional": null
+  },
+  {
+   "command": [
+    "kit",
+    "confirm"
+   ],
+   "flags": [
+    {
+     "name": "kit-version",
+     "value": "int"
+    },
+    {
+     "name": "copies",
+     "value": "enum",
+     "enum": [
+      "2"
+     ]
+    },
+    {
+     "name": "recheck",
+     "value": "none"
+    }
+   ],
+   "positional": null
+  },
+  {
+   "command": [
+    "source",
+    "enroll"
+   ],
+   "flags": [
+    {
+     "name": "host",
+     "value": "word"
+    },
+    {
+     "name": "admin-ref",
+     "value": "ref"
+    },
+    {
+     "name": "rotate",
+     "value": "none"
+    }
+   ],
+   "positional": null
+  },
+  {
+   "command": [
+    "source",
+    "check"
+   ],
+   "flags": [],
+   "positional": null
+  },
+  {
+   "command": [
+    "source",
+    "survey"
+   ],
+   "flags": [
+    {
+     "name": "host",
+     "value": "word"
+    },
+    {
+     "name": "admin-ref",
+     "value": "ref"
+    }
+   ],
+   "positional": null
+  },
+  {
+   "command": [
+    "restore-dest",
+    "enroll"
+   ],
+   "flags": [
+    {
+     "name": "dest",
+     "value": "word"
+    },
+    {
+     "name": "adapter",
+     "value": "word"
+    },
+    {
+     "name": "admin-ref",
+     "value": "ref"
+    }
+   ],
+   "positional": null
+  },
+  {
+   "command": [
+    "restore-dest",
+    "check"
+   ],
+   "flags": [
+    {
+     "name": "session",
+     "value": "word"
+    }
+   ],
+   "positional": null
+  },
+  {
+   "command": [
+    "restore-dest",
+    "teardown"
+   ],
+   "flags": [
+    {
+     "name": "session",
+     "value": "word"
+    }
+   ],
+   "positional": null
+  },
+  {
+   "command": [
+    "restore-dest",
+    "release"
+   ],
+   "flags": [
+    {
+     "name": "session",
+     "value": "word"
+    },
+    {
+     "name": "authorized-key",
+     "value": "json"
+    },
+    {
+     "name": "allow-from",
+     "value": "json"
+    },
+    {
+     "name": "with-restore-change",
+     "value": "json"
+    }
+   ],
+   "positional": null
+  },
+  {
+   "command": [
+    "notify",
+    "set"
+   ],
+   "flags": [
+    {
+     "name": "to",
+     "value": "word"
+    },
+    {
+     "name": "secret-ref",
+     "value": "ref"
+    }
+   ],
+   "positional": null
+  },
+  {
+   "command": [
+    "notify",
+    "test"
+   ],
+   "flags": [],
+   "positional": null
+  },
+  {
+   "command": [
+    "backup"
+   ],
+   "flags": [],
+   "positional": null
+  },
+  {
+   "command": [
+    "verify"
+   ],
+   "flags": [],
+   "positional": null
+  },
+  {
+   "command": [
+    "journal",
+    "verify"
+   ],
+   "flags": [
+    {
+     "name": "endpoint",
+     "value": "word"
+    },
+    {
+     "name": "bucket",
+     "value": "word"
+    },
+    {
+     "name": "prefix",
+     "value": "word"
+    },
+    {
+     "name": "keyring",
+     "value": "word"
+    },
+    {
+     "name": "key-ref",
+     "value": "ref"
+    },
+    {
+     "name": "phrase-stdin",
+     "value": "none"
+    },
+    {
+     "name": "repo-id",
+     "value": "word"
+    }
+   ],
+   "positional": null
+  },
+  {
+   "command": [
+    "extend"
+   ],
+   "flags": [],
+   "positional": null
+  },
+  {
+   "command": [
+    "prune"
+   ],
+   "flags": [],
+   "positional": null
+  },
+  {
+   "command": [
+    "hold",
+    "set"
+   ],
+   "flags": [],
+   "positional": null
+  },
+  {
+   "command": [
+    "list"
+   ],
+   "flags": [
+    {
+     "name": "endpoint",
+     "value": "word"
+    },
+    {
+     "name": "bucket",
+     "value": "word"
+    },
+    {
+     "name": "prefix",
+     "value": "word"
+    },
+    {
+     "name": "keyring",
+     "value": "word"
+    },
+    {
+     "name": "key-ref",
+     "value": "ref"
+    },
+    {
+     "name": "phrase-stdin",
+     "value": "none"
+    },
+    {
+     "name": "anchor",
+     "value": "word"
+    },
+    {
+     "name": "repo-id",
+     "value": "word"
+    }
+   ],
+   "positional": null
+  },
+  {
+   "command": [
+    "restore"
+   ],
+   "flags": [
+    {
+     "name": "backup",
+     "value": "word"
+    },
+    {
+     "name": "to",
+     "value": "word"
+    },
+    {
+     "name": "paths",
+     "value": "json"
+    },
+    {
+     "name": "host-ref",
+     "value": "ref"
+    },
+    {
+     "name": "hold-hours",
+     "value": "int"
+    },
+    {
+     "name": "checks",
+     "value": "enum",
+     "enum": [
+      "all",
+      "none"
+     ]
+    },
+    {
+     "name": "endpoint",
+     "value": "word"
+    },
+    {
+     "name": "bucket",
+     "value": "word"
+    },
+    {
+     "name": "prefix",
+     "value": "word"
+    },
+    {
+     "name": "keyring",
+     "value": "word"
+    },
+    {
+     "name": "key-ref",
+     "value": "ref"
+    },
+    {
+     "name": "phrase-stdin",
+     "value": "none"
+    },
+    {
+     "name": "snapshot-key-stdin",
+     "value": "none"
+    },
+    {
+     "name": "repo-id",
+     "value": "word"
+    }
+   ],
+   "positional": null
+  },
+  {
+   "command": [
+    "restore",
+    "fetch"
+   ],
+   "flags": [
+    {
+     "name": "session",
+     "value": "word"
+    },
+    {
+     "name": "paths",
+     "value": "json"
+    }
+   ],
+   "positional": null
+  },
+  {
+   "command": [
+    "restore-test"
+   ],
+   "flags": [
+    {
+     "name": "force",
+     "value": "none"
+    }
+   ],
+   "positional": null
+  },
+  {
+   "command": [
+    "status"
+   ],
+   "flags": [],
+   "positional": null
+  },
+  {
+   "command": [
+    "report"
+   ],
+   "flags": [
+    {
+     "name": "weekly",
+     "value": "none"
+    }
+   ],
+   "positional": null
+  },
+  {
+   "command": [
+    "estimate"
+   ],
+   "flags": [
+    {
+     "name": "size-gb",
+     "value": "word"
+    },
+    {
+     "name": "daily-gb",
+     "value": "word"
+    },
+    {
+     "name": "dump-gb",
+     "value": "word"
+    },
+    {
+     "name": "keep-days",
+     "value": "int"
+    },
+    {
+     "name": "restore-tests-per-month",
+     "value": "int"
+    },
+    {
+     "name": "providers",
+     "value": "json"
+    },
+    {
+     "name": "endpoint",
+     "value": "word"
+    },
+    {
+     "name": "hours",
+     "value": "word"
+    },
+    {
+     "name": "price-table",
+     "value": "none"
+    }
+   ],
+   "positional": null
+  },
+  {
+   "command": [
+    "propose"
+   ],
+   "flags": [
+    {
+     "name": "restore",
+     "value": "json"
+    },
+    {
+     "name": "source",
+     "value": "json"
+    },
+    {
+     "name": "notify",
+     "value": "json"
+    },
+    {
+     "name": "file",
+     "value": "stdin_dash"
+    },
+    {
+     "name": "hours",
+     "value": "int"
+    },
+    {
+     "name": "pubkey",
+     "value": "base64"
+    },
+    {
+     "name": "key-type",
+     "value": "enum",
+     "enum": [
+      "software",
+      "fido2"
+     ]
+    },
+    {
+     "name": "to",
+     "value": "word"
+    },
+    {
+     "name": "session",
+     "value": "word"
+    },
+    {
+     "name": "hold-hours",
+     "value": "int"
+    },
+    {
+     "name": "backup",
+     "value": "word"
+    },
+    {
+     "name": "paths",
+     "value": "json"
+    },
+    {
+     "name": "checks",
+     "value": "enum",
+     "enum": [
+      "all",
+      "none"
+     ]
+    },
+    {
+     "name": "force",
+     "value": "none"
+    },
+    {
+     "name": "dir",
+     "value": "word"
+    },
+    {
+     "name": "step",
+     "value": "word"
+    },
+    {
+     "name": "note",
+     "value": "json"
+    },
+    {
+     "name": "endpoint",
+     "value": "word"
+    },
+    {
+     "name": "bucket",
+     "value": "word"
+    },
+    {
+     "name": "prefix",
+     "value": "word"
+    },
+    {
+     "name": "adapter",
+     "value": "word"
+    },
+    {
+     "name": "reissue",
+     "value": "none"
+    },
+    {
+     "name": "authorized-key",
+     "value": "json"
+    },
+    {
+     "name": "allow-from",
+     "value": "json"
+    },
+    {
+     "name": "with-restore-change",
+     "value": "json"
+    }
+   ],
+   "positional": {
+    "count": 1,
+    "values": [
+     "storage-init",
+     "read-key-issue",
+     "restore-change",
+     "restore-elsewhere",
+     "restore-session-extend",
+     "restore-dest-release",
+     "source-change",
+     "notify-change",
+     "notify-add",
+     "key-rotate",
+     "key-rotate-waive",
+     "phrase-reissue",
+     "delay-change",
+     "approval-key-change",
+     "restore-test-reduce",
+     "restore-test-increase",
+     "storage-read-extra",
+     "def-change",
+     "def-change-unlisted",
+     "checks-weaken",
+     "hold-release",
+     "adapter-add",
+     "seal",
+     "attest"
+    ]
+   }
+  },
+  {
+   "command": [
+    "pending"
+   ],
+   "flags": [
+    {
+     "name": "id",
+     "value": "word"
+    }
+   ],
+   "positional": null
+  },
+  {
+   "command": [
+    "approve"
+   ],
+   "flags": [
+    {
+     "name": "id",
+     "value": "word"
+    },
+    {
+     "name": "signature",
+     "value": "word"
+    },
+    {
+     "name": "signed-at",
+     "value": "word"
+    },
+    {
+     "name": "notify-proof-stdin",
+     "value": "none"
+    }
+   ],
+   "positional": null
+  },
+  {
+   "command": [
+    "apply"
+   ],
+   "flags": [
+    {
+     "name": "id",
+     "value": "word"
+    },
+    {
+     "name": "admin-ref",
+     "value": "ref"
+    },
+    {
+     "name": "source-admin-ref",
+     "value": "ref"
+    },
+    {
+     "name": "host-ref",
+     "value": "ref"
+    }
+   ],
+   "positional": null,
+   "secret_fd": true
+  },
+  {
+   "command": [
+    "cancel"
+   ],
+   "flags": [
+    {
+     "name": "id",
+     "value": "word"
+    }
+   ],
+   "positional": null
+  },
+  {
+   "command": [
+    "attest"
+   ],
+   "flags": [
+    {
+     "name": "step",
+     "value": "word"
+    },
+    {
+     "name": "session",
+     "value": "word"
+    },
+    {
+     "name": "note",
+     "value": "json"
+    }
+   ],
+   "positional": null
+  },
+  {
+   "command": [
+    "upgrade"
+   ],
+   "flags": [
+    {
+     "name": "to",
+     "value": "word"
+    }
+   ],
+   "positional": null
+  }
+ ],
+ "excluded": [
+  {
+   "command": [
+    "bootstrap"
+   ],
+   "reason": "args_form_unspecified"
+  },
+  {
+   "command": [
+    "bootstrap-restore"
+   ],
+   "reason": "args_form_unspecified"
+  }
+ ]
+}

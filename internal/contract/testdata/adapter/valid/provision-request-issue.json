@@ -1,0 +1,18 @@
+{
+ "contract": "sitate.provision/v1",
+ "op": "issue-keys",
+ "endpoint": "https://s3.example.invalid",
+ "bucket": "b1",
+ "prefix": "sitate/",
+ "roles": [
+  "write",
+  "read"
+ ],
+ "max_retention_days": 97,
+ "secrets": {
+  "admin": {
+   "key_id": "K1",
+   "secret": "s"
+  }
+ }
+}

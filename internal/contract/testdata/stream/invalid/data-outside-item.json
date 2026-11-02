@@ -1,0 +1,24 @@
+{
+ "description": "項目の外の data",
+ "frames": [
+  {
+   "h": {
+    "type": "data",
+    "size": 1
+   },
+   "body": "x"
+  },
+  {
+   "h": {
+    "type": "end",
+    "bytes": 1,
+    "hash": "blake3:d8b09705f47579ed840318fe73f9d5dd2ce2932349e66bee7cdce9c1c7f7dc80",
+    "exit_status": 0
+   }
+  }
+ ],
+ "error": {
+  "kind": "contract",
+  "reason": "order"
+ }
+}

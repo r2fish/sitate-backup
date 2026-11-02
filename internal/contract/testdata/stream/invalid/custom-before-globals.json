@@ -1,0 +1,32 @@
+{
+ "description": "custom が globals より先",
+ "frames": [
+  {
+   "h": {
+    "type": "dump",
+    "format": "custom"
+   }
+  },
+  {
+   "h": {
+    "type": "item_end",
+    "bytes": 0,
+    "hash": "blake3:af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+    "status": "ok",
+    "exit_status": 0
+   }
+  },
+  {
+   "h": {
+    "type": "end",
+    "bytes": 0,
+    "hash": "blake3:e348c4cee5bd666f27bdaee5388190f7a0dfd7584737596857a5c787b9119d5d",
+    "exit_status": 0
+   }
+  }
+ ],
+ "error": {
+  "kind": "contract",
+  "reason": "order"
+ }
+}

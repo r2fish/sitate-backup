@@ -1,0 +1,11 @@
+[Unit]
+Description=Sitate-backup {{.Name}} timer
+
+[Timer]
+OnCalendar={{.OnCalendar}}
+Persistent={{.Persistent}}
+RandomizedDelaySec=0
+Unit={{.UnitName}}.service
+
+[Install]
+WantedBy=timers.target

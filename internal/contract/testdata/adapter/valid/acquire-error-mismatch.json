@@ -1,0 +1,11 @@
+{
+ "contract": "sitate.acquire/v1",
+ "error": {
+  "code": "RECEIVER_TARGETS_MISMATCH",
+  "detail": {
+   "target_ids": [
+    "t1"
+   ]
+  }
+ }
+}

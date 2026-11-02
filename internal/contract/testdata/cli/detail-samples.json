@@ -1,0 +1,423 @@
+{
+ "DEF_INVALID": {
+  "issues": [
+   {
+    "pointer": "/source/targets/0/files",
+    "reason": "root_forbidden"
+   }
+  ]
+ },
+ "DEF_DRIFT": {
+  "file_def_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "approved_def_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ },
+ "DEF_CHANGE_MIXED": {
+  "groups": [
+   {
+    "kind": "source-change",
+    "pointers": [
+     "/source/host"
+    ]
+   },
+   {
+    "kind": "unknown",
+    "pointers": [
+     "/x"
+    ]
+   }
+  ]
+ },
+ "ARG_INVALID": {
+  "flag": "--run-id",
+  "reason": "reused"
+ },
+ "CONFIG_COPY_MISMATCH": {
+  "config_def_hash": null,
+  "manifest_def_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ },
+ "NOT_INITIALIZED": {},
+ "ALREADY_INITIALIZED": {},
+ "PHRASE_UNCONFIRMED": {},
+ "NOT_SEALED": {},
+ "ALREADY_SEALED": {},
+ "ALL_TARGETS_FAILED": {},
+ "NO_HEALTHY_BACKUP": {},
+ "DEF_FILE_WRITE_FAILED": {},
+ "RUN_INTERRUPTED": {},
+ "SECRET_FD_REQUIRED": {},
+ "PHRASE_VERIFY_PENDING": {
+  "keyring_version": 2
+ },
+ "PHRASE_INVALID": {
+  "reason": "no_match"
+ },
+ "KIT_OUTDATED": {
+  "kit_version": "k1",
+  "confirmed_kit_version": null
+ },
+ "BUCKET_MISMATCH": {
+  "mismatches": [
+   {
+    "item": "lock_mode",
+    "expected": "COMPLIANCE",
+    "actual": null
+   },
+   {
+    "item": "versioning",
+    "expected": true,
+    "actual": false
+   },
+   {
+    "item": "default_retention_days",
+    "expected": 90,
+    "actual": 30
+   }
+  ]
+ },
+ "BUCKET_NOT_OWNED": {
+  "reason": "taken"
+ },
+ "KEY_TOO_POWERFUL": {
+  "role": "read",
+  "ops": [
+   "put",
+   "delete_version"
+  ]
+ },
+ "KEY_ALLOWS_UNVERSIONED_DELETE": {
+  "role": "write"
+ },
+ "KEY_RECONCILE_UNVERIFIED": {
+  "reason": "STORAGE_UNREACHABLE"
+ },
+ "KEY_MISSING_PERMISSION": {
+  "role": "write",
+  "reason": "denied",
+  "ops": [
+   "put"
+  ]
+ },
+ "PRICE_UNKNOWN": {
+  "missing": [
+   "storage"
+  ]
+ },
+ "KEY_ROTATE_REQUIRED": {
+  "cause": "unknown"
+ },
+ "HUMAN_SECRET_REQUIRED": {
+  "change_id": "c-20261018-0007",
+  "required_flags": [
+   "--admin-ref"
+  ]
+ },
+ "SECRET_MISSING": {
+  "ref": "admin"
+ },
+ "SECRET_REF_IN_USE": {
+  "ref": "storage"
+ },
+ "NOTIFY_UNDELIVERED": {
+  "delivered": [
+   {
+    "to": "hook-main",
+    "channel": "webhook",
+    "delivered": false,
+    "attempts": 3,
+    "reason": "http_status",
+    "accepted_at": null
+   }
+  ]
+ },
+ "NOTIFY_PROOF_MISMATCH": {
+  "mismatched": [
+   "ops@example.jp"
+  ]
+ },
+ "STORAGE_UNREACHABLE": {
+  "target": "storage",
+  "reason": "throttled",
+  "http_status": 503
+ },
+ "RESTORE_HOST_DENIED": {
+  "reason": "quota"
+ },
+ "SOURCE_HOSTKEY_MISMATCH": {
+  "expected_fp": "SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "seen_fp": "SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "session_id": null
+ },
+ "RESTORE_HOSTKEY_MISMATCH": {
+  "expected_fp": "SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "seen_fp": "SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "session_id": "s-1"
+ },
+ "RECEIVER_SELFTEST_FAILED": {
+  "failed": [
+   "from_restricted"
+  ]
+ },
+ "RECEIVER_TARGETS_MISMATCH": {
+  "target_ids": [
+   "t2"
+  ]
+ },
+ "SOURCE_SETUP_FAILED": {
+  "step": "selftest",
+  "target_id": "t3",
+  "reason": "db_privileges",
+  "lacks": [
+   "tables"
+  ],
+  "unreadable_tables": 2,
+  "server_version_num": 160001,
+  "pg_dump_version_num": 160001,
+  "missing": []
+ },
+ "SOURCE_SURVEY_FAILED": {
+  "step": "connect",
+  "reason": "auth"
+ },
+ "STORAGE_DENIED": {
+  "reason": "payment",
+  "http_status": 403
+ },
+ "TIME_SKEW": {
+  "skew_s": -700,
+  "max_s": 600
+ },
+ "CHUNK_KEY_MISSING": {
+  "count": 2
+ },
+ "CHECK_FAILED": {
+  "snapshot_ref": "m-5f0c",
+  "failed_checks": [
+   "entropy-ratio"
+  ]
+ },
+ "CHECK_INHERITED": {
+  "snapshot_ref": "m-5f0c",
+  "inherited_from": [
+   "m-1"
+  ]
+ },
+ "CHECK_ERROR": {
+  "snapshot_ref": "m-5f0c",
+  "error_checks": [
+   "entropy-ratio"
+  ]
+ },
+ "UNEXPECTED_VERSION": {
+  "objects": [
+   {
+    "key": "sitate/probe/x",
+    "version_id": "v1"
+   }
+  ]
+ },
+ "STORAGE_SIZE_DRIFT": {
+  "written_bytes": 100,
+  "bucket_bytes": 150,
+  "threshold_bytes": 10
+ },
+ "JOURNAL_CHAIN_BROKEN": {
+  "kind": "gap",
+  "seq": 4,
+  "keys": [
+   "sitate/journal/0004"
+  ]
+ },
+ "RETENTION_LONG": {
+  "retention_long": [
+   {
+    "key": "sitate/x",
+    "version_id": "v2",
+    "recorded": "2026-11-02T10:00:00Z",
+    "actual": "2026-11-03T10:00:00Z"
+   }
+  ]
+ },
+ "KEY_LEGAL_HOLD_ALLOWED": {
+  "role": "write",
+  "provider": "b2"
+ },
+ "KEYRING_MISMATCH": {
+  "reason": "hash",
+  "keyring_version": 1
+ },
+ "REPO_ID_MISMATCH": {
+  "reason": "repo_id",
+  "missing": null,
+  "expected": "repo-1",
+  "found": "repo-2",
+  "versions_tried": null
+ },
+ "RESTORE_ISOLATION_FAILED": {
+  "failed": [
+   "outbound"
+  ]
+ },
+ "RESTORE_ENROLL_MISMATCH": {
+  "reason": "disk_short",
+  "mismatches": [],
+  "prereq": [],
+  "needed_gb": 10,
+  "free_gb": null
+ },
+ "RESTORE_MISMATCH": {
+  "hash_mismatch": [
+   {
+    "chunk_id": "ch-1",
+    "version_id": "v1",
+    "reason": "hash",
+    "refs": [
+     "e-1"
+    ]
+   }
+  ],
+  "files_ok": 2,
+  "files_failed": 1
+ },
+ "DEF_COPY_MISMATCH": {
+  "backup_ref": "m-5f0c",
+  "reason": "hash_mismatch"
+ },
+ "DECRYPT_FAILED": {
+  "object": "entries",
+  "chunk_id": "ch-1",
+  "key": "sitate/chunks/ch-1",
+  "version_id": "v1",
+  "reason": "tag"
+ },
+ "FORMAT_TOO_NEW": {
+  "required": 3,
+  "supported": [
+   1,
+   2
+  ]
+ },
+ "FORMAT_TOO_OLD": {
+  "found": 0,
+  "supported": [
+   1,
+   2
+  ]
+ },
+ "FORMAT_UPGRADE_BLOCKED": {
+  "to_format_version": 3,
+  "repo_format_version": 2,
+  "oldest_version": 1,
+  "backups": 4
+ },
+ "RESTORE_SESSION_OPEN": {
+  "session_id": "s-1"
+ },
+ "TEARDOWN_UNVERIFIED": {
+  "sessions": [
+   {
+    "session_id": "s-1",
+    "remaining": [
+     {
+      "type": "instance",
+      "id": "i-0abc"
+     }
+    ]
+   }
+  ]
+ },
+ "TEARDOWN_PENDING": {
+  "sessions": [
+   {
+    "session_id": "s-1",
+    "remaining": []
+   }
+  ]
+ },
+ "APPROVAL_REQUIRED": {
+  "kind": "seal"
+ },
+ "PAIR_REQUIRED": {
+  "session_id": "s-1"
+ },
+ "SIGNATURE_INVALID": {
+  "reason": "clock",
+  "skew_s": 700
+ },
+ "DELAY_NOT_ELAPSED": {
+  "change_id": "c-20261018-0007",
+  "not_before": "2026-11-03T10:00:00Z"
+ },
+ "PRECONDITION_CHANGED": {
+  "change_id": "c-20261018-0007"
+ },
+ "COST_CEILING_EXCEEDED": {
+  "monthly_jpy": 3500,
+  "cost_ceiling_yen": 3000
+ },
+ "ADAPTER_TIMEOUT": {
+  "kind": "provision",
+  "name": "b2",
+  "timeout_s": 60
+ },
+ "ADAPTER_ERROR": {
+  "kind": "notify",
+  "name": "email",
+  "adapter_code": "SMTP_REJECTED"
+ },
+ "LOCKED": {
+  "lock": "run",
+  "holder_command": [
+   "backup"
+  ],
+  "holder_started_at": "2026-11-02T10:00:00Z"
+ },
+ "RUN_ABORTED": {
+  "reason": "deadline"
+ },
+ "LOCK_UNAVAILABLE": {
+  "reason": "unsupported_fs",
+  "fs_type": "nfs"
+ },
+ "MLOCK_FAILED": {
+  "reason": "enomem"
+ },
+ "CHANGE_STATE_INVALID": {
+  "change_id": "c-20261018-0007",
+  "state": "applying"
+ },
+ "PENDING_CHAIN_BROKEN": {
+  "kind": "malformed",
+  "seq": null,
+  "discarded": [
+   "c-20261018-0007"
+  ]
+ },
+ "ROLLBACK_SUSPECTED": {
+  "reason": "no_newer",
+  "backup_ref": "m-5f0c"
+ },
+ "ANCHOR_INVALID": {
+  "backup_ref": "m-5f0c",
+  "reason": "signature"
+ },
+ "DELETE_MARKER_FOUND": {
+  "count": 1
+ },
+ "NOT_IMPLEMENTED": {
+  "feature": "restore fetch"
+ },
+ "FETCH_PATH_REJECTED": {
+  "index": 0
+ },
+ "GATE_DENIED": {
+  "reason": "lexical",
+  "index": null
+ },
+ "INTERNAL": {
+  "component": "adapter",
+  "http_status": null,
+  "kind": "check",
+  "name": "entropy-ratio",
+  "reason": "contract"
+ }
+}

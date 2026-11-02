@@ -1,0 +1,15 @@
+[Unit]
+Description=Sitate-backup daily
+
+[Service]
+Type=oneshot
+User=sitate
+Environment=TZ=Asia/Tokyo
+TimeoutStartSec=87060
+ExecStart=-/usr/local/bin/sitate backup --invoked-by timer
+ExecStart=-/usr/local/bin/sitate verify --invoked-by timer
+ExecStart=-/bin/sh -c 'if [ "$$(date +%%u)" = 7 ]; then exec /usr/local/bin/sitate bucket check --invoked-by timer; fi'
+ExecStart=-/bin/sh -c 'if [ "$$(date +%%u)" = 7 ]; then exec /usr/local/bin/sitate extend --invoked-by timer; fi'
+ExecStart=-/bin/sh -c 'if [ "$$(date +%%u)" = 7 ]; then exec /usr/local/bin/sitate prune --invoked-by timer; fi'
+ExecStart=-/usr/local/bin/sitate restore-test --invoked-by timer
+

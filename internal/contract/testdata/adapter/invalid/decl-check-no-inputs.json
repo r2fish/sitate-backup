@@ -1,0 +1,15 @@
+{
+ "kind": "check",
+ "name": "x",
+ "version": "1.0.0",
+ "contract": "sitate.check/v1",
+ "exe": "x",
+ "secrets": [],
+ "network": false,
+ "phases": [
+  "ingest"
+ ],
+ "params": [],
+ "metrics": [],
+ "finding_codes": []
+}

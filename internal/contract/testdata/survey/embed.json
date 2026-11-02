@@ -1,0 +1,33 @@
+{
+ "$comment": "核が調査の処理と source-setup の台本の先頭に埋め込む値の渡し方(spec 3.3、作業指示書 5.1 の U0 固定一覧)。値は単一引用符で囲み、' は '\\'' にする。改行・NUL・(クラスタの行では)タブを含む値は埋め込めない。",
+ "survey": [
+  {"name": "full", "scope": "full", "du_timeout_s": 600, "want": "SITATE_SCOPE='full'\nSITATE_DU_TIMEOUT_S='600'\n"},
+  {"name": "db-only", "scope": "db_only", "du_timeout_s": 5, "want": "SITATE_SCOPE='db_only'\nSITATE_DU_TIMEOUT_S='5'\n"},
+  {"name": "bad-scope", "scope": "all", "du_timeout_s": 600, "want": null},
+  {"name": "empty-timeout", "scope": "full", "du_timeout_s": 0, "want": null}
+ ],
+ "setup": [
+  {"name": "none", "clusters": [], "want": ""},
+  {"name": "one", "clusters": [{"socket_dir": "/run/postgresql", "port": 5432, "major": 16, "raw_paths": ["/var/lib/postgresql/16/main"]}],
+   "want": "SITATE_CLUSTER='/run/postgresql\t5432\t16\t/var/lib/postgresql/16/main'\n"},
+  {"name": "two-with-wal", "clusters": [
+    {"socket_dir": "/run/postgresql", "port": 5432, "major": 16, "raw_paths": ["/d/main", "/w/pg_wal"]},
+    {"socket_dir": "/var/run/postgresql", "port": 5433, "major": 15, "raw_paths": ["/e/main"]}],
+   "want": "SITATE_CLUSTER='/run/postgresql\t5432\t16\t/d/main\t/w/pg_wal'\nSITATE_CLUSTER='/var/run/postgresql\t5433\t15\t/e/main'\n"},
+  {"name": "single-quote-in-path", "clusters": [{"socket_dir": "/run/postgresql", "port": 5432, "major": 16, "raw_paths": ["/d/o'brien"]}],
+   "want": "SITATE_CLUSTER='/run/postgresql\t5432\t16\t/d/o'\\''brien'\n"},
+  {"name": "newline-in-path", "clusters": [{"socket_dir": "/run/postgresql", "port": 5432, "major": 16, "raw_paths": ["/d/a\nb"]}], "want": null},
+  {"name": "tab-in-path", "clusters": [{"socket_dir": "/run/postgresql", "port": 5432, "major": 16, "raw_paths": ["/d/a\tb"]}], "want": null}
+ ],
+ "forbidden_roots": [
+  {"path": "/", "want": "root_forbidden"}, {"path": "/etc", "want": "root_forbidden"}, {"path": "/etc/app", "want": "ok"},
+  {"path": "/home", "want": "root_forbidden"}, {"path": "/home/x", "want": "ok"}, {"path": "/srv", "want": "root_forbidden"},
+  {"path": "/opt", "want": "root_forbidden"}, {"path": "/opt/app", "want": "ok"}, {"path": "/var", "want": "root_forbidden"},
+  {"path": "/var/www", "want": "ok"}, {"path": "/var/tmp", "want": "root_forbidden"}, {"path": "/var/tmp/x", "want": "root_forbidden"},
+  {"path": "/proc/1", "want": "root_forbidden"}, {"path": "/etc/ssh", "want": "root_forbidden"}, {"path": "/etc/ssh/x", "want": "root_forbidden"},
+  {"path": "/usr/local", "want": "root_forbidden"}, {"path": "/root", "want": "root_forbidden"}, {"path": "/rootfs", "want": "ok"},
+  {"path": "/data", "want": "ok"}, {"path": "/lib64/x", "want": "root_forbidden"}, {"path": "/library", "want": "ok"},
+  {"path": "etc", "want": "invalid_value"}, {"path": "//data", "want": "invalid_value"}, {"path": "/a/../b", "want": "invalid_value"},
+  {"path": "/a/./b", "want": "invalid_value"}
+ ]
+}

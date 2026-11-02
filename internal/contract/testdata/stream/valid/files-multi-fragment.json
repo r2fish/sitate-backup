@@ -1,0 +1,69 @@
+{
+ "description": "本体を複数の断片に分ける(断片の連結が item_end の bytes・hash)",
+ "frames": [
+  {
+   "h": {
+    "type": "file",
+    "path": "big",
+    "size": 9,
+    "mode": 420,
+    "uid": 1000,
+    "gid": 1000,
+    "mtime_ns": 1760808600123456789
+   }
+  },
+  {
+   "h": {
+    "type": "data",
+    "size": 3
+   },
+   "body": "abc"
+  },
+  {
+   "h": {
+    "type": "data",
+    "size": 3
+   },
+   "body": "def"
+  },
+  {
+   "h": {
+    "type": "data",
+    "size": 3
+   },
+   "body": "ghi"
+  },
+  {
+   "h": {
+    "type": "item_end",
+    "bytes": 9,
+    "hash": "blake3:899ead67561e6e7176ddcad0b447caec42a658b70bb181757f144ce9ebb159c4",
+    "status": "ok",
+    "exit_status": null
+   }
+  },
+  {
+   "h": {
+    "type": "end",
+    "bytes": 9,
+    "hash": "blake3:6dc20104ed84408350e2d3c435f4e8c6392558914228e4183ded76f44abe7ec8",
+    "exit_status": 0
+   }
+  }
+ ],
+ "result": {
+  "contract": "sitate.acquire/v1",
+  "status": "ok",
+  "stats": {
+   "files": 1,
+   "bytes": 5,
+   "errors": 0,
+   "errors_omitted": 0,
+   "warnings_omitted": 0,
+   "changed_during_read": 0
+  },
+  "errors": [],
+  "warnings": []
+ },
+ "error": null
+}

@@ -1,0 +1,11 @@
+{
+ "contract": "sitate.check/v1",
+ "phase": "ingest",
+ "target_id": "t1",
+ "input": {
+  "kind": "stream",
+  "path": "/x"
+ },
+ "baseline": null,
+ "params": {}
+}

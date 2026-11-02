@@ -1,0 +1,1952 @@
+{
+ "results": {
+  "version": {
+   "version": "1.0.0",
+   "format_versions": {
+    "write": 1,
+    "read": [
+     1
+    ],
+    "test": true
+   },
+   "signing_key_fp": "SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "build": "test",
+   "sim_time": "2026-11-02T10:00:00Z"
+  },
+  "doctor": {
+   "stage": "bootstrap",
+   "passed": true,
+   "checks": [
+    {
+     "name": "check_images",
+     "severity": "required",
+     "ok": true,
+     "next": [],
+     "count": 0
+    },
+    {
+     "name": "swap_disabled",
+     "severity": "advisory",
+     "ok": false,
+     "next": []
+    }
+   ]
+  },
+  "def_validate": {
+   "normalized": {
+    "version": 1,
+    "source": {
+     "host": "app01.example.internal",
+     "targets": [
+      {
+       "id": "t1",
+       "files": "/srv/app/data"
+      },
+      {
+       "id": "t3",
+       "postgresql": "appdb",
+       "port": 5432
+      }
+     ]
+    },
+    "storage": [
+     {
+      "endpoint": "https://s3.example-provider.com",
+      "bucket": "example-sitate",
+      "key_ref": "storage"
+     }
+    ],
+    "restore": {
+     "adapter": "ec2",
+     "dest": {
+      "at": "ec2:ap-northeast-1",
+      "key_ref": "restore-api"
+     }
+    },
+    "notify": {
+     "to": [
+      "ops@example.jp"
+     ],
+     "smtp_ref": "smtp-main"
+    },
+    "checks": {
+     "entropy-ratio": {
+      "enabled": true,
+      "params": {
+       "entropy_ratio_fail": 0.9
+      }
+     }
+    }
+   },
+   "def_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "diff_from_approved": [
+    {
+     "pointer": "/notify/to/0",
+     "before": "ops@example.jp",
+     "after": "new@example.jp"
+    }
+   ]
+  },
+  "def_show": {
+   "normalized": {
+    "version": 1,
+    "source": {
+     "host": "app01.example.internal",
+     "targets": [
+      {
+       "id": "t1",
+       "files": "/srv/app/data"
+      },
+      {
+       "id": "t3",
+       "postgresql": "appdb",
+       "port": 5432
+      }
+     ]
+    },
+    "storage": [
+     {
+      "endpoint": "https://s3.example-provider.com",
+      "bucket": "example-sitate",
+      "key_ref": "storage"
+     }
+    ],
+    "restore": {
+     "adapter": "ec2",
+     "dest": {
+      "at": "ec2:ap-northeast-1",
+      "key_ref": "restore-api"
+     }
+    },
+    "notify": {
+     "to": [
+      "ops@example.jp"
+     ],
+     "smtp_ref": "smtp-main"
+    },
+    "checks": {
+     "entropy-ratio": {
+      "enabled": true,
+      "params": {
+       "entropy_ratio_fail": 0.9
+      }
+     }
+    }
+   },
+   "def_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "sealed": true,
+   "approved_at": "2026-11-02T10:00:00Z",
+   "storage_country": [
+    {
+     "endpoint": "https://s3.example-provider.com",
+     "status": "known",
+     "country": "US"
+    }
+   ]
+  },
+  "init_storage": {
+   "created": true,
+   "lock_mode": "COMPLIANCE",
+   "versioning": true,
+   "default_retention_days": 90,
+   "keys": [
+    {
+     "role": "write",
+     "key_ref": "storage",
+     "key_id": "k1"
+    }
+   ],
+   "revoked": [
+    {
+     "key_id": "k0"
+    }
+   ],
+   "permissions": [
+    {
+     "op": "put",
+     "key_role": "write",
+     "expected": "allow",
+     "actual": "allow"
+    },
+    {
+     "op": "put",
+     "key_role": "read",
+     "expected": "deny",
+     "actual": "deny"
+    }
+   ]
+  },
+  "storage_issue_read_key": {
+   "key_ref": "storage",
+   "key_id": "k2",
+   "permissions": [
+    {
+     "op": "put",
+     "key_role": "read",
+     "expected": "deny",
+     "actual": "deny"
+    }
+   ],
+   "previous_revoked": null
+  },
+  "storage_revoke_read_key": {
+   "key_id": "k2",
+   "revoked": true,
+   "secret_removed": true
+  },
+  "secrets_set": {
+   "ref": "storage",
+   "role": "read",
+   "key_id": "k2"
+  },
+  "bucket_check": {
+   "lock_mode": "COMPLIANCE",
+   "versioning": true,
+   "permissions": [
+    {
+     "op": "put",
+     "key_role": "write",
+     "expected": "allow",
+     "actual": "allow"
+    },
+    {
+     "op": "legal_hold",
+     "key_role": "write",
+     "expected": "deny",
+     "actual": "untested"
+    }
+   ]
+  },
+  "init": {
+   "repo_id": "repo-1",
+   "keyring_id": "kr-1",
+   "committed": false,
+   "kit_version": "0123456789ab",
+   "approval_key_fp": "SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  },
+  "phrase_verify": {
+   "verified": true,
+   "keyring_version": 1,
+   "keyring_version_id": "v-1",
+   "committed": true
+  },
+  "kit": {
+   "kit_version": "0123456789ab",
+   "fields": {
+    "kit_version": "0123456789ab",
+    "issued_on": "2026-11-02",
+    "core_version": "1.0.0",
+    "format_version": 1,
+    "distribution_url": "https://dist.example.invalid/sitate",
+    "core_sha256": {
+     "linux_x86_64": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+     "linux_arm64": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "sbom_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "source_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "signing_keys": [
+     {
+      "public_key": "RWQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "fp": "SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+     }
+    ],
+    "storage": {
+     "provider": "b2",
+     "country": "US",
+     "endpoint": "https://s3.us-west-004.backblazeb2.com",
+     "bucket": "example-sitate",
+     "prefix": "sitate/",
+     "repo_id": "repo-1",
+     "keyring_id": "kr-1",
+     "key_ref": "storage"
+    },
+    "host_key_fp": "SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "bin_path": "sitate/bin/1.0.0/linux-x86_64/",
+    "steps": [
+     {
+      "id": "1",
+      "argv": []
+     },
+     {
+      "id": "3",
+      "argv": [
+       "sudo",
+       "-u",
+       "sitate",
+       "sitate",
+       "storage",
+       "issue-read-key",
+       "--key-ref",
+       "storage"
+      ]
+     }
+    ],
+    "provider_hints": {
+     "kind": "b2",
+     "key_name": "sitate-backup-key",
+     "bin_prefix": "sitate/bin/"
+    }
+   }
+  },
+  "kit_confirm": {
+   "location_checked_at": "2026-11-02T10:00:00Z"
+  },
+  "source_enroll": {
+   "host_key_fp": "SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "receiver_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "selftest": [
+    {
+     "name": "from_restricted",
+     "target_id": null,
+     "ok": true,
+     "code": null,
+     "unreadable": [],
+     "unreadable_tables": null,
+     "large_objects": null
+    },
+    {
+     "name": "db_privileges",
+     "target_id": "t3",
+     "ok": false,
+     "code": "SOURCE_SETUP_FAILED",
+     "unreadable": [
+      "/srv/x"
+     ],
+     "unreadable_tables": 2,
+     "large_objects": true
+    }
+   ],
+   "targets": [
+    {
+     "id": "t1",
+     "kind": "files",
+     "root": "/srv/app/data"
+    },
+    {
+     "id": "t3",
+     "kind": "postgresql",
+     "root": null
+    }
+   ],
+   "key_rotated": null
+  },
+  "source_check": {
+   "selftest": [
+    {
+     "name": "from_restricted",
+     "target_id": null,
+     "ok": true,
+     "code": null,
+     "unreadable": [],
+     "unreadable_tables": null,
+     "large_objects": null
+    }
+   ],
+   "uncovered": [
+    {
+     "kind": "mount",
+     "path": "/mnt/data",
+     "port": null,
+     "target_id": null
+    },
+    {
+     "kind": "db",
+     "path": "appdb",
+     "port": 5432,
+     "target_id": null
+    }
+   ],
+   "actionable": [
+    {
+     "kind": "mount",
+     "path": "/mnt/data",
+     "port": null,
+     "target_id": null
+    }
+   ],
+   "new_since_last": [
+    {
+     "kind": "db",
+     "path": "appdb",
+     "port": 5432,
+     "target_id": null
+    }
+   ]
+  },
+  "source_survey": {
+   "host_key_fp": "SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "dirs": [
+    {
+     "path": "/home/app",
+     "label": "home",
+     "bytes": 1024,
+     "fs_type": "ext4",
+     "supported": true,
+     "db_data": false
+    }
+   ],
+   "mounts": [
+    {
+     "path": "/mnt/data",
+     "fs_type": "xfs",
+     "bytes": null,
+     "class": "candidate"
+    }
+   ],
+   "databases": [
+    {
+     "name": "appdb",
+     "port": 5432,
+     "major": 16,
+     "bytes": 10485760,
+     "large_objects": false
+    }
+   ],
+   "clusters": [
+    {
+     "port": 5432,
+     "major": 16,
+     "names_readable": true,
+     "supported": true
+    }
+   ],
+   "prereq_missing": [
+    "psql"
+   ],
+   "sizes_complete": true,
+   "databases_complete": true
+  },
+  "restore_dest_enroll": {
+   "host_key_fp": null,
+   "isolation": [
+    {
+     "name": "inbound",
+     "ok": true,
+     "code": null
+    },
+    {
+     "name": "outbound",
+     "ok": false,
+     "code": "RESTORE_ISOLATION_FAILED"
+    }
+   ],
+   "replaced": false
+  },
+  "restore_dest_check": {
+   "isolation": [
+    {
+     "name": "dns_name",
+     "ok": true,
+     "code": null
+    }
+   ]
+  },
+  "restore_dest_teardown": {
+   "teardown": {
+    "done": true,
+    "verified_by": "provider-api",
+    "remaining": []
+   },
+   "session_id": "s-1",
+   "reason": "expired"
+  },
+  "restore_dest_release": {
+   "session_id": "s-1",
+   "released": true,
+   "authorized_key_fp": "SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "allow_from": [
+    "203.0.113.5/32"
+   ],
+   "connect": {
+    "host": "203.0.113.10",
+    "port": 22,
+    "host_key_fp": "SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+   }
+  },
+  "notify_set": {
+   "to": "ops@example.jp",
+   "secret_ref": "smtp-main",
+   "channel": "email"
+  },
+  "notify_test": {
+   "delivered": [
+    {
+     "to": "ops@example.jp",
+     "channel": "email",
+     "delivered": true,
+     "attempts": 1,
+     "reason": null,
+     "accepted_at": "2026-11-02T10:00:00Z"
+    },
+    {
+     "to": "hook-main",
+     "channel": "webhook",
+     "delivered": false,
+     "attempts": 3,
+     "reason": "http_status",
+     "accepted_at": null
+    }
+   ],
+   "all_delivered": false,
+   "proof_issued_at": "2026-11-02T10:00:00Z"
+  },
+  "backup": {
+   "snapshot_ref": "m-5f0c",
+   "targets": [
+    {
+     "id": "t1",
+     "status": "ok",
+     "bytes": 100,
+     "files": 3,
+     "changed_during_read": 0,
+     "errors_omitted": 0,
+     "warnings_omitted": 0,
+     "error_code": null
+    },
+    {
+     "id": "t2",
+     "status": "failed",
+     "bytes": 0,
+     "files": 0,
+     "changed_during_read": 0,
+     "errors_omitted": 0,
+     "warnings_omitted": 0,
+     "error_code": "PERMISSION"
+    }
+   ],
+   "checks": [
+    {
+     "name": "entropy-ratio",
+     "version": "1",
+     "phase": "ingest",
+     "result": "pass",
+     "findings": [
+      {
+       "item_ref": "e-1",
+       "code": "high-entropy",
+       "path": "/srv/app/data/a.bin"
+      }
+     ],
+     "inherited": false
+    },
+    {
+     "name": "entropy-ratio",
+     "version": "1",
+     "phase": "restore-test",
+     "result": "fail",
+     "findings": [],
+     "inherited": true,
+     "inherited_from": "m-5f0c"
+    }
+   ],
+   "health": "pass",
+   "uploaded_bytes": 100,
+   "duration_s": 12,
+   "chunk_keys_missing": 0
+  },
+  "verify": {
+   "missing": [
+    {
+     "key": "sitate/chunks/aa",
+     "version_id": "v1"
+    }
+   ],
+   "retention_short": [],
+   "retention_long": [
+    {
+     "key": "sitate/x",
+     "version_id": "v2",
+     "recorded": "2026-11-02T10:00:00Z",
+     "actual": "2026-11-03T10:00:00Z"
+    }
+   ],
+   "unexpected_versions": [],
+   "noncurrent_versions": 0,
+   "delete_markers": 0,
+   "bytes_written_vs_bucket": 1.0,
+   "journal_chain_ok": true,
+   "sampled": 5
+  },
+  "journal_verify": {
+   "entries": [
+    {
+     "seq": 1,
+     "stored_at": "2026-11-02T10:00:00Z",
+     "kind": "run_end",
+     "run_id": "r-20261018T173000Z-3f9a",
+     "ok": true,
+     "code": null
+    }
+   ],
+   "chain_ok": true,
+   "head_seq": 1,
+   "last_seq": 1,
+   "read_bytes": 512
+  },
+  "extend": {
+   "extended": 3,
+   "failed": [
+    {
+     "key": "sitate/x",
+     "version_id": "v1",
+     "code": "STORAGE_UNREACHABLE"
+    }
+   ],
+   "min_retain_until": "2026-11-03T10:00:00Z"
+  },
+  "prune": {
+   "deleted": 0,
+   "skipped_locked": 2,
+   "protected": 1,
+   "held": false
+  },
+  "hold_set": {
+   "held_since": "2026-11-02T10:00:00Z"
+  },
+  "list": {
+   "backups": [
+    {
+     "ref": "m-5f0c",
+     "at": "2026-11-02T10:00:00Z",
+     "stored_at": "2026-11-02T10:00:00Z",
+     "stored_at_mismatch": false,
+     "retention_class": "daily",
+     "health": "pass",
+     "targets_ok": true,
+     "restore_verified": null,
+     "refs_verified": false,
+     "restore_failed": false,
+     "findings": []
+    }
+   ],
+   "latest": "m-5f0c",
+   "anchor": {
+    "backup_ref": "m-5f0c",
+    "stored_at": "2026-11-02T10:00:00Z",
+    "retention_class": "monthly",
+    "retention_until": "2026-11-03T10:00:00Z",
+    "signature_ok": null,
+    "skipped_reason": null,
+    "found": true,
+    "stored_at_match": true,
+    "expired": false,
+    "later_found": false,
+    "rollback_suspected": false
+   }
+  },
+  "restore": {
+   "backup_ref": "m-5f0c",
+   "health": "pass",
+   "files": 3,
+   "bytes": 100,
+   "hash_mismatch": 0,
+   "checks": [
+    {
+     "name": "entropy-ratio",
+     "version": "1",
+     "phase": "ingest",
+     "result": "pass",
+     "findings": [
+      {
+       "item_ref": "e-1",
+       "code": "high-entropy",
+       "path": "/srv/app/data/a.bin"
+      }
+     ],
+     "inherited": false
+    }
+   ],
+   "duration_s": 4,
+   "dumps": [
+    {
+     "target_id": "t3",
+     "path": "/var/lib/sitate/restore/x/to/t3/db.dump",
+     "format": "custom",
+     "loaded": false,
+     "load_verified_by": "none",
+     "load_verified_at": null,
+     "verified_check_ref": null
+    },
+    {
+     "target_id": "t3",
+     "path": "/var/lib/sitate/restore/x/to/t3/globals.sql",
+     "format": "globals",
+     "loaded": false,
+     "load_verified_by": "restore-test",
+     "load_verified_at": "2026-11-02T10:00:00Z",
+     "verified_check_ref": "c-1"
+    }
+   ]
+  },
+  "restore_fetch": {
+   "session_id": "s-1",
+   "files": 3,
+   "bytes": 100
+  },
+  "restore_test": {
+   "backup_ref": "m-5f0c",
+   "restore_ok": true,
+   "keyring_ok": true,
+   "config_copy_ok": true,
+   "def_copy_ok": true,
+   "checks": [
+    {
+     "name": "entropy-ratio",
+     "version": "1",
+     "phase": "ingest",
+     "result": "pass",
+     "findings": [
+      {
+       "item_ref": "e-1",
+       "code": "high-entropy",
+       "path": "/srv/app/data/a.bin"
+      }
+     ],
+     "inherited": false
+    }
+   ],
+   "duration_s": 60,
+   "egress_bytes": 100,
+   "teardown": {
+    "done": true,
+    "verified_by": "provider-api",
+    "remaining": []
+   },
+   "deferred": false,
+   "deferred_reason": null,
+   "proof": {
+    "repo_id": "repo-1",
+    "backup_ref": "m-5f0c",
+    "stored_at": "2026-11-02T10:00:00Z",
+    "retention_class": "daily",
+    "retention_until": "2026-11-03T10:00:00Z",
+    "key_id": "k-1",
+    "sig": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+   }
+  },
+  "status": {
+   "initialized": true,
+   "running": {
+    "run_id": "r-20261018T173000Z-3f9a",
+    "command": [
+     "backup"
+    ],
+    "started_at": "2026-11-02T10:00:00Z",
+    "stale_suspected": false
+   },
+   "schedule": "02:30",
+   "last_backup": {
+    "at": "2026-11-02T10:00:00Z",
+    "ok": true,
+    "health": "pass",
+    "snapshot_ref": "m-5f0c",
+    "checks_count": 1
+   },
+   "last_restore_test": {
+    "at": "2026-11-02T10:00:00Z",
+    "ok": true,
+    "last_ok_at": "2026-11-02T10:00:00Z",
+    "days_since": 0,
+    "consecutive_failures": 0,
+    "backup_ref": "m-5f0c",
+    "deferred": false,
+    "deferred_reason": null,
+    "proof": {
+     "repo_id": "repo-1",
+     "backup_ref": "m-5f0c",
+     "stored_at": "2026-11-02T10:00:00Z",
+     "retention_class": "daily",
+     "retention_until": "2026-11-03T10:00:00Z",
+     "key_id": "k-1",
+     "sig": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    }
+   },
+   "unverified_backups": 0,
+   "pending_changes": 1,
+   "waiting_panel": [
+    {
+     "change_id": "c-20261018-0007",
+     "reason": "PHRASE_VERIFY_PENDING"
+    }
+   ],
+   "hold": {
+    "active": true,
+    "since": "2026-11-02T10:00:00Z",
+    "reason": "manual",
+    "auto": false,
+    "causes": [
+     {
+      "reason": "manual",
+      "code": null,
+      "at": "2026-11-02T10:00:00Z",
+      "days": null,
+      "refs": []
+     }
+    ]
+   },
+   "kit": {
+    "version": "0123456789ab",
+    "confirmed": true,
+    "matches_current": true,
+    "location_checked_at": "2026-11-02T10:00:00Z",
+    "location_check_due": false
+   },
+   "phrase_confirmed": true,
+   "key_rotate_required": false,
+   "notify": {
+    "last_test_at": "2026-11-02T10:00:00Z",
+    "all_delivered": true,
+    "proof_confirmed": true,
+    "last_digest_at": null,
+    "last_digest_accepted_at": null
+   },
+   "restore_sessions": [],
+   "teardown_pending": [
+    {
+     "session_id": "s-1",
+     "since": "2026-11-02T10:00:00Z",
+     "remaining": [
+      {
+       "type": "instance",
+       "id": "i-0abc"
+      }
+     ]
+    }
+   ],
+   "storage_reads_this_month": {
+    "read_bytes": 0,
+    "allowance_bytes": 1000,
+    "timer_reserved": true
+   },
+   "storage": {
+    "bytes": 100,
+    "objects": 3
+   },
+   "retention": {
+    "last_expires_at": "2026-11-03T10:00:00Z",
+    "last_extend_ok_at": null,
+    "protection_ends_at": null
+   },
+   "uncovered": [
+    {
+     "kind": "mount",
+     "path": "/mnt/data",
+     "port": null,
+     "target_id": null
+    }
+   ],
+   "uncovered_count": 1,
+   "estimate": {
+    "monthly_jpy": 135,
+    "cost_ceiling_yen": 3000,
+    "over_ceiling": false,
+    "uncounted": [
+     "server"
+    ]
+   },
+   "warnings": [
+    {
+     "code": "KIT_OUTDATED",
+     "detail": {
+      "kit_version": "k",
+      "confirmed_kit_version": null
+     },
+     "next": [],
+     "since": "2026-11-02T10:00:00Z"
+    }
+   ]
+  },
+  "report": {
+   "capacity": {
+    "stored_bytes": 100,
+    "objects": 3,
+    "delta_bytes": -5,
+    "capacity_gb": {
+     "y1": 1.5,
+     "y3": 4.5
+    }
+   },
+   "estimate": {
+    "capacity_gb": {
+     "y1": 1.5,
+     "y3": 4.5
+    },
+    "monthly_jpy": [
+     {
+      "combo": "current",
+      "y1": {
+       "storage": 100,
+       "egress": 10,
+       "requests": 5,
+       "server": 0,
+       "restore_dest": 20,
+       "total": 135
+      },
+      "y3": {
+       "storage": null,
+       "egress": null,
+       "requests": null,
+       "server": null,
+       "restore_dest": null,
+       "total": null
+      }
+     }
+    ],
+    "deltas": [],
+    "cost_ceiling_yen": 3000,
+    "over_ceiling": null,
+    "uncounted": [],
+    "excluded_suspect": 0,
+    "price_table_date": "2026-11-01",
+    "teardown_daily_jpy": null,
+    "basis": "args",
+    "inputs": {
+     "size_gb": 10,
+     "daily_gb": 0.5,
+     "dump_gb": 0
+    }
+   },
+   "restore_tests": [
+    {
+     "at": "2026-11-02T10:00:00Z",
+     "backup_ref": "m-5f0c",
+     "ok": true,
+     "code": null,
+     "counted_restore": false,
+     "deferred": false,
+     "duration_s": 60,
+     "egress_bytes": 100
+    }
+   ]
+  },
+  "estimate": {
+   "capacity_gb": {
+    "y1": 1.5,
+    "y3": 4.5
+   },
+   "monthly_jpy": [
+    {
+     "combo": "current",
+     "y1": {
+      "storage": 100,
+      "egress": 10,
+      "requests": 5,
+      "server": 0,
+      "restore_dest": 20,
+      "total": 135
+     },
+     "y3": {
+      "storage": null,
+      "egress": null,
+      "requests": null,
+      "server": null,
+      "restore_dest": null,
+      "total": null
+     }
+    }
+   ],
+   "deltas": [
+    {
+     "decision": "storage_count",
+     "combo": "A",
+     "y1": -10,
+     "y3": null
+    }
+   ],
+   "cost_ceiling_yen": 3000,
+   "over_ceiling": false,
+   "uncounted": [
+    "restore_dest"
+   ],
+   "excluded_suspect": 0,
+   "price_table_date": "2026-11-01",
+   "teardown_daily_jpy": 0,
+   "basis": "records",
+   "inputs": {
+    "size_gb": 10,
+    "daily_gb": 0.5,
+    "dump_gb": 1
+   },
+   "prices": [
+    {
+     "row_id": "b2-1",
+     "provider": "b2",
+     "plan": "standard",
+     "monthly_jpy": 900,
+     "endpoint_patterns": [
+      "https://s3.*.backblazeb2.com"
+     ],
+     "checked_on": "2026-11-01"
+    }
+   ]
+  },
+  "propose": {
+   "change_id": "c-20261018-0007",
+   "plan": {
+    "reversible": true,
+    "errors": [],
+    "estimate_delta_jpy": -79,
+    "conflicts": [],
+    "from": "weekly",
+    "to": "monthly"
+   },
+   "canonical_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "not_before_if_approved_now": "2026-11-03T10:00:00Z",
+   "reused": false,
+   "state": "proposed"
+  },
+  "pending": {
+   "changes": [
+    {
+     "change_id": "c-20261018-0007",
+     "op": "restore-test-reduce",
+     "args": {
+      "to": "monthly"
+     },
+     "target": null,
+     "precondition_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "plan": {
+      "reversible": true,
+      "errors": [],
+      "estimate_delta_jpy": -79,
+      "conflicts": [],
+      "from": "weekly",
+      "to": "monthly"
+     },
+     "proposed_at": "2026-11-02T10:00:00Z",
+     "delay_hours": 24,
+     "expires_at": "2026-11-03T10:00:00Z",
+     "canonical_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "state": "proposed",
+     "not_before": null
+    }
+   ]
+  },
+  "approve": {
+   "approved_at": "2026-11-02T10:00:00Z",
+   "not_before": "2026-11-03T10:00:00Z",
+   "state": "approved",
+   "notify_proof_ok": null
+  },
+  "apply": {
+   "applied": [
+    {
+     "change_id": "c-20261018-0007",
+     "op": "restore-test-reduce",
+     "state": "applied",
+     "result": null
+    }
+   ],
+   "failed": [
+    {
+     "change_id": "c-20261018-0008",
+     "op": "seal",
+     "code": "SIGNATURE_INVALID"
+    }
+   ],
+   "waiting": [
+    {
+     "change_id": "c-20261018-0009",
+     "reason": "applying_in_progress"
+    }
+   ]
+  },
+  "cancel": {
+   "cancelled_at": "2026-11-02T10:00:00Z"
+  },
+  "attest": {
+   "change_id": null,
+   "step": "admin_access_closed",
+   "recorded": true,
+   "signed": false,
+   "signed_at": null
+  },
+  "upgrade": {
+   "from": "1.0.0",
+   "to": "1.0.1",
+   "selftest": true
+  },
+  "gate": {},
+  "bootstrap": {
+   "host_key_fp": "SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "host_key_pinned": true,
+   "core_version": "1.0.0",
+   "signing_key_fp": "SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "admin_key_type": "software",
+   "rekeyed": false,
+   "replaced_key_lines": 0,
+   "admin_access_closed": true
+  },
+  "bootstrap_restore": {
+   "step": "place",
+   "host_key_fp": "SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "core_version": "1.0.0",
+   "signing_key_fp": "SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  },
+  "test_tick": {
+   "days": 30,
+   "now": "2026-11-03T10:00:00Z"
+  }
+ },
+ "extra": {
+  "init_adopt": {
+   "def": "init",
+   "result": {
+    "repo_id": "repo-1",
+    "keyring_id": "kr-1",
+    "committed": true,
+    "kit_version": "0123456789ab",
+    "approval_key_fp": "SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "old_key_ids": [
+     "k0"
+    ],
+    "revoked": [
+     {
+      "key_id": "k0"
+     }
+    ],
+    "old_keys_revoked": true,
+    "new_keys": [
+     {
+      "role": "write",
+      "key_ref": "storage",
+      "key_id": "k1"
+     },
+     {
+      "role": "read",
+      "key_ref": "storage",
+      "key_id": "k2"
+     }
+    ],
+    "index_rebuilt": true,
+    "skipped_backups": [
+     {
+      "ref": "m-1",
+      "reason": "format_too_new"
+     }
+    ],
+    "phrase_confirmed": true,
+    "definition_from": {
+     "ref": "m-5f0c",
+     "stored_at": "2026-11-02T10:00:00Z"
+    },
+    "config_copy_match": true,
+    "key_rotate": {
+     "required": true,
+     "waive_proposed": false,
+     "change_id": "c-20261018-0001"
+    }
+   }
+  },
+  "restore_dest_check_session": {
+   "def": "restore_dest_check",
+   "result": {
+    "isolation": [],
+    "session_id": "s-1",
+    "remaining": [
+     {
+      "type": "instance",
+      "id": "i-0abc"
+     }
+    ],
+    "cleared": false
+   }
+  },
+  "restore_relay": {
+   "def": "restore",
+   "result": {
+    "backup_ref": "m-5f0c",
+    "health": "pass",
+    "files": 3,
+    "bytes": 100,
+    "hash_mismatch": 0,
+    "checks": [],
+    "duration_s": 4,
+    "to": "restore@203.0.113.10:/data/restore",
+    "read_bytes": 100,
+    "session": {
+     "session_id": "s-1",
+     "expires_at": "2026-11-03T10:00:00Z"
+    },
+    "counted_as_restore_test": true,
+    "keyring_ok": true,
+    "config_copy_ok": true,
+    "def_copy_ok": true
+   }
+  },
+  "restore_test_deferred": {
+   "def": "restore_test",
+   "result": {
+    "backup_ref": null,
+    "restore_ok": null,
+    "keyring_ok": null,
+    "config_copy_ok": null,
+    "def_copy_ok": null,
+    "checks": [],
+    "duration_s": null,
+    "egress_bytes": null,
+    "teardown": null,
+    "deferred": true,
+    "deferred_reason": "counted_restore",
+    "proof": null
+   }
+  },
+  "backup_rebuilt": {
+   "def": "backup",
+   "result": {
+    "snapshot_ref": "m-5f0c",
+    "targets": [
+     {
+      "id": "t1",
+      "status": "ok",
+      "bytes": 100,
+      "files": 3,
+      "changed_during_read": 0,
+      "errors_omitted": 0,
+      "warnings_omitted": 0,
+      "error_code": null
+     },
+     {
+      "id": "t2",
+      "status": "failed",
+      "bytes": 0,
+      "files": 0,
+      "changed_during_read": 0,
+      "errors_omitted": 0,
+      "warnings_omitted": 0,
+      "error_code": "PERMISSION"
+     }
+    ],
+    "checks": [
+     {
+      "name": "entropy-ratio",
+      "version": "1",
+      "phase": "ingest",
+      "result": "pass",
+      "findings": [
+       {
+        "item_ref": "e-1",
+        "code": "high-entropy",
+        "path": "/srv/app/data/a.bin"
+       }
+      ],
+      "inherited": false
+     },
+     {
+      "name": "entropy-ratio",
+      "version": "1",
+      "phase": "restore-test",
+      "result": "fail",
+      "findings": [],
+      "inherited": true,
+      "inherited_from": "m-5f0c"
+     }
+    ],
+    "health": "pass",
+    "uploaded_bytes": 100,
+    "duration_s": 12,
+    "chunk_keys_missing": 0,
+    "skipped_backups": [
+     {
+      "ref": "m-1",
+      "reason": "tag"
+     }
+    ]
+   }
+  },
+  "apply_result": {
+   "def": "apply",
+   "result": {
+    "applied": [
+     {
+      "change_id": "c-20261018-0007",
+      "op": "restore-elsewhere",
+      "state": "applied",
+      "result": {
+       "backup_ref": "m-5f0c",
+       "health": "pass",
+       "files": 3,
+       "bytes": 100,
+       "hash_mismatch": 0,
+       "checks": [
+        {
+         "name": "entropy-ratio",
+         "version": "1",
+         "phase": "ingest",
+         "result": "pass",
+         "findings": [
+          {
+           "item_ref": "e-1",
+           "code": "high-entropy",
+           "path": "/srv/app/data/a.bin"
+          }
+         ],
+         "inherited": false
+        }
+       ],
+       "duration_s": 4,
+       "dumps": [
+        {
+         "target_id": "t3",
+         "path": "/var/lib/sitate/restore/x/to/t3/db.dump",
+         "format": "custom",
+         "loaded": false,
+         "load_verified_by": "none",
+         "load_verified_at": null,
+         "verified_check_ref": null
+        },
+        {
+         "target_id": "t3",
+         "path": "/var/lib/sitate/restore/x/to/t3/globals.sql",
+         "format": "globals",
+         "loaded": false,
+         "load_verified_by": "restore-test",
+         "load_verified_at": "2026-11-02T10:00:00Z",
+         "verified_check_ref": "c-1"
+        }
+       ]
+      }
+     }
+    ],
+    "failed": [],
+    "waiting": []
+   }
+  },
+  "attest_signed": {
+   "def": "attest",
+   "result": {
+    "change_id": "c-20261018-0010",
+    "step": "R3",
+    "recorded": true,
+    "signed": true,
+    "signed_at": "2026-11-02T10:00:00Z"
+   }
+  },
+  "attest_procedure": {
+   "def": "attest",
+   "result": {
+    "change_id": "c-20261018-0010",
+    "step": "V1",
+    "recorded": true,
+    "signed": true,
+    "signed_at": "2026-11-02T10:00:00Z"
+   }
+  },
+  "init_adopt_cause_unknown": {
+   "def": "init",
+   "result": {
+    "repo_id": "repo-1",
+    "keyring_id": "kr-1",
+    "committed": true,
+    "kit_version": "0123456789ab",
+    "approval_key_fp": "SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "old_key_ids": [
+     "k0"
+    ],
+    "revoked": [
+     {
+      "key_id": "k0"
+     }
+    ],
+    "old_keys_revoked": true,
+    "new_keys": [
+     {
+      "role": "write",
+      "key_ref": "storage",
+      "key_id": "k1"
+     },
+     {
+      "role": "read",
+      "key_ref": "storage",
+      "key_id": "k2"
+     }
+    ],
+    "index_rebuilt": true,
+    "skipped_backups": [
+     {
+      "ref": "m-1",
+      "reason": "format_too_new"
+     }
+    ],
+    "phrase_confirmed": true,
+    "definition_from": {
+     "ref": "m-5f0c",
+     "stored_at": "2026-11-02T10:00:00Z"
+    },
+    "config_copy_match": true,
+    "key_rotate": {
+     "required": true,
+     "waive_proposed": false,
+     "change_id": "c-20261018-0001"
+    }
+   }
+  },
+  "init_adopt_cause_benign": {
+   "def": "init",
+   "result": {
+    "repo_id": "repo-1",
+    "keyring_id": "kr-1",
+    "committed": true,
+    "kit_version": "0123456789ab",
+    "approval_key_fp": "SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "old_key_ids": [
+     "k0"
+    ],
+    "revoked": [
+     {
+      "key_id": "k0"
+     }
+    ],
+    "old_keys_revoked": true,
+    "new_keys": [
+     {
+      "role": "write",
+      "key_ref": "storage",
+      "key_id": "k1"
+     },
+     {
+      "role": "read",
+      "key_ref": "storage",
+      "key_id": "k2"
+     }
+    ],
+    "index_rebuilt": true,
+    "skipped_backups": [
+     {
+      "ref": "m-1",
+      "reason": "format_too_new"
+     }
+    ],
+    "phrase_confirmed": true,
+    "definition_from": {
+     "ref": "m-5f0c",
+     "stored_at": "2026-11-02T10:00:00Z"
+    },
+    "config_copy_match": true,
+    "key_rotate": {
+     "required": false,
+     "waive_proposed": true,
+     "change_id": "c-20261018-0001"
+    }
+   }
+  }
+ },
+ "reject": {
+  "init_key_rotate_with_status": {
+   "def": "init",
+   "result": {
+    "repo_id": "repo-1",
+    "keyring_id": "kr-1",
+    "committed": true,
+    "kit_version": "0123456789ab",
+    "approval_key_fp": "SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "old_key_ids": [
+     "k0"
+    ],
+    "revoked": [
+     {
+      "key_id": "k0"
+     }
+    ],
+    "old_keys_revoked": true,
+    "new_keys": [
+     {
+      "role": "write",
+      "key_ref": "storage",
+      "key_id": "k1"
+     },
+     {
+      "role": "read",
+      "key_ref": "storage",
+      "key_id": "k2"
+     }
+    ],
+    "index_rebuilt": true,
+    "skipped_backups": [
+     {
+      "ref": "m-1",
+      "reason": "format_too_new"
+     }
+    ],
+    "phrase_confirmed": true,
+    "definition_from": {
+     "ref": "m-5f0c",
+     "stored_at": "2026-11-02T10:00:00Z"
+    },
+    "config_copy_match": true,
+    "key_rotate": {
+     "required": true,
+     "waive_proposed": false,
+     "change_id": "c-20261018-0001",
+     "status": "proposed"
+    }
+   }
+  },
+  "init_key_rotate_both_true": {
+   "def": "init",
+   "result": {
+    "repo_id": "repo-1",
+    "keyring_id": "kr-1",
+    "committed": true,
+    "kit_version": "0123456789ab",
+    "approval_key_fp": "SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "old_key_ids": [
+     "k0"
+    ],
+    "revoked": [
+     {
+      "key_id": "k0"
+     }
+    ],
+    "old_keys_revoked": true,
+    "new_keys": [
+     {
+      "role": "write",
+      "key_ref": "storage",
+      "key_id": "k1"
+     },
+     {
+      "role": "read",
+      "key_ref": "storage",
+      "key_id": "k2"
+     }
+    ],
+    "index_rebuilt": true,
+    "skipped_backups": [
+     {
+      "ref": "m-1",
+      "reason": "format_too_new"
+     }
+    ],
+    "phrase_confirmed": true,
+    "definition_from": {
+     "ref": "m-5f0c",
+     "stored_at": "2026-11-02T10:00:00Z"
+    },
+    "config_copy_match": true,
+    "key_rotate": {
+     "required": true,
+     "waive_proposed": true,
+     "change_id": "c-20261018-0001"
+    }
+   }
+  },
+  "init_key_rotate_both_false": {
+   "def": "init",
+   "result": {
+    "repo_id": "repo-1",
+    "keyring_id": "kr-1",
+    "committed": true,
+    "kit_version": "0123456789ab",
+    "approval_key_fp": "SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "old_key_ids": [
+     "k0"
+    ],
+    "revoked": [
+     {
+      "key_id": "k0"
+     }
+    ],
+    "old_keys_revoked": true,
+    "new_keys": [
+     {
+      "role": "write",
+      "key_ref": "storage",
+      "key_id": "k1"
+     },
+     {
+      "role": "read",
+      "key_ref": "storage",
+      "key_id": "k2"
+     }
+    ],
+    "index_rebuilt": true,
+    "skipped_backups": [
+     {
+      "ref": "m-1",
+      "reason": "format_too_new"
+     }
+    ],
+    "phrase_confirmed": true,
+    "definition_from": {
+     "ref": "m-5f0c",
+     "stored_at": "2026-11-02T10:00:00Z"
+    },
+    "config_copy_match": true,
+    "key_rotate": {
+     "required": false,
+     "waive_proposed": false,
+     "change_id": "c-20261018-0001"
+    }
+   }
+  },
+  "init_key_rotate_without_adopt": {
+   "def": "init",
+   "result": {
+    "repo_id": "repo-1",
+    "keyring_id": "kr-1",
+    "committed": true,
+    "kit_version": "0123456789ab",
+    "approval_key_fp": "SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "old_key_ids": [
+     "k0"
+    ],
+    "revoked": [
+     {
+      "key_id": "k0"
+     }
+    ],
+    "old_keys_revoked": true,
+    "new_keys": [
+     {
+      "role": "write",
+      "key_ref": "storage",
+      "key_id": "k1"
+     },
+     {
+      "role": "read",
+      "key_ref": "storage",
+      "key_id": "k2"
+     }
+    ],
+    "index_rebuilt": true,
+    "skipped_backups": [
+     {
+      "ref": "m-1",
+      "reason": "format_too_new"
+     }
+    ],
+    "phrase_confirmed": true,
+    "config_copy_match": true,
+    "key_rotate": {
+     "required": true,
+     "waive_proposed": false,
+     "change_id": "c-20261018-0001"
+    }
+   }
+  },
+  "init_key_rotate_no_change_id": {
+   "def": "init",
+   "result": {
+    "repo_id": "repo-1",
+    "keyring_id": "kr-1",
+    "committed": true,
+    "kit_version": "0123456789ab",
+    "approval_key_fp": "SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "old_key_ids": [
+     "k0"
+    ],
+    "revoked": [
+     {
+      "key_id": "k0"
+     }
+    ],
+    "old_keys_revoked": true,
+    "new_keys": [
+     {
+      "role": "write",
+      "key_ref": "storage",
+      "key_id": "k1"
+     },
+     {
+      "role": "read",
+      "key_ref": "storage",
+      "key_id": "k2"
+     }
+    ],
+    "index_rebuilt": true,
+    "skipped_backups": [
+     {
+      "ref": "m-1",
+      "reason": "format_too_new"
+     }
+    ],
+    "phrase_confirmed": true,
+    "definition_from": {
+     "ref": "m-5f0c",
+     "stored_at": "2026-11-02T10:00:00Z"
+    },
+    "config_copy_match": true,
+    "key_rotate": {
+     "required": true,
+     "waive_proposed": false
+    }
+   }
+  },
+  "status_warning_free_text": {
+   "def": "status",
+   "result": {
+    "initialized": true,
+    "running": {
+     "run_id": "r-20261018T173000Z-3f9a",
+     "command": [
+      "backup"
+     ],
+     "started_at": "2026-11-02T10:00:00Z",
+     "stale_suspected": false
+    },
+    "schedule": "02:30",
+    "last_backup": {
+     "at": "2026-11-02T10:00:00Z",
+     "ok": true,
+     "health": "pass",
+     "snapshot_ref": "m-5f0c",
+     "checks_count": 1
+    },
+    "last_restore_test": {
+     "at": "2026-11-02T10:00:00Z",
+     "ok": true,
+     "last_ok_at": "2026-11-02T10:00:00Z",
+     "days_since": 0,
+     "consecutive_failures": 0,
+     "backup_ref": "m-5f0c",
+     "deferred": false,
+     "deferred_reason": null,
+     "proof": {
+      "repo_id": "repo-1",
+      "backup_ref": "m-5f0c",
+      "stored_at": "2026-11-02T10:00:00Z",
+      "retention_class": "daily",
+      "retention_until": "2026-11-03T10:00:00Z",
+      "key_id": "k-1",
+      "sig": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+     }
+    },
+    "unverified_backups": 0,
+    "pending_changes": 1,
+    "waiting_panel": [
+     {
+      "change_id": "c-20261018-0007",
+      "reason": "PHRASE_VERIFY_PENDING"
+     }
+    ],
+    "hold": {
+     "active": true,
+     "since": "2026-11-02T10:00:00Z",
+     "reason": "manual",
+     "auto": false,
+     "causes": [
+      {
+       "reason": "manual",
+       "code": null,
+       "at": "2026-11-02T10:00:00Z",
+       "days": null,
+       "refs": []
+      }
+     ]
+    },
+    "kit": {
+     "version": "0123456789ab",
+     "confirmed": true,
+     "matches_current": true,
+     "location_checked_at": "2026-11-02T10:00:00Z",
+     "location_check_due": false
+    },
+    "phrase_confirmed": true,
+    "key_rotate_required": false,
+    "notify": {
+     "last_test_at": "2026-11-02T10:00:00Z",
+     "all_delivered": true,
+     "proof_confirmed": true,
+     "last_digest_at": null,
+     "last_digest_accepted_at": null
+    },
+    "restore_sessions": [],
+    "teardown_pending": [
+     {
+      "session_id": "s-1",
+      "since": "2026-11-02T10:00:00Z",
+      "remaining": [
+       {
+        "type": "instance",
+        "id": "i-0abc"
+       }
+      ]
+     }
+    ],
+    "storage_reads_this_month": {
+     "read_bytes": 0,
+     "allowance_bytes": 1000,
+     "timer_reserved": true
+    },
+    "storage": {
+     "bytes": 100,
+     "objects": 3
+    },
+    "retention": {
+     "last_expires_at": "2026-11-03T10:00:00Z",
+     "last_extend_ok_at": null,
+     "protection_ends_at": null
+    },
+    "uncovered": [
+     {
+      "kind": "mount",
+      "path": "/mnt/data",
+      "port": null,
+      "target_id": null
+     }
+    ],
+    "uncovered_count": 1,
+    "estimate": {
+     "monthly_jpy": 135,
+     "cost_ceiling_yen": 3000,
+     "over_ceiling": false,
+     "uncounted": [
+      "server"
+     ]
+    },
+    "warnings": [
+     {
+      "code": "KIT_OUTDATED",
+      "detail": {
+       "message": "please print the kit again"
+      },
+      "next": [],
+      "since": "2026-11-02T00:00:00Z"
+     }
+    ]
+   }
+  },
+  "dump_passwd_path": {
+   "def": "restore",
+   "result": {
+    "backup_ref": "m-5f0c",
+    "health": "pass",
+    "files": 3,
+    "bytes": 100,
+    "hash_mismatch": 0,
+    "checks": [
+     {
+      "name": "entropy-ratio",
+      "version": "1",
+      "phase": "ingest",
+      "result": "pass",
+      "findings": [
+       {
+        "item_ref": "e-1",
+        "code": "high-entropy",
+        "path": "/srv/app/data/a.bin"
+       }
+      ],
+      "inherited": false
+     }
+    ],
+    "duration_s": 4,
+    "dumps": [
+     {
+      "target_id": "t3",
+      "path": "/etc/passwd",
+      "format": "custom",
+      "loaded": false,
+      "load_verified_by": "none",
+      "load_verified_at": null,
+      "verified_check_ref": null
+     },
+     {
+      "target_id": "t3",
+      "path": "/etc/passwd",
+      "format": "globals",
+      "loaded": false,
+      "load_verified_by": "restore-test",
+      "load_verified_at": "2026-11-02T10:00:00Z",
+      "verified_check_ref": "c-1"
+     }
+    ]
+   }
+  },
+  "dump_format_name_mismatch": {
+   "def": "restore",
+   "result": {
+    "backup_ref": "m-5f0c",
+    "health": "pass",
+    "files": 3,
+    "bytes": 100,
+    "hash_mismatch": 0,
+    "checks": [
+     {
+      "name": "entropy-ratio",
+      "version": "1",
+      "phase": "ingest",
+      "result": "pass",
+      "findings": [
+       {
+        "item_ref": "e-1",
+        "code": "high-entropy",
+        "path": "/srv/app/data/a.bin"
+       }
+      ],
+      "inherited": false
+     }
+    ],
+    "duration_s": 4,
+    "dumps": [
+     {
+      "target_id": "t3",
+      "path": "/var/lib/sitate/restore/x/to/t3/db.dump",
+      "format": "globals",
+      "loaded": false,
+      "load_verified_by": "none",
+      "load_verified_at": null,
+      "verified_check_ref": null
+     },
+     {
+      "target_id": "t3",
+      "path": "/var/lib/sitate/restore/x/to/t3/globals.sql",
+      "format": "custom",
+      "loaded": false,
+      "load_verified_by": "restore-test",
+      "load_verified_at": "2026-11-02T10:00:00Z",
+      "verified_check_ref": "c-1"
+     }
+    ]
+   }
+  },
+  "dump_none_with_time": {
+   "def": "restore",
+   "result": {
+    "backup_ref": "m-5f0c",
+    "health": "pass",
+    "files": 3,
+    "bytes": 100,
+    "hash_mismatch": 0,
+    "checks": [
+     {
+      "name": "entropy-ratio",
+      "version": "1",
+      "phase": "ingest",
+      "result": "pass",
+      "findings": [
+       {
+        "item_ref": "e-1",
+        "code": "high-entropy",
+        "path": "/srv/app/data/a.bin"
+       }
+      ],
+      "inherited": false
+     }
+    ],
+    "duration_s": 4,
+    "dumps": [
+     {
+      "target_id": "t3",
+      "path": "/var/lib/sitate/restore/x/to/t3/db.dump",
+      "format": "custom",
+      "loaded": false,
+      "load_verified_by": "none",
+      "load_verified_at": "2026-11-02T10:00:00Z",
+      "verified_check_ref": null
+     },
+     {
+      "target_id": "t3",
+      "path": "/var/lib/sitate/restore/x/to/t3/globals.sql",
+      "format": "globals",
+      "loaded": false,
+      "load_verified_by": "none",
+      "load_verified_at": "2026-11-02T10:00:00Z",
+      "verified_check_ref": "c-1"
+     }
+    ]
+   }
+  }
+ }
+}

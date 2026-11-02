@@ -1,0 +1,10 @@
+{
+ "contract": "sitate.provision/v1",
+ "issued": [
+  {
+   "role": "write",
+   "key_id": "K2",
+   "secret": "s"
+  }
+ ]
+}

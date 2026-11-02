@@ -1,0 +1,11 @@
+{
+ "run_id": "r-20261018T173000Z-3f9a",
+ "command": [
+  "backup"
+ ],
+ "pid": 123,
+ "pid_start_ticks": 99,
+ "boot_id": "0f0f0f0f-0f0f-0f0f-0f0f-0f0f0f0f0f0f",
+ "started_at": "2026-10-18T17:30:00Z",
+ "deadline_at": "2026-10-18T18:30:00Z"
+}

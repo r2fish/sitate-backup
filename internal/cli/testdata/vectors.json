@@ -1,0 +1,77 @@
+{
+ "$comment": "internal/cli の契約試験の試験ベクトル(作業指示書 3.2)。argv は sitate の引数列、env は試験の間だけ置く環境変数。 dry_run_rejected: subcommands.json で dry_run が false のサブコマンドに --dry-run を渡すと ARG_INVALID(flag: --dry-run、reason: unknown。終了 2)。",
+ "arg_errors": [
+  {
+   "name": "unknown-flag",
+   "argv": [
+    "version",
+    "--nosuch"
+   ],
+   "code": "ARG_INVALID",
+   "flag": "--nosuch",
+   "reason": "unknown"
+  },
+  {
+   "name": "run-id-format",
+   "argv": [
+    "version",
+    "--run-id",
+    "bad"
+   ],
+   "code": "ARG_INVALID",
+   "flag": "--run-id",
+   "reason": "format"
+  },
+  {
+   "name": "invoked-by-not-timer",
+   "argv": [
+    "version",
+    "--invoked-by",
+    "cron"
+   ],
+   "code": "ARG_INVALID",
+   "flag": "--invoked-by",
+   "reason": "format"
+  }
+ ],
+ "dry_run_rejected": [
+  {
+   "name": "bucket-check-dry-run",
+   "argv": [
+    "bucket",
+    "check",
+    "--dry-run"
+   ]
+  },
+  {
+   "name": "notify-test-dry-run",
+   "argv": [
+    "notify",
+    "test",
+    "--dry-run"
+   ]
+  },
+  {
+   "name": "report-dry-run",
+   "argv": [
+    "report",
+    "--dry-run"
+   ]
+  },
+  {
+   "name": "source-survey-dry-run",
+   "argv": [
+    "source",
+    "survey",
+    "--dry-run"
+   ]
+  },
+  {
+   "name": "verify-dry-run",
+   "argv": [
+    "verify",
+    "--dry-run"
+   ]
+  }
+ ]
+}

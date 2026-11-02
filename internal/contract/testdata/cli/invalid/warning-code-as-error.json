@@ -1,0 +1,2 @@
+{"schema":"sitate.out/v1","command":["backup"],"ok":false,"dry_run":false,"run_id":"r-20261018T173000Z-3f9a","result":null,"warnings":[],
+ "error":{"code":"KIT_OUTDATED","class":"precondition","retryable":false,"detail":{"kit_version":"k","confirmed_kit_version":null},"next":[]}}

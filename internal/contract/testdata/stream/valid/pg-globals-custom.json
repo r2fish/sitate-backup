@@ -1,0 +1,79 @@
+{
+ "description": "DB の対象: globals を先、続けて custom。end.exit_status は最後の呼び出しの値",
+ "frames": [
+  {
+   "h": {
+    "type": "dump",
+    "format": "globals"
+   }
+  },
+  {
+   "h": {
+    "type": "data",
+    "size": 17
+   },
+   "body": "CREATE ROLE app;\n"
+  },
+  {
+   "h": {
+    "type": "item_end",
+    "bytes": 17,
+    "hash": "blake3:fdc88db28b40b6c788f8f6757de0efbfa114c65d643ac41223122dfc49d22a78",
+    "status": "ok",
+    "exit_status": 0
+   }
+  },
+  {
+   "h": {
+    "type": "dump",
+    "format": "custom"
+   }
+  },
+  {
+   "h": {
+    "type": "data",
+    "size": 5
+   },
+   "body": "PGDMP"
+  },
+  {
+   "h": {
+    "type": "data",
+    "size": 5
+   },
+   "body": "-body"
+  },
+  {
+   "h": {
+    "type": "item_end",
+    "bytes": 10,
+    "hash": "blake3:21f1ead63c29b79e37b48b5b61977a1d307b2b6dc78389f60bbb4645f4114657",
+    "status": "ok",
+    "exit_status": 0
+   }
+  },
+  {
+   "h": {
+    "type": "end",
+    "bytes": 27,
+    "hash": "blake3:3a18a72835ab7103fa070f8573fbd5329759f0a0a719cb9a355e76fefc20e1a9",
+    "exit_status": 0
+   }
+  }
+ ],
+ "result": {
+  "contract": "sitate.acquire/v1",
+  "status": "ok",
+  "stats": {
+   "files": 1,
+   "bytes": 5,
+   "errors": 0,
+   "errors_omitted": 0,
+   "warnings_omitted": 0,
+   "changed_during_read": 0
+  },
+  "errors": [],
+  "warnings": []
+ },
+ "error": null
+}

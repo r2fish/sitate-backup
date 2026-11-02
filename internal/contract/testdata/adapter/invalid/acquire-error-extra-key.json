@@ -1,0 +1,10 @@
+{
+ "contract": "sitate.acquire/v1",
+ "error": {
+  "code": "INTERNAL",
+  "detail": {
+   "component": "adapter"
+  },
+  "seen_fp": "SHA256:abcDEF123"
+ }
+}

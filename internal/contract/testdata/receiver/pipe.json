@@ -1,0 +1,70 @@
+{
+ "description": "sitate.recvpipe/v1。to_core は補助コマンド→核の全バイト、to_helper は核→補助コマンドの全バイト。ok の組は ReadPipeRequest が to_core を、ReadPipeReply が to_helper を読める",
+ "vectors": [
+  {
+   "name": "list",
+   "to_core": "{\"format\":\"sitate.recvpipe/v1\",\"op\":\"list\",\"target\":\"t1\"}\n{\"in\":0}\n",
+   "to_helper": "{\"out\":5}\nabcde{\"out\":3}\nfgh{\"exit\":0}\n",
+   "ok": true,
+   "op": "list",
+   "target": "t1",
+   "stdin": "",
+   "stdout": "abcdefgh",
+   "exit": 0
+  },
+  {
+   "name": "read-batch-stdin",
+   "to_core": "{\"format\":\"sitate.recvpipe/v1\",\"op\":\"read-batch\",\"target\":\"t1\"}\n{\"in\":3}\na\u0000b{\"in\":2}\n\u0000c{\"in\":0}\n",
+   "to_helper": "{\"exit\":0}\n",
+   "ok": true,
+   "op": "read-batch",
+   "target": "t1",
+   "stdin": "a\u0000b\u0000c",
+   "stdout": "",
+   "exit": 0
+  },
+  {
+   "name": "denied",
+   "to_core": "{\"format\":\"sitate.recvpipe/v1\",\"op\":\"selftest\",\"target\":\"t1\"}\n{\"in\":0}\n",
+   "to_helper": "{\"exit\":126}\n",
+   "ok": false,
+   "why": "selftest は request のスキーマ(op の値域)に合わない。核は受け口へ送らず終了状態 126 を返す(to_helper は拒否の応答の例)",
+   "exit": 126
+  },
+  {
+   "name": "dump-failed",
+   "to_core": "{\"format\":\"sitate.recvpipe/v1\",\"op\":\"dump-pg\",\"target\":\"t2\"}\n{\"in\":0}\n",
+   "to_helper": "{\"out\":2}\nPG{\"exit\":1}\n",
+   "ok": true,
+   "op": "dump-pg",
+   "target": "t2",
+   "stdin": "",
+   "stdout": "PG",
+   "exit": 1
+  },
+  {
+   "name": "no-exit",
+   "to_core": "{\"format\":\"sitate.recvpipe/v1\",\"op\":\"list\",\"target\":\"t1\"}\n{\"in\":0}\n",
+   "to_helper": "{\"out\":2}\nab",
+   "ok": false,
+   "why": "exit の前に閉じた: 補助コマンドは 255",
+   "exit": 255
+  },
+  {
+   "name": "out-zero",
+   "to_core": "{\"format\":\"sitate.recvpipe/v1\",\"op\":\"list\",\"target\":\"t1\"}\n{\"in\":0}\n",
+   "to_helper": "{\"out\":0}\n{\"exit\":0}\n",
+   "ok": false,
+   "why": "out の n は 1 以上",
+   "exit": 255
+  },
+  {
+   "name": "bad-target",
+   "to_core": "{\"format\":\"sitate.recvpipe/v1\",\"op\":\"list\",\"target\":\"x1\"}\n{\"in\":0}\n",
+   "to_helper": "{\"exit\":126}\n",
+   "ok": false,
+   "why": "target が対象 id の形でない",
+   "exit": 126
+  }
+ ]
+}

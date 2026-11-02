@@ -1,0 +1,28 @@
+{
+ "schema": "sitate.event/v1",
+ "id": "e-20261018T173000Z-3f9a-01",
+ "time": "2026-10-18T17:35:12Z",
+ "severity": "critical",
+ "type": "restore_test.failed",
+ "repo_id": "rp-91919191919191919191919191919191",
+ "facts": {
+  "backup_ref": "m-5f0c",
+  "error_code": "RESTORE_MISMATCH",
+  "days_since_last_ok": 33,
+  "counted_as_restore_test": null,
+  "teardown_pending": null,
+  "warning_codes": []
+ },
+ "suppressed_count": 0,
+ "next": [
+  {
+   "argv": [
+    "sitate",
+    "status"
+   ],
+   "requires_human": false,
+   "requires_approval": false,
+   "why": null
+  }
+ ]
+}

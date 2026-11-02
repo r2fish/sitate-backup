@@ -1,0 +1,42 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://sitate.invalid/schema/data/restore-proof.json",
+ "$defs": {
+  "proof": {
+   "type": "object",
+   "required": [
+    "repo_id",
+    "backup_ref",
+    "stored_at",
+    "retention_class",
+    "retention_until",
+    "key_id",
+    "sig"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "repo_id": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+    },
+    "backup_ref": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+    },
+    "stored_at": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "retention_class": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/retention_class"
+    },
+    "retention_until": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
+    },
+    "key_id": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+    },
+    "sig": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/sig"
+    }
+   }
+  }
+ }
+}

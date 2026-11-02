@@ -1,0 +1,13 @@
+{
+ "kind": "provision",
+ "name": "b2",
+ "version": "1.0.0",
+ "contract": "sitate.provision/v1",
+ "exe": "b2",
+ "secrets": [
+  "admin",
+  "key"
+ ],
+ "network": true,
+ "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+}

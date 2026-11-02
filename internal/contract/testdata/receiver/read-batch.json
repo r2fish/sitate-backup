@@ -1,0 +1,151 @@
+{
+ "description": "read-batch。input: 標準入力のパス一覧(受け口は検査に落ちれば何も出さず 126)。tail: tar の終端の直後の変化の一覧(区切りの行 + NUL 終端のパス)。record を持つ要素は、tar の全体が record バイトの倍数になるまでゼロ埋めされた(--blocking-factor 既定の 20 ブロック = 10240)形で、読む側はゼロ埋めを読み飛ばして区切りの行を探す",
+ "input": [
+  {
+   "name": "empty-list",
+   "paths": [],
+   "ok": true
+  },
+  {
+   "name": "normal",
+   "paths": [
+    "a",
+    "b/c",
+    "日本語/名"
+   ],
+   "ok": true
+  },
+  {
+   "name": "empty-path",
+   "paths": [
+    "a",
+    ""
+   ],
+   "ok": false
+  },
+  {
+   "name": "absolute",
+   "paths": [
+    "/etc/passwd"
+   ],
+   "ok": false
+  },
+  {
+   "name": "dotdot",
+   "paths": [
+    "a/../b"
+   ],
+   "ok": false
+  },
+  {
+   "name": "dot",
+   "paths": [
+    "."
+   ],
+   "ok": false
+  },
+  {
+   "name": "dot-element",
+   "paths": [
+    "a/./b"
+   ],
+   "ok": false
+  },
+  {
+   "name": "empty-element",
+   "paths": [
+    "a//b"
+   ],
+   "ok": false
+  },
+  {
+   "name": "trailing-slash",
+   "paths": [
+    "a/"
+   ],
+   "ok": false
+  },
+  {
+   "name": "duplicate",
+   "paths": [
+    "a",
+    "b",
+    "a"
+   ],
+   "ok": false
+  }
+ ],
+ "tail": [
+  {
+   "name": "none",
+   "tail": "SITATE-CHANGED/1\n",
+   "changed": [],
+   "ok": true
+  },
+  {
+   "name": "two",
+   "tail": "SITATE-CHANGED/1\na\u0000b/c\u0000",
+   "changed": [
+    "a",
+    "b/c"
+   ],
+   "ok": true
+  },
+  {
+   "name": "newline-in-name",
+   "tail": "SITATE-CHANGED/1\nx\ny\u0000",
+   "changed": [
+    "x\ny"
+   ],
+   "ok": true
+  },
+  {
+   "name": "no-marker",
+   "tail": "a\u0000",
+   "ok": false
+  },
+  {
+   "name": "wrong-marker",
+   "tail": "SITATE-CHANGED/2\n",
+   "ok": false
+  },
+  {
+   "name": "not-nul-terminated",
+   "tail": "SITATE-CHANGED/1\na",
+   "ok": false
+  },
+  {
+   "name": "dotdot",
+   "tail": "SITATE-CHANGED/1\n../x\u0000",
+   "ok": false
+  },
+  {
+   "name": "default-record-padding",
+   "record": 10240,
+   "tail": "SITATE-CHANGED/1\na\u0000",
+   "changed": [
+    "a"
+   ],
+   "ok": true
+  },
+  {
+   "name": "default-record-padding-empty",
+   "record": 10240,
+   "tail": "SITATE-CHANGED/1\n",
+   "changed": [],
+   "ok": true
+  },
+  {
+   "name": "padding-then-no-marker",
+   "record": 10240,
+   "tail": "a\u0000",
+   "ok": false
+  },
+  {
+   "name": "padding-only",
+   "record": 10240,
+   "tail": "",
+   "ok": false
+  }
+ ]
+}

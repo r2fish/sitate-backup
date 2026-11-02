@@ -1,0 +1,234 @@
+{
+ "$comment": "保管形式の試験ベクトル(spec 4.3)。header_hex・aad_hex は仕様の表から手で組んだ値(U1a が仕様から作った並びと突き合わせる)。object_hex = header ∥ nonce ∥ 暗号文 ∥ タグ(XChaCha20-Poly1305)で、暗号の出力は golang.org/x/crypto の実行で埋めた(go test ./internal/contract -run FormatVectors -update-format)。manifest は header_prefix_hex ∥ wrapped_from の object(nonce ∥ 暗号文 ∥ タグの 72 バイト)が header になる。整数はすべて符号なしのビッグエンディアン。",
+ "aead": [
+  {
+   "aad_hex": "0153495443111111111111111111111111111111111111111111111111111111111111111101",
+   "header_hex": "534954430101",
+   "key_hex": "2222222222222222222222222222222222222222222222222222222222222222",
+   "magic": "SITC",
+   "name": "chunk-zstd",
+   "nonce_hex": "333333333333333333333333333333333333333333333333",
+   "object_hex": "534954430101333333333333333333333333333333333333333333333333fa9f4801aae406eed576626c4f003c11fa1b698448513ae15ca313",
+   "plaintext_hex": "68656c6c6f206368756e6b"
+  },
+  {
+   "aad_hex": "0153495443111111111111111111111111111111111111111111111111111111111111111100",
+   "header_hex": "534954430100",
+   "key_hex": "2222222222222222222222222222222222222222222222222222222222222222",
+   "magic": "SITC",
+   "name": "chunk-plain",
+   "nonce_hex": "343434343434343434343434343434343434343434343434",
+   "object_hex": "534954430100343434343434343434343434343434343434343434343434ccc03864cadf5be7bce581e541c181f9c6595c798306e89855880a",
+   "plaintext_hex": "68656c6c6f206368756e6b"
+  },
+  {
+   "aad_hex": "01575250534444444444444444444444444444444400000002",
+   "header_hex": "",
+   "key_hex": "5555555555555555555555555555555555555555555555555555555555555555",
+   "magic": "WRPS",
+   "name": "wrap-snapshot-key",
+   "nonce_hex": "666666666666666666666666666666666666666666666666",
+   "object_hex": "666666666666666666666666666666666666666666666666c0518eda01232287b29a07983d202a4e47d78e3dbcd21544c1028694530b943e828aaf69fb5b09757e86b187a81e1954",
+   "plaintext_hex": "7777777777777777777777777777777777777777777777777777777777777777"
+  },
+  {
+   "aad_hex": "015349544d4444444444444444444444444444444400000002",
+   "header_hex": "",
+   "header_prefix_hex": "5349544d0100000002",
+   "key_hex": "7777777777777777777777777777777777777777777777777777777777777777",
+   "magic": "SITM",
+   "name": "manifest",
+   "nonce_hex": "888888888888888888888888888888888888888888888888",
+   "object_hex": "5349544d0100000002666666666666666666666666666666666666666666666666c0518eda01232287b29a07983d202a4e47d78e3dbcd21544c1028694530b943e828aaf69fb5b09757e86b187a81e1954888888888888888888888888888888888888888888888888ee3fd4421d3fe279a0e869bc67f644dcc1421648aad5a5f3f5bd6386cd7230bfedc31ab7bc9d6275fdcf95a9fa6d77",
+   "plaintext_hex": "7b22666f726d6174223a227369746174652e6d616e69666573742f7631227d",
+   "wrapped_from": "wrap-snapshot-key"
+  },
+  {
+   "aad_hex": "0153495447aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa00000001",
+   "header_hex": "534954470100000001",
+   "key_hex": "9999999999999999999999999999999999999999999999999999999999999999",
+   "magic": "SITG",
+   "name": "config",
+   "nonce_hex": "121212121212121212121212121212121212121212121212",
+   "object_hex": "5349544701000000011212121212121212121212121212121212121212121212120daedc23cc6b37e7e735c1a6700972470d58c036378486",
+   "plaintext_hex": "7b2278223a317d"
+  },
+  {
+   "aad_hex": "015349544a000000000000000700000001",
+   "header_hex": "5349544a0100000001",
+   "key_hex": "9898989898989898989898989898989898989898989898989898989898989898",
+   "magic": "SITJ",
+   "name": "journal",
+   "nonce_hex": "131313131313131313131313131313131313131313131313",
+   "object_hex": "5349544a0100000001131313131313131313131313131313131313131313131313a5d7f3af6126ec482dd1e288c3988de82d958d28580cfe633b",
+   "plaintext_hex": "7b22736571223a377d"
+  },
+  {
+   "aad_hex": "015349544b99999999999999999999999999999999000400000000000304bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+   "header_hex": "5349544b0199999999999999999999999999999999000400000000000304bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+   "key_hex": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+   "magic": "SITK",
+   "name": "keyring",
+   "nonce_hex": "141414141414141414141414141414141414141414141414",
+   "object_hex": "5349544b0199999999999999999999999999999999000400000000000304bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb141414141414141414141414141414141414141414141414a17ffe85b60128e4095cd7e35a2cc2d462204793835900579603de8b67fd715eef85b368848d13120b0bf39afd9c",
+   "plaintext_hex": "7b22666f726d6174223a227369746174652e6b657972696e672f7631227d"
+  },
+  {
+   "aad_hex": "0153495453000e696e6465782f66696c65732f743100000001",
+   "header_hex": "534954530100000001",
+   "key_hex": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+   "magic": "SITS",
+   "name": "state",
+   "nonce_hex": "151515151515151515151515151515151515151515151515",
+   "object_hex": "5349545301000000011515151515151515151515151515151515151515151515158636372e28c9a9c82879edfcc816977b023b6a391acbd8",
+   "plaintext_hex": "7b2273223a317d"
+  },
+  {
+   "aad_hex": "0157525043111111111111111111111111111111111111111111111111111111111111111100000001",
+   "header_hex": "",
+   "key_hex": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+   "magic": "WRPC",
+   "name": "wrap-chunk-key",
+   "nonce_hex": "161616161616161616161616161616161616161616161616",
+   "object_hex": "1616161616161616161616161616161616161616161616169736f4ab55ff8bd93e08ffcbad1cebfb274ad04973b9e7594df56e7236d7873f4920b787c4a49a34eefcac3edcf041c7",
+   "plaintext_hex": "7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a"
+  }
+ ],
+ "argon2id": [
+  {
+   "entropy_hex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+   "iterations": 1,
+   "kek_hex": "cf2adc9cce950c8e0ff9a0bb111825015abb26c1ac2699dfbd2e7e0d08319716",
+   "mem_kib": 64,
+   "parallelism": 1,
+   "salt_hex": "5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a"
+  },
+  {
+   "$comment": "既定のパラメータ(256 MiB・3・4)",
+   "entropy_hex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+   "iterations": 3,
+   "kek_hex": "211f555601f03717b0911bc49ed72d7750360fb25ba973af7030ac9e95f9e2d1",
+   "mem_kib": 262144,
+   "parallelism": 4,
+   "salt_hex": "5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a"
+  }
+ ],
+ "chunk_ids": [
+  {
+   "chunk_id": "3441db5e340ef39d1e2646d3f18face762e0f3ecba1a22577fcfe09499e506fe",
+   "id_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+   "plaintext_hex": "68656c6c6f206368756e6b"
+  },
+  {
+   "chunk_id": "4fa213fa1c1f5ae802e09c6e384b60390a0b5a1b0f228d77d89af00a84b29a21",
+   "id_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+   "plaintext_hex": ""
+  }
+ ],
+ "hkdf": {
+  "$comment": "標準の hmac で作り直した値(RFC 5869。salt 空)",
+  "derived": [
+   {
+    "key_hex": "be6b4f0cc740ac80a788b40ed04e9b4223d5daaadc47c7896b58311028a86116",
+    "purpose": "chunk-id"
+   },
+   {
+    "key_hex": "4387a2b9137b44992006a731567887a0de7d9eb39c7c1ac08cc3faae614f6b65",
+    "purpose": "snapshot-wrap"
+   },
+   {
+    "key_hex": "9fbcaa14200437e0775f351ea7cbf79f555bae8d9ebb60a199c62bd71898d445",
+    "purpose": "chunk-wrap"
+   },
+   {
+    "key_hex": "f1d4647b9423891a418b10dee345adc4076e9bb8200267136e8a3c96308e8de5",
+    "purpose": "config"
+   },
+   {
+    "key_hex": "eca6bba036826dfb58ba919741a0bba3895b42b9f12ca8bda4ecf78e3a132a8a",
+    "purpose": "journal"
+   },
+   {
+    "key_hex": "a0715a74bb2d92e3bdf585f35b6d786671f2020531cb566e8b4924d7c1c71778",
+    "purpose": "state"
+   },
+   {
+    "key_hex": "f01a9c191b31e421ea71c099d186d757a4628a17b2c669cd3f95f3aa5a898088",
+    "purpose": "proof"
+   }
+  ],
+  "master_hex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"
+ },
+ "master_key_ids": [
+  {
+   "header_hex": "00000001",
+   "n": 1,
+   "text": "k1"
+  },
+  {
+   "header_hex": "00000002",
+   "n": 2,
+   "text": "k2"
+  },
+  {
+   "header_hex": "00000100",
+   "n": 256,
+   "text": "k256"
+  },
+  {
+   "header_hex": "ffffffff",
+   "n": 4294967295,
+   "text": "k4294967295"
+  }
+ ],
+ "open_failures": [
+  {
+   "base": "chunk-zstd",
+   "mutate": "flip_last",
+   "name": "flip-last-byte",
+   "want": "tag"
+  },
+  {
+   "base": "chunk-zstd",
+   "mutate": "aad_version",
+   "name": "flip-aad",
+   "want": "tag"
+  },
+  {
+   "base": "chunk-zstd",
+   "mutate": "magic",
+   "name": "wrong-magic",
+   "want": "header"
+  },
+  {
+   "base": "chunk-zstd",
+   "mutate": "version_2",
+   "name": "version-2",
+   "want": "too_new"
+  },
+  {
+   "base": "chunk-zstd",
+   "mutate": "version_0",
+   "name": "version-0",
+   "want": "too_old"
+  }
+ ],
+ "readable_versions": [
+  1
+ ],
+ "uncovered_fp": [
+  {
+   "fp": "c762238a9ccc17f45254f58cc9601589c740cf566bcfab0461c69aa41da9f27c",
+   "id_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+   "kind": "mount",
+   "path": "/data"
+  },
+  {
+   "fp": "4f3935c7375724ca43ebfccbd4f257e7ed68d321bcb147d6fe08a0e39b0c7691",
+   "id_key_hex": "4242424242424242424242424242424242424242424242424242424242424242",
+   "kind": "db",
+   "path": "app"
+  }
+ ],
+ "version": 1
+}

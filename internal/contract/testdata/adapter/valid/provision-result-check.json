@@ -1,0 +1,17 @@
+{
+ "contract": "sitate.provision/v1",
+ "versioning": true,
+ "lock_mode": "COMPLIANCE",
+ "default_retention_days": 90,
+ "keys": [
+  {
+   "role": "write",
+   "key_id": "K2",
+   "prefix": "sitate/",
+   "capabilities": [
+    "put",
+    "list_versions"
+   ]
+  }
+ ]
+}

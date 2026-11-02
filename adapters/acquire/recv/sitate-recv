@@ -1,0 +1,4 @@
+#!/bin/sh
+# 受け口の骨格(U2a が実装する)。
+echo "NOT_IMPLEMENTED: sitate-recv" >&2
+exit 1

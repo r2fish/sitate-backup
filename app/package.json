@@ -1,0 +1,30 @@
+{
+  "name": "sitate-app",
+  "version": "0.1.0-dev",
+  "private": true,
+  "type": "module",
+  "description": "Sitate-backup クライアントアプリ(Electron + TypeScript)。骨格。中身は WP U3a・U3b。",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "test": "node --test \"test/contract/*.test.ts\" \"test/u3a/*.test.ts\" \"src/kit/*.test.ts\"",
+    "test:contract": "node --test \"test/contract/*.test.ts\"",
+    "test:u3a": "node --test --test-skip-pattern=\"\\\\[u3b\\\\]\" \"test/contract/*.test.ts\" \"test/u3a/*.test.ts\"",
+    "test:u3b": "r=0; node --test \"src/kit/*.test.ts\" || r=1; node --test --test-name-pattern=\"\\\\[u3b\\\\]\" \"test/contract/*.test.ts\" || r=1; exit $r",
+    "contract-status": "node scripts/contract-status.mjs",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:size": "eslint src test scripts",
+    "build": "node -e \"console.error('NOT_IMPLEMENTED: build-app (U3a)'); process.exit(1)\"",
+    "build:test": "node -e \"console.error('NOT_IMPLEMENTED: build-app-test (U3a)'); process.exit(1)\""
+  },
+  "devDependencies": {
+    "@types/node": "26.6.6",
+    "ajv": "8.20.0",
+    "electron": "45.2.1",
+    "eslint": "10.14.0",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.72.1"
+  }
+}

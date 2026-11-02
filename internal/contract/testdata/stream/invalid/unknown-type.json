@@ -1,0 +1,23 @@
+{
+ "description": "未知の type",
+ "frames": [
+  {
+   "h": {
+    "type": "tar",
+    "size": 1
+   }
+  },
+  {
+   "h": {
+    "type": "end",
+    "bytes": 0,
+    "hash": "blake3:4b1e58da92d04040ffac68eb0a3ddebf795bb413cc8a9b067d26bd8d482bade2",
+    "exit_status": 0
+   }
+  }
+ ],
+ "error": {
+  "kind": "contract",
+  "reason": "header"
+ }
+}

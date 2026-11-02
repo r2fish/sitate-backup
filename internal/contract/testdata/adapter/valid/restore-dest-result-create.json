@@ -1,0 +1,20 @@
+{
+ "contract": "sitate.restore-dest/v1",
+ "session_id": "r-20261103T010203Z-3f9a",
+ "ssh": {
+  "host": "dest.example.invalid",
+  "port": 22,
+  "user": "sitate-restore"
+ },
+ "host_key_fp": "SHA256:abcDEF123",
+ "scratch": {
+  "path": "/home/x/scratch",
+  "method": "gocryptfs"
+ },
+ "resources": [
+  {
+   "type": "workdir",
+   "id": "r-20261103T010203Z-3f9a"
+  }
+ ]
+}

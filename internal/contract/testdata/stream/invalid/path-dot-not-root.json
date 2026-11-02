@@ -1,0 +1,37 @@
+{
+ "description": "根以外の . の要素",
+ "frames": [
+  {
+   "h": {
+    "type": "file",
+    "path": "a/./b",
+    "size": 0,
+    "mode": 420,
+    "uid": 1000,
+    "gid": 1000,
+    "mtime_ns": 1760808600123456789
+   }
+  },
+  {
+   "h": {
+    "type": "item_end",
+    "bytes": 0,
+    "hash": "blake3:af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+    "status": "ok",
+    "exit_status": null
+   }
+  },
+  {
+   "h": {
+    "type": "end",
+    "bytes": 0,
+    "hash": "blake3:c43bc9caede6758f31059bba08b8b2363b47b555c4ffb683afd353e6aaf40f79",
+    "exit_status": 0
+   }
+  }
+ ],
+ "error": {
+  "kind": "contract",
+  "reason": "path"
+ }
+}

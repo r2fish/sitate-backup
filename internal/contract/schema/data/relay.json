@@ -1,0 +1,98 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://sitate.invalid/schema/data/relay.json",
+ "$defs": {
+  "start": {
+   "type": "object",
+   "required": [
+    "format"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "format": {
+     "const": "sitate.relay/v1"
+    }
+   }
+  },
+  "object": {
+   "type": "object",
+   "required": [
+    "kind",
+    "key",
+    "version_id",
+    "size"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "kind": {
+     "enum": [
+      "manifest",
+      "chunk"
+     ]
+    },
+    "key": {
+     "type": "string",
+     "pattern": "^(manifests/m-[0-9a-f]{32}|chunks/[0-9a-f]{2}/[0-9a-f]{64})$"
+    },
+    "version_id": {
+     "type": "string",
+     "pattern": "^[^\\x00-\\x1f]+$",
+     "minLength": 1,
+     "maxLength": 1024
+    },
+    "size": {
+     "type": "integer",
+     "minimum": 0
+    }
+   },
+   "allOf": [
+    {
+     "if": {
+      "properties": {
+       "kind": {
+        "const": "manifest"
+       }
+      }
+     },
+     "then": {
+      "properties": {
+       "key": {
+        "pattern": "^manifests/"
+       }
+      }
+     },
+     "else": {
+      "properties": {
+       "key": {
+        "pattern": "^chunks/"
+       }
+      }
+     }
+    }
+   ]
+  },
+  "end": {
+   "type": "object",
+   "required": [
+    "kind",
+    "objects",
+    "bytes"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "kind": {
+     "const": "end"
+    },
+    "objects": {
+     "type": "integer",
+     "minimum": 0
+    },
+    "bytes": {
+     "type": "integer",
+     "minimum": 0
+    }
+   }
+  }
+ },
+ "$comment": "sitate.relay/v1。1 行目 start、続いて object の見出し 1 行+size バイトの本体の繰り返し、最後に end の 1 行。end が無いまま標準入力が閉じたときは取り消し"
+}

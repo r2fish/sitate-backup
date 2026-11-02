@@ -1,0 +1,11 @@
+[Unit]
+Description=Sitate-backup daily timer
+
+[Timer]
+OnCalendar=*-*-* 02:30:00 Asia/Tokyo
+Persistent=true
+RandomizedDelaySec=0
+Unit=sitate-daily.service
+
+[Install]
+WantedBy=timers.target

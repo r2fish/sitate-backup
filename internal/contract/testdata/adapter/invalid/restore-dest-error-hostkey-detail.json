@@ -1,0 +1,9 @@
+{
+ "contract": "sitate.restore-dest/v1",
+ "error": {
+  "code": "hostkey_mismatch",
+  "detail": {
+   "seen_fp": "SHA256:abcDEF123"
+  }
+ }
+}

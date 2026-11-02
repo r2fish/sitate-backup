@@ -1,0 +1,203 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://sitate.invalid/schema/cli/common.json",
+ "$defs": {
+  "time": {
+   "type": "string",
+   "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+  },
+  "int": {
+   "type": "integer",
+   "minimum": -9223372036854775808,
+   "maximum": 9223372036854775807
+  },
+  "nonneg": {
+   "type": "integer",
+   "minimum": 0,
+   "maximum": 9223372036854775807
+  },
+  "gb": {
+   "type": "number",
+   "minimum": 0
+  },
+  "sha256": {
+   "type": "string",
+   "pattern": "^sha256:[0-9a-f]{64}$"
+  },
+  "hex64": {
+   "type": "string",
+   "pattern": "^[0-9a-f]{64}$"
+  },
+  "fp": {
+   "type": "string",
+   "pattern": "^SHA256:[A-Za-z0-9+/._-]+$"
+  },
+  "ident": {
+   "type": "string",
+   "pattern": "^[A-Za-z0-9][A-Za-z0-9._:@=+/~-]{0,255}$"
+  },
+  "path": {
+   "type": "string",
+   "pattern": "^/[^\\x00-\\x1f]*$",
+   "maxLength": 4096
+  },
+  "anypath": {
+   "type": "string",
+   "pattern": "^[^\\x00-\\x1f]+$",
+   "maxLength": 4096
+  },
+  "url": {
+   "type": "string",
+   "pattern": "^https?://[^\\s]+$",
+   "maxLength": 2048
+  },
+  "s3key": {
+   "type": "string",
+   "pattern": "^[^\\x00-\\x1f]+$",
+   "maxLength": 1024
+  },
+  "date": {
+   "type": "string",
+   "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+  },
+  "pointer": {
+   "type": "string",
+   "pattern": "^(/[^\\x00-\\x1f/]*)*$",
+   "maxLength": 1024
+  },
+  "acode": {
+   "type": "string",
+   "pattern": "^[A-Z][A-Z0-9_]{0,63}$"
+  },
+  "feature": {
+   "type": "string",
+   "pattern": "^[a-z0-9][a-z0-9 _.:/-]{0,127}$"
+  },
+  "host": {
+   "type": "string",
+   "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,254}$"
+  },
+  "target_id": {
+   "type": "string",
+   "pattern": "^t[1-9][0-9]{0,3}$"
+  },
+  "declined_id": {
+   "type": "string",
+   "pattern": "^d[1-9][0-9]{0,3}$"
+  },
+  "run_id": {
+   "type": "string",
+   "pattern": "^r-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{4}$"
+  },
+  "pubkey_line": {
+   "type": "string",
+   "pattern": "^ssh-ed25519 [A-Za-z0-9+/]+={0,2}$"
+  },
+  "sig": {
+   "type": "string",
+   "pattern": "^[A-Za-z0-9+/]{86}==$"
+  },
+  "country": {
+   "type": "string",
+   "pattern": "^[A-Z]{2}$"
+  },
+  "hhmm": {
+   "type": "string",
+   "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+  },
+  "lock_mode": {
+   "type": "string",
+   "pattern": "^[A-Z][A-Z_]{0,31}$"
+  },
+  "key_role": {
+   "enum": [
+    "write",
+    "read"
+   ]
+  },
+  "op": {
+   "enum": [
+    "put",
+    "list_versions",
+    "get_version",
+    "get_retention",
+    "get_bucket_config",
+    "extend_retention",
+    "delete_version",
+    "retention_shorten",
+    "unversioned_delete",
+    "bucket_policy",
+    "lifecycle",
+    "default_retention",
+    "governance_bypass",
+    "legal_hold",
+    "bucket_delete",
+    "key_manage"
+   ]
+  },
+  "perm_value": {
+   "enum": [
+    "allow",
+    "deny"
+   ]
+  },
+  "retention_class": {
+   "enum": [
+    "daily",
+    "monthly"
+   ]
+  },
+  "health": {
+   "enum": [
+    "pass",
+    "suspect",
+    "incomplete",
+    "unknown"
+   ]
+  },
+  "data": {
+   "type": "string",
+   "maxLength": 65536,
+   "x-sitate-data": true
+  },
+  "defvalue": {
+   "type": [
+    "string",
+    "number",
+    "boolean",
+    "null",
+    "array",
+    "object"
+   ],
+   "x-sitate-data": true
+  },
+  "permission": {
+   "type": "object",
+   "required": [
+    "op",
+    "key_role",
+    "expected",
+    "actual"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "op": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/op"
+    },
+    "key_role": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/key_role"
+    },
+    "expected": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/perm_value"
+    },
+    "actual": {
+     "enum": [
+      "allow",
+      "deny",
+      "untested"
+     ]
+    }
+   }
+  }
+ }
+}

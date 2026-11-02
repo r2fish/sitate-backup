@@ -1,0 +1,12 @@
+{
+ "contract": "sitate.acquire/v1",
+ "target": {
+  "id": "t3",
+  "kind": "postgresql",
+  "spec": {
+   "path": "/var/run/postgresql",
+   "port": 5432
+  }
+ },
+ "previous_index": null
+}

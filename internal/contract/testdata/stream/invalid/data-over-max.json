@@ -1,0 +1,47 @@
+{
+ "description": "data の size が最大長 + 1",
+ "frames": [
+  {
+   "h": {
+    "type": "file",
+    "path": "a",
+    "size": 1,
+    "mode": 420,
+    "uid": 1000,
+    "gid": 1000,
+    "mtime_ns": 1760808600123456789
+   }
+  },
+  {
+   "h": {
+    "type": "data",
+    "size": 1048577
+   },
+   "fill": {
+    "byte": "x",
+    "count": 1048577
+   }
+  },
+  {
+   "h": {
+    "type": "item_end",
+    "bytes": 1048577,
+    "hash": "blake3:50fe82105b54cc2b5bec3633311b3d1dde8845915eaa20a166a7cfba39310211",
+    "status": "ok",
+    "exit_status": null
+   }
+  },
+  {
+   "h": {
+    "type": "end",
+    "bytes": 1048577,
+    "hash": "blake3:fe922ba4c5449ff2fe6ca1fbc7fa99a140bfd736b11156faf6344d13723dfab4",
+    "exit_status": 0
+   }
+  }
+ ],
+ "error": {
+  "kind": "contract",
+  "reason": "header"
+ }
+}

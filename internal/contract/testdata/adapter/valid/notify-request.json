@@ -1,0 +1,18 @@
+{
+ "contract": "sitate.notify/v1",
+ "to": "ops@example.invalid",
+ "event": {
+  "schema": "sitate.event/v1",
+  "id": "e-20261018T173000Z-3f9a-02",
+  "time": "2026-10-18T17:35:12Z",
+  "severity": "warn",
+  "type": "phrase.unconfirmed",
+  "repo_id": null,
+  "facts": {},
+  "suppressed_count": 2,
+  "next": []
+ },
+ "secrets": {
+  "url": "https://hooks.example.invalid/x"
+ }
+}

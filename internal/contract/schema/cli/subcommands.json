@@ -1,0 +1,355 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://sitate.invalid/schema/cli/subcommands.json",
+ "x_note": "公開区分の表(spec 3.1.1)。後のイテレーションの印は later に番号を書く dry_run は --dry-run を受けるか(一覧で定める: def validate・init-storage・init・source enroll・restore-dest enroll・notify set・backup・restore・restore-test・propose・apply・cancel・attest・hold set・prune・extend の 16 件と、後のイテレーションのうち 3.1.2 の引数の列に --dry-run があるもの。現状は後のイテレーションに該当なし)。false のサブコマンドに --dry-run を渡すと核が ARG_INVALID(flag: --dry-run、reason: unknown)で拒否する。bootstrap・bootstrap-restore は核のサブコマンドではないので列を持たない",
+ "subcommands": [
+  {
+   "command": [
+    "version"
+   ],
+   "public": "tool",
+   "dry_run": false
+  },
+  {
+   "command": [
+    "doctor"
+   ],
+   "public": "tool",
+   "dry_run": false
+  },
+  {
+   "command": [
+    "def",
+    "validate"
+   ],
+   "public": "tool",
+   "dry_run": true
+  },
+  {
+   "command": [
+    "def",
+    "show"
+   ],
+   "public": "tool",
+   "dry_run": false
+  },
+  {
+   "command": [
+    "init-storage"
+   ],
+   "public": "tool",
+   "dry_run": true
+  },
+  {
+   "command": [
+    "storage",
+    "issue-read-key"
+   ],
+   "public": "tool",
+   "later": "2",
+   "dry_run": false
+  },
+  {
+   "command": [
+    "storage",
+    "revoke-read-key"
+   ],
+   "public": "tool",
+   "later": "2",
+   "dry_run": false
+  },
+  {
+   "command": [
+    "secrets",
+    "set"
+   ],
+   "public": "ui-only",
+   "later": "3",
+   "dry_run": false
+  },
+  {
+   "command": [
+    "bucket",
+    "check"
+   ],
+   "public": "tool",
+   "dry_run": false
+  },
+  {
+   "command": [
+    "init"
+   ],
+   "public": "tool",
+   "dry_run": true
+  },
+  {
+   "command": [
+    "phrase",
+    "verify"
+   ],
+   "public": "ui-only",
+   "dry_run": false
+  },
+  {
+   "command": [
+    "kit"
+   ],
+   "public": "tool",
+   "dry_run": false
+  },
+  {
+   "command": [
+    "kit",
+    "confirm"
+   ],
+   "public": "ui-only",
+   "dry_run": false
+  },
+  {
+   "command": [
+    "source",
+    "enroll"
+   ],
+   "public": "tool",
+   "dry_run": true
+  },
+  {
+   "command": [
+    "source",
+    "check"
+   ],
+   "public": "tool",
+   "dry_run": false
+  },
+  {
+   "command": [
+    "source",
+    "survey"
+   ],
+   "public": "tool",
+   "dry_run": false
+  },
+  {
+   "command": [
+    "restore-dest",
+    "enroll"
+   ],
+   "public": "tool",
+   "dry_run": true
+  },
+  {
+   "command": [
+    "restore-dest",
+    "check"
+   ],
+   "public": "tool",
+   "dry_run": false
+  },
+  {
+   "command": [
+    "restore-dest",
+    "teardown"
+   ],
+   "public": "tool",
+   "later": "4+",
+   "dry_run": false
+  },
+  {
+   "command": [
+    "restore-dest",
+    "release"
+   ],
+   "public": "tool",
+   "later": "4+",
+   "dry_run": false
+  },
+  {
+   "command": [
+    "notify",
+    "set"
+   ],
+   "public": "tool",
+   "dry_run": true
+  },
+  {
+   "command": [
+    "notify",
+    "test"
+   ],
+   "public": "tool",
+   "dry_run": false
+  },
+  {
+   "command": [
+    "backup"
+   ],
+   "public": "tool",
+   "dry_run": true
+  },
+  {
+   "command": [
+    "verify"
+   ],
+   "public": "tool",
+   "dry_run": false
+  },
+  {
+   "command": [
+    "journal",
+    "verify"
+   ],
+   "public": "tool",
+   "later": "2",
+   "dry_run": false
+  },
+  {
+   "command": [
+    "extend"
+   ],
+   "public": "tool",
+   "dry_run": true
+  },
+  {
+   "command": [
+    "prune"
+   ],
+   "public": "tool",
+   "dry_run": true
+  },
+  {
+   "command": [
+    "hold",
+    "set"
+   ],
+   "public": "tool",
+   "dry_run": true
+  },
+  {
+   "command": [
+    "list"
+   ],
+   "public": "tool",
+   "dry_run": false
+  },
+  {
+   "command": [
+    "restore"
+   ],
+   "public": "tool",
+   "dry_run": true
+  },
+  {
+   "command": [
+    "restore",
+    "fetch"
+   ],
+   "public": "ui-only",
+   "later": "1+",
+   "dry_run": false
+  },
+  {
+   "command": [
+    "restore-test"
+   ],
+   "public": "tool",
+   "dry_run": true
+  },
+  {
+   "command": [
+    "status"
+   ],
+   "public": "tool",
+   "dry_run": false
+  },
+  {
+   "command": [
+    "report"
+   ],
+   "public": "tool",
+   "dry_run": false
+  },
+  {
+   "command": [
+    "estimate"
+   ],
+   "public": "tool",
+   "dry_run": false
+  },
+  {
+   "command": [
+    "propose"
+   ],
+   "public": "tool",
+   "dry_run": true
+  },
+  {
+   "command": [
+    "pending"
+   ],
+   "public": "tool",
+   "dry_run": false
+  },
+  {
+   "command": [
+    "approve"
+   ],
+   "public": "ui-only",
+   "dry_run": false
+  },
+  {
+   "command": [
+    "apply"
+   ],
+   "public": "tool",
+   "dry_run": true
+  },
+  {
+   "command": [
+    "cancel"
+   ],
+   "public": "tool",
+   "dry_run": true
+  },
+  {
+   "command": [
+    "attest"
+   ],
+   "public": "tool",
+   "dry_run": true
+  },
+  {
+   "command": [
+    "upgrade"
+   ],
+   "public": "tool",
+   "later": "4+",
+   "dry_run": false
+  },
+  {
+   "command": [
+    "gate"
+   ],
+   "public": "internal",
+   "dry_run": false
+  },
+  {
+   "command": [
+    "bootstrap"
+   ],
+   "public": "tool"
+  },
+  {
+   "command": [
+    "bootstrap-restore"
+   ],
+   "public": "tool"
+  },
+  {
+   "command": [
+    "test-tick"
+   ],
+   "public": "test-only",
+   "dry_run": false
+  }
+ ]
+}

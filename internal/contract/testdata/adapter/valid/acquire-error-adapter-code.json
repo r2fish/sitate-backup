@@ -1,0 +1,7 @@
+{
+ "contract": "sitate.acquire/v1",
+ "error": {
+  "code": "adapter:files:SOMETHING",
+  "detail": {}
+ }
+}

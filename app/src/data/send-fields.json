@@ -1,0 +1,1479 @@
+{
+ "format": "sitate.send-fields/v1",
+ "rows": [
+  {
+   "where": "envelope",
+   "fields": [
+    {
+     "pointer": "/schema"
+    },
+    {
+     "pointer": "/command"
+    },
+    {
+     "pointer": "/ok"
+    },
+    {
+     "pointer": "/dry_run"
+    },
+    {
+     "pointer": "/run_id"
+    },
+    {
+     "pointer": "/error/code"
+    },
+    {
+     "pointer": "/error/class"
+    },
+    {
+     "pointer": "/error/retryable"
+    },
+    {
+     "pointer": "/error/next/*/argv"
+    },
+    {
+     "pointer": "/error/next/*/requires_human"
+    },
+    {
+     "pointer": "/error/next/*/requires_approval"
+    },
+    {
+     "pointer": "/error/next/*/why"
+    },
+    {
+     "pointer": "/warnings/*/code"
+    },
+    {
+     "pointer": "/warnings/*/next"
+    }
+   ]
+  },
+  {
+   "where": "envelope",
+   "fields": [
+    {
+     "pointer": "/error/detail/issues/*/pointer"
+    },
+    {
+     "pointer": "/error/detail/issues/*/reason"
+    }
+   ],
+   "when": {
+    "codes": [
+     "DEF_INVALID"
+    ],
+    "on": [
+     "error"
+    ]
+   }
+  },
+  {
+   "where": "envelope",
+   "fields": [
+    {
+     "pointer": "/error/detail/flag"
+    },
+    {
+     "pointer": "/error/detail/reason"
+    }
+   ],
+   "when": {
+    "codes": [
+     "ARG_INVALID"
+    ],
+    "on": [
+     "error"
+    ]
+   }
+  },
+  {
+   "where": "envelope",
+   "fields": [
+    {
+     "pointer": "/error/detail/step"
+    },
+    {
+     "pointer": "/error/detail/target_id"
+    },
+    {
+     "pointer": "/error/detail/reason"
+    },
+    {
+     "pointer": "/error/detail/lacks"
+    },
+    {
+     "pointer": "/error/detail/unreadable_tables"
+    },
+    {
+     "pointer": "/error/detail/server_version_num"
+    },
+    {
+     "pointer": "/error/detail/pg_dump_version_num"
+    },
+    {
+     "pointer": "/error/detail/missing"
+    }
+   ],
+   "when": {
+    "codes": [
+     "SOURCE_SETUP_FAILED"
+    ],
+    "on": [
+     "error"
+    ]
+   }
+  },
+  {
+   "where": "envelope",
+   "fields": [
+    {
+     "pointer": "/error/detail/step"
+    },
+    {
+     "pointer": "/error/detail/reason"
+    }
+   ],
+   "when": {
+    "codes": [
+     "SOURCE_SURVEY_FAILED"
+    ],
+    "on": [
+     "error"
+    ]
+   }
+  },
+  {
+   "where": "envelope",
+   "fields": [
+    {
+     "pointer": "/error/detail/failed"
+    }
+   ],
+   "when": {
+    "codes": [
+     "RECEIVER_SELFTEST_FAILED"
+    ],
+    "on": [
+     "error"
+    ]
+   }
+  },
+  {
+   "where": "envelope",
+   "fields": [
+    {
+     "pointer": "/error/detail/target_ids"
+    },
+    {
+     "pointer": "/warnings/*/detail/target_ids"
+    }
+   ],
+   "when": {
+    "codes": [
+     "RECEIVER_TARGETS_MISMATCH"
+    ],
+    "on": [
+     "error",
+     "warnings"
+    ]
+   }
+  },
+  {
+   "where": "envelope",
+   "fields": [
+    {
+     "pointer": "/error/detail/expected_fp"
+    },
+    {
+     "pointer": "/error/detail/seen_fp"
+    }
+   ],
+   "when": {
+    "codes": [
+     "SOURCE_HOSTKEY_MISMATCH",
+     "RESTORE_HOSTKEY_MISMATCH"
+    ],
+    "on": [
+     "error"
+    ]
+   }
+  },
+  {
+   "where": "envelope",
+   "fields": [
+    {
+     "pointer": "/error/detail/mismatches/*/item"
+    },
+    {
+     "pointer": "/error/detail/mismatches/*/expected"
+    },
+    {
+     "pointer": "/error/detail/mismatches/*/actual"
+    }
+   ],
+   "when": {
+    "codes": [
+     "BUCKET_MISMATCH"
+    ],
+    "on": [
+     "error"
+    ]
+   }
+  },
+  {
+   "where": "envelope",
+   "fields": [
+    {
+     "pointer": "/error/detail/reason"
+    }
+   ],
+   "when": {
+    "codes": [
+     "BUCKET_NOT_OWNED",
+     "PHRASE_INVALID",
+     "RESTORE_HOST_DENIED"
+    ],
+    "on": [
+     "error"
+    ]
+   }
+  },
+  {
+   "where": "envelope",
+   "fields": [
+    {
+     "pointer": "/error/detail/role"
+    },
+    {
+     "pointer": "/error/detail/reason"
+    },
+    {
+     "pointer": "/error/detail/ops"
+    }
+   ],
+   "when": {
+    "codes": [
+     "KEY_MISSING_PERMISSION",
+     "KEY_TOO_POWERFUL"
+    ],
+    "on": [
+     "error"
+    ]
+   }
+  },
+  {
+   "where": "envelope",
+   "fields": [
+    {
+     "pointer": "/error/detail/target"
+    },
+    {
+     "pointer": "/error/detail/reason"
+    },
+    {
+     "pointer": "/error/detail/http_status"
+    }
+   ],
+   "when": {
+    "codes": [
+     "STORAGE_UNREACHABLE",
+     "STORAGE_DENIED"
+    ],
+    "on": [
+     "error"
+    ]
+   }
+  },
+  {
+   "where": "envelope",
+   "fields": [
+    {
+     "pointer": "/error/detail/delivered/*/channel"
+    },
+    {
+     "pointer": "/error/detail/delivered/*/delivered"
+    },
+    {
+     "pointer": "/error/detail/delivered/*/attempts"
+    },
+    {
+     "pointer": "/error/detail/delivered/*/reason"
+    },
+    {
+     "pointer": "/error/detail/delivered/*/accepted_at"
+    }
+   ],
+   "when": {
+    "codes": [
+     "NOTIFY_UNDELIVERED"
+    ],
+    "on": [
+     "error"
+    ]
+   }
+  },
+  {
+   "where": "envelope",
+   "fields": [
+    {
+     "pointer": "/error/detail/reason"
+    },
+    {
+     "pointer": "/error/detail/mismatches"
+    },
+    {
+     "pointer": "/error/detail/needed_gb"
+    },
+    {
+     "pointer": "/error/detail/free_gb"
+    },
+    {
+     "pointer": "/error/detail/prereq/*/name"
+    },
+    {
+     "pointer": "/error/detail/prereq/*/ok"
+    }
+   ],
+   "when": {
+    "codes": [
+     "RESTORE_ENROLL_MISMATCH"
+    ],
+    "on": [
+     "error"
+    ]
+   }
+  },
+  {
+   "where": "envelope",
+   "fields": [
+    {
+     "pointer": "/error/detail/change_id"
+    },
+    {
+     "pointer": "/error/detail/required_flags"
+    }
+   ],
+   "when": {
+    "codes": [
+     "HUMAN_SECRET_REQUIRED"
+    ],
+    "on": [
+     "error"
+    ]
+   }
+  },
+  {
+   "where": "envelope",
+   "fields": [
+    {
+     "pointer": "/error/detail/lock"
+    },
+    {
+     "pointer": "/error/detail/holder_command"
+    },
+    {
+     "pointer": "/error/detail/holder_started_at"
+    }
+   ],
+   "when": {
+    "codes": [
+     "LOCKED"
+    ],
+    "on": [
+     "error"
+    ]
+   }
+  },
+  {
+   "where": "envelope",
+   "fields": [
+    {
+     "pointer": "/error/detail/monthly_jpy"
+    },
+    {
+     "pointer": "/error/detail/cost_ceiling_yen"
+    }
+   ],
+   "when": {
+    "codes": [
+     "COST_CEILING_EXCEEDED"
+    ],
+    "on": [
+     "error"
+    ]
+   }
+  },
+  {
+   "where": "envelope",
+   "fields": [
+    {
+     "pointer": "/error/detail/kind"
+    },
+    {
+     "pointer": "/error/detail/change_id"
+    },
+    {
+     "pointer": "/error/detail/not_before"
+    },
+    {
+     "pointer": "/error/detail/reason"
+    },
+    {
+     "pointer": "/error/detail/index"
+    }
+   ],
+   "when": {
+    "codes": [
+     "APPROVAL_REQUIRED",
+     "DELAY_NOT_ELAPSED",
+     "GATE_DENIED"
+    ],
+    "on": [
+     "error"
+    ]
+   }
+  },
+  {
+   "where": "envelope",
+   "fields": [
+    {
+     "pointer": "/error/detail/reason"
+    },
+    {
+     "pointer": "/error/detail/step"
+    }
+   ],
+   "when": {
+    "codes": [
+     "SSH_UNREACHABLE",
+     "BOOTSTRAP_PACKAGE_FAILED"
+    ],
+    "on": [
+     "error"
+    ]
+   }
+  },
+  {
+   "where": "version",
+   "fields": [
+    {
+     "pointer": "/result/version"
+    },
+    {
+     "pointer": "/result/signing_key_fp"
+    },
+    {
+     "pointer": "/result/build"
+    },
+    {
+     "pointer": "/result/format_versions"
+    }
+   ]
+  },
+  {
+   "where": "bootstrap",
+   "fields": [
+    {
+     "pointer": "/result/host_key_fp"
+    },
+    {
+     "pointer": "/result/host_key_pinned"
+    },
+    {
+     "pointer": "/result/core_version"
+    },
+    {
+     "pointer": "/result/signing_key_fp"
+    },
+    {
+     "pointer": "/result/admin_key_type"
+    },
+    {
+     "pointer": "/result/rekeyed"
+    },
+    {
+     "pointer": "/result/replaced_key_lines"
+    },
+    {
+     "pointer": "/result/admin_access_closed"
+    }
+   ]
+  },
+  {
+   "where": "bootstrap-restore",
+   "fields": [
+    {
+     "pointer": "/result/step"
+    },
+    {
+     "pointer": "/result/host_key_fp"
+    },
+    {
+     "pointer": "/result/core_version"
+    },
+    {
+     "pointer": "/result/signing_key_fp"
+    }
+   ]
+  },
+  {
+   "where": "doctor",
+   "fields": [
+    {
+     "pointer": "/result/stage"
+    },
+    {
+     "pointer": "/result/passed"
+    },
+    {
+     "pointer": "/result/checks/*/name"
+    },
+    {
+     "pointer": "/result/checks/*/severity"
+    },
+    {
+     "pointer": "/result/checks/*/ok"
+    },
+    {
+     "pointer": "/result/checks/*/next"
+    },
+    {
+     "pointer": "/result/checks/*/count"
+    }
+   ]
+  },
+  {
+   "where": "def validate",
+   "fields": [
+    {
+     "pointer": "/result/def_hash"
+    }
+   ]
+  },
+  {
+   "where": "def show",
+   "fields": [
+    {
+     "pointer": "/result/sealed"
+    },
+    {
+     "pointer": "/result/def_hash"
+    },
+    {
+     "pointer": "/result/approved_at"
+    },
+    {
+     "pointer": "/result/storage_country/*"
+    }
+   ]
+  },
+  {
+   "where": "init-storage",
+   "fields": [
+    {
+     "pointer": "/result/plan/errors/*/code"
+    },
+    {
+     "pointer": "/result/created"
+    },
+    {
+     "pointer": "/result/lock_mode"
+    },
+    {
+     "pointer": "/result/versioning"
+    },
+    {
+     "pointer": "/result/default_retention_days"
+    },
+    {
+     "pointer": "/result/keys/*/role"
+    },
+    {
+     "pointer": "/result/keys/*/key_ref"
+    },
+    {
+     "pointer": "/result/keys/*/key_id"
+    },
+    {
+     "pointer": "/result/revoked/*/key_id"
+    },
+    {
+     "pointer": "/result/permissions/*/op"
+    },
+    {
+     "pointer": "/result/permissions/*/key_role"
+    },
+    {
+     "pointer": "/result/permissions/*/expected"
+    },
+    {
+     "pointer": "/result/permissions/*/actual"
+    }
+   ]
+  },
+  {
+   "where": "bucket check",
+   "fields": [
+    {
+     "pointer": "/result/lock_mode"
+    },
+    {
+     "pointer": "/result/versioning"
+    },
+    {
+     "pointer": "/result/permissions/*/op"
+    },
+    {
+     "pointer": "/result/permissions/*/key_role"
+    },
+    {
+     "pointer": "/result/permissions/*/expected"
+    },
+    {
+     "pointer": "/result/permissions/*/actual"
+    }
+   ]
+  },
+  {
+   "where": "restore-dest enroll",
+   "fields": [
+    {
+     "pointer": "/result/plan/errors/*/code"
+    }
+   ]
+  },
+  {
+   "where": "restore-dest check",
+   "fields": [
+    {
+     "pointer": "/result/isolation/*/ok"
+    },
+    {
+     "pointer": "/result/isolation/*/code"
+    }
+   ]
+  },
+  {
+   "where": "notify test",
+   "fields": [
+    {
+     "pointer": "/result/all_delivered"
+    },
+    {
+     "pointer": "/result/proof_issued_at"
+    },
+    {
+     "pointer": "/result/delivered/*/delivered"
+    },
+    {
+     "pointer": "/result/delivered/*/channel"
+    },
+    {
+     "pointer": "/result/delivered/*/attempts"
+    },
+    {
+     "pointer": "/result/delivered/*/reason"
+    },
+    {
+     "pointer": "/result/delivered/*/accepted_at"
+    }
+   ]
+  },
+  {
+   "where": "init",
+   "fields": [
+    {
+     "pointer": "/result/repo_id"
+    },
+    {
+     "pointer": "/result/keyring_id"
+    },
+    {
+     "pointer": "/result/committed"
+    },
+    {
+     "pointer": "/result/kit_version"
+    },
+    {
+     "pointer": "/result/approval_key_fp"
+    },
+    {
+     "pointer": "/result/old_key_ids"
+    },
+    {
+     "pointer": "/result/revoked"
+    },
+    {
+     "pointer": "/result/old_keys_revoked"
+    },
+    {
+     "pointer": "/result/new_keys/*/role"
+    },
+    {
+     "pointer": "/result/new_keys/*/key_ref"
+    },
+    {
+     "pointer": "/result/new_keys/*/key_id"
+    },
+    {
+     "pointer": "/result/index_rebuilt"
+    },
+    {
+     "pointer": "/result/phrase_confirmed"
+    },
+    {
+     "pointer": "/result/config_copy_match"
+    },
+    {
+     "pointer": "/result/definition_from/ref"
+    },
+    {
+     "pointer": "/result/definition_from/stored_at"
+    },
+    {
+     "pointer": "/result/key_rotate/required"
+    },
+    {
+     "pointer": "/result/key_rotate/waive_proposed"
+    },
+    {
+     "pointer": "/result/key_rotate/change_id"
+    }
+   ]
+  },
+  {
+   "where": "status",
+   "fields": [
+    {
+     "pointer": "/result/initialized"
+    },
+    {
+     "pointer": "/result/running/command"
+    },
+    {
+     "pointer": "/result/running/started_at"
+    },
+    {
+     "pointer": "/result/running/stale_suspected"
+    },
+    {
+     "pointer": "/result/schedule"
+    },
+    {
+     "pointer": "/result/last_backup/at"
+    },
+    {
+     "pointer": "/result/last_backup/ok"
+    },
+    {
+     "pointer": "/result/last_backup/health"
+    },
+    {
+     "pointer": "/result/last_backup/snapshot_ref"
+    },
+    {
+     "pointer": "/result/last_backup/checks_count"
+    },
+    {
+     "pointer": "/result/last_restore_test/at"
+    },
+    {
+     "pointer": "/result/last_restore_test/ok"
+    },
+    {
+     "pointer": "/result/last_restore_test/days_since"
+    },
+    {
+     "pointer": "/result/last_restore_test/backup_ref"
+    },
+    {
+     "pointer": "/result/last_restore_test/deferred"
+    },
+    {
+     "pointer": "/result/phrase_confirmed"
+    },
+    {
+     "pointer": "/result/key_rotate_required"
+    },
+    {
+     "pointer": "/result/kit/version"
+    },
+    {
+     "pointer": "/result/kit/confirmed"
+    },
+    {
+     "pointer": "/result/kit/matches_current"
+    },
+    {
+     "pointer": "/result/kit/location_check_due"
+    }
+   ]
+  },
+  {
+   "where": "status",
+   "fields": [
+    {
+     "pointer": "/result/notify/last_test_at"
+    },
+    {
+     "pointer": "/result/notify/all_delivered"
+    },
+    {
+     "pointer": "/result/notify/proof_confirmed"
+    },
+    {
+     "pointer": "/result/notify/last_digest_at"
+    },
+    {
+     "pointer": "/result/notify/last_digest_accepted_at"
+    },
+    {
+     "pointer": "/result/hold/active"
+    },
+    {
+     "pointer": "/result/hold/since"
+    },
+    {
+     "pointer": "/result/hold/auto"
+    },
+    {
+     "pointer": "/result/unverified_backups"
+    },
+    {
+     "pointer": "/result/pending_changes"
+    },
+    {
+     "pointer": "/result/waiting_panel"
+    },
+    {
+     "pointer": "/result/storage_reads_this_month"
+    },
+    {
+     "pointer": "/result/storage"
+    },
+    {
+     "pointer": "/result/estimate"
+    },
+    {
+     "pointer": "/result/warnings/*/code"
+    }
+   ]
+  },
+  {
+   "where": "status",
+   "fields": [
+    {
+     "pointer": "/result/last_restore_test/last_ok_at"
+    },
+    {
+     "pointer": "/result/last_restore_test/consecutive_failures"
+    },
+    {
+     "pointer": "/result/retention"
+    },
+    {
+     "pointer": "/result/uncovered/*/kind"
+    },
+    {
+     "pointer": "/result/uncovered/*/path",
+     "transform": "path_ref"
+    },
+    {
+     "pointer": "/result/uncovered/*/port"
+    },
+    {
+     "pointer": "/result/uncovered/*/target_id"
+    },
+    {
+     "pointer": "/result/uncovered_count"
+    },
+    {
+     "pointer": "/result/teardown_pending/*/session_id"
+    },
+    {
+     "pointer": "/result/teardown_pending/*/since"
+    },
+    {
+     "pointer": "/result/teardown_pending/*/remaining/*/type"
+    },
+    {
+     "pointer": "/result/teardown_pending/*/remaining/*/id"
+    }
+   ]
+  },
+  {
+   "where": "source enroll",
+   "fields": [
+    {
+     "pointer": "/result/host_key_fp"
+    },
+    {
+     "pointer": "/result/receiver_hash"
+    },
+    {
+     "pointer": "/result/key_rotated"
+    },
+    {
+     "pointer": "/result/selftest/*/ok"
+    },
+    {
+     "pointer": "/result/selftest/*/code"
+    },
+    {
+     "pointer": "/result/targets/*/id"
+    }
+   ]
+  },
+  {
+   "where": "source check",
+   "fields": [
+    {
+     "pointer": "/result/selftest/*/ok"
+    },
+    {
+     "pointer": "/result/selftest/*/code"
+    },
+    {
+     "pointer": "/result/uncovered/*/kind"
+    },
+    {
+     "pointer": "/result/uncovered/*/path",
+     "transform": "path_ref"
+    },
+    {
+     "pointer": "/result/uncovered/*/port"
+    },
+    {
+     "pointer": "/result/uncovered/*/target_id"
+    },
+    {
+     "pointer": "/result/actionable/*/kind"
+    },
+    {
+     "pointer": "/result/actionable/*/path",
+     "transform": "path_ref"
+    },
+    {
+     "pointer": "/result/actionable/*/port"
+    },
+    {
+     "pointer": "/result/actionable/*/target_id"
+    },
+    {
+     "pointer": "/result/new_since_last/*/kind"
+    },
+    {
+     "pointer": "/result/new_since_last/*/path",
+     "transform": "path_ref"
+    },
+    {
+     "pointer": "/result/new_since_last/*/port"
+    },
+    {
+     "pointer": "/result/new_since_last/*/target_id"
+    }
+   ]
+  },
+  {
+   "where": "source survey",
+   "fields": [
+    {
+     "pointer": "/result/host_key_fp"
+    },
+    {
+     "pointer": "/result/sizes_complete"
+    },
+    {
+     "pointer": "/result/databases_complete"
+    },
+    {
+     "pointer": "/result/prereq_missing"
+    },
+    {
+     "pointer": "/result/dirs/*/path",
+     "transform": "path_ref"
+    },
+    {
+     "pointer": "/result/dirs/*/label"
+    },
+    {
+     "pointer": "/result/dirs/*/bytes"
+    },
+    {
+     "pointer": "/result/dirs/*/fs_type"
+    },
+    {
+     "pointer": "/result/dirs/*/supported"
+    },
+    {
+     "pointer": "/result/dirs/*/db_data"
+    },
+    {
+     "pointer": "/result/mounts/*/path",
+     "transform": "path_ref"
+    },
+    {
+     "pointer": "/result/mounts/*/fs_type"
+    },
+    {
+     "pointer": "/result/mounts/*/bytes"
+    },
+    {
+     "pointer": "/result/mounts/*/class"
+    },
+    {
+     "pointer": "/result/databases/*/name",
+     "transform": "path_ref"
+    },
+    {
+     "pointer": "/result/databases/*/port"
+    },
+    {
+     "pointer": "/result/databases/*/major"
+    },
+    {
+     "pointer": "/result/databases/*/bytes"
+    },
+    {
+     "pointer": "/result/databases/*/large_objects"
+    },
+    {
+     "pointer": "/result/clusters/*/port"
+    },
+    {
+     "pointer": "/result/clusters/*/major"
+    },
+    {
+     "pointer": "/result/clusters/*/names_readable"
+    },
+    {
+     "pointer": "/result/clusters/*/supported"
+    }
+   ]
+  },
+  {
+   "where": "list",
+   "fields": [
+    {
+     "pointer": "/result/backups/*/ref"
+    },
+    {
+     "pointer": "/result/backups/*/at"
+    },
+    {
+     "pointer": "/result/backups/*/stored_at"
+    },
+    {
+     "pointer": "/result/backups/*/stored_at_mismatch"
+    },
+    {
+     "pointer": "/result/backups/*/retention_class"
+    },
+    {
+     "pointer": "/result/backups/*/health"
+    },
+    {
+     "pointer": "/result/backups/*/targets_ok"
+    },
+    {
+     "pointer": "/result/backups/*/restore_verified"
+    },
+    {
+     "pointer": "/result/backups/*/refs_verified"
+    },
+    {
+     "pointer": "/result/backups/*/restore_failed"
+    },
+    {
+     "pointer": "/result/backups/*/findings/*/item_ref"
+    },
+    {
+     "pointer": "/result/backups/*/findings/*/code"
+    },
+    {
+     "pointer": "/result/latest"
+    },
+    {
+     "pointer": "/result/anchor"
+    }
+   ]
+  },
+  {
+   "where": "backup",
+   "fields": [
+    {
+     "pointer": "/result/snapshot_ref"
+    },
+    {
+     "pointer": "/result/health"
+    },
+    {
+     "pointer": "/result/uploaded_bytes"
+    },
+    {
+     "pointer": "/result/duration_s"
+    },
+    {
+     "pointer": "/result/chunk_keys_missing"
+    },
+    {
+     "pointer": "/result/targets/*/id"
+    },
+    {
+     "pointer": "/result/targets/*/status"
+    },
+    {
+     "pointer": "/result/targets/*/bytes"
+    },
+    {
+     "pointer": "/result/targets/*/files"
+    },
+    {
+     "pointer": "/result/targets/*/changed_during_read"
+    },
+    {
+     "pointer": "/result/targets/*/errors_omitted"
+    },
+    {
+     "pointer": "/result/targets/*/warnings_omitted"
+    },
+    {
+     "pointer": "/result/targets/*/error_code"
+    },
+    {
+     "pointer": "/result/checks/*/name"
+    },
+    {
+     "pointer": "/result/checks/*/result"
+    },
+    {
+     "pointer": "/result/checks/*/findings/*/item_ref"
+    },
+    {
+     "pointer": "/result/checks/*/findings/*/code"
+    }
+   ]
+  },
+  {
+   "where": "restore",
+   "fields": [
+    {
+     "pointer": "/result/backup_ref"
+    },
+    {
+     "pointer": "/result/health"
+    },
+    {
+     "pointer": "/result/files"
+    },
+    {
+     "pointer": "/result/bytes"
+    },
+    {
+     "pointer": "/result/hash_mismatch"
+    },
+    {
+     "pointer": "/result/duration_s"
+    },
+    {
+     "pointer": "/result/read_bytes"
+    },
+    {
+     "pointer": "/result/counted_as_restore_test"
+    },
+    {
+     "pointer": "/result/keyring_ok"
+    },
+    {
+     "pointer": "/result/config_copy_ok"
+    },
+    {
+     "pointer": "/result/def_copy_ok"
+    },
+    {
+     "pointer": "/result/checks/*/name"
+    },
+    {
+     "pointer": "/result/checks/*/result"
+    },
+    {
+     "pointer": "/result/session/session_id"
+    },
+    {
+     "pointer": "/result/session/expires_at"
+    },
+    {
+     "pointer": "/result/dumps/*/target_id"
+    },
+    {
+     "pointer": "/result/dumps/*/format"
+    },
+    {
+     "pointer": "/result/dumps/*/loaded"
+    },
+    {
+     "pointer": "/result/dumps/*/load_verified_by"
+    },
+    {
+     "pointer": "/result/dumps/*/load_verified_at"
+    },
+    {
+     "pointer": "/result/dumps/*/verified_check_ref"
+    }
+   ]
+  },
+  {
+   "where": "storage revoke-read-key",
+   "fields": [
+    {
+     "pointer": "/result/key_id"
+    },
+    {
+     "pointer": "/result/revoked"
+    },
+    {
+     "pointer": "/result/secret_removed"
+    }
+   ]
+  },
+  {
+   "where": "estimate",
+   "fields": [
+    {
+     "pointer": "/result/capacity_gb"
+    },
+    {
+     "pointer": "/result/monthly_jpy"
+    },
+    {
+     "pointer": "/result/deltas"
+    },
+    {
+     "pointer": "/result/cost_ceiling_yen"
+    },
+    {
+     "pointer": "/result/over_ceiling"
+    },
+    {
+     "pointer": "/result/price_table_date"
+    },
+    {
+     "pointer": "/result/excluded_suspect"
+    },
+    {
+     "pointer": "/result/teardown_daily_jpy"
+    },
+    {
+     "pointer": "/result/basis"
+    },
+    {
+     "pointer": "/result/inputs"
+    },
+    {
+     "pointer": "/result/uncounted"
+    },
+    {
+     "pointer": "/result/prices/*/row_id"
+    },
+    {
+     "pointer": "/result/prices/*/provider"
+    },
+    {
+     "pointer": "/result/prices/*/plan"
+    },
+    {
+     "pointer": "/result/prices/*/monthly_jpy"
+    }
+   ]
+  },
+  {
+   "where": "report",
+   "fields": [
+    {
+     "pointer": "/result/capacity"
+    },
+    {
+     "pointer": "/result/estimate"
+    },
+    {
+     "pointer": "/result/restore_tests/*"
+    },
+    {
+     "pointer": "/result/delivered/*/delivered"
+    },
+    {
+     "pointer": "/result/delivered/*/channel"
+    },
+    {
+     "pointer": "/result/delivered/*/attempts"
+    },
+    {
+     "pointer": "/result/delivered/*/reason"
+    },
+    {
+     "pointer": "/result/delivered/*/accepted_at"
+    }
+   ]
+  },
+  {
+   "where": "propose",
+   "fields": [
+    {
+     "pointer": "/result/change_id"
+    },
+    {
+     "pointer": "/result/canonical_hash"
+    },
+    {
+     "pointer": "/result/not_before_if_approved_now"
+    },
+    {
+     "pointer": "/result/reused"
+    },
+    {
+     "pointer": "/result/state"
+    },
+    {
+     "pointer": "/result/plan/errors/*/code"
+    }
+   ]
+  },
+  {
+   "where": "pending",
+   "fields": [
+    {
+     "pointer": "/result/changes/*/change_id"
+    },
+    {
+     "pointer": "/result/changes/*/op"
+    },
+    {
+     "pointer": "/result/changes/*/state"
+    },
+    {
+     "pointer": "/result/changes/*/not_before"
+    }
+   ]
+  },
+  {
+   "where": "approve",
+   "fields": [
+    {
+     "pointer": "/result/state"
+    },
+    {
+     "pointer": "/result/approved_at"
+    },
+    {
+     "pointer": "/result/not_before"
+    },
+    {
+     "pointer": "/result/notify_proof_ok"
+    }
+   ]
+  },
+  {
+   "where": "apply",
+   "fields": [
+    {
+     "pointer": "/result/applied/*/change_id"
+    },
+    {
+     "pointer": "/result/applied/*/op"
+    },
+    {
+     "pointer": "/result/applied/*/state"
+    },
+    {
+     "pointer": "/result/failed/*/change_id"
+    },
+    {
+     "pointer": "/result/failed/*/code"
+    },
+    {
+     "pointer": "/result/waiting/*/change_id"
+    },
+    {
+     "pointer": "/result/waiting/*/reason"
+    }
+   ]
+  },
+  {
+   "where": "attest",
+   "fields": [
+    {
+     "pointer": "/result/change_id"
+    },
+    {
+     "pointer": "/result/step"
+    },
+    {
+     "pointer": "/result/recorded"
+    },
+    {
+     "pointer": "/result/signed"
+    },
+    {
+     "pointer": "/result/signed_at"
+    }
+   ]
+  },
+  {
+   "where": "hold set",
+   "fields": [
+    {
+     "pointer": "/result/held_since"
+    }
+   ]
+  },
+  {
+   "where": "app quote-check",
+   "fields": [
+    {
+     "pointer": "/error/detail/rejected/*"
+    },
+    {
+     "pointer": "/error/detail/missing/*"
+    },
+    {
+     "pointer": "/error/detail/unquoted"
+    }
+   ]
+  },
+  {
+   "where": "journal verify",
+   "fields": [
+    {
+     "pointer": "/result/chain_ok"
+    },
+    {
+     "pointer": "/result/head_seq"
+    },
+    {
+     "pointer": "/result/last_seq"
+    },
+    {
+     "pointer": "/result/read_bytes"
+    },
+    {
+     "pointer": "/result/entries/*/seq"
+    },
+    {
+     "pointer": "/result/entries/*/stored_at"
+    },
+    {
+     "pointer": "/result/entries/*/kind"
+    },
+    {
+     "pointer": "/result/entries/*/run_id"
+    },
+    {
+     "pointer": "/result/entries/*/ok"
+    },
+    {
+     "pointer": "/result/entries/*/code"
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,521 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://sitate.invalid/schema/adapter/stream.json",
+ "$comment": "sitate.stream/v1 の見出し(JSON 1 行)。data の size の最大は StreamFragmentMax と一致(試験で照合)",
+ "$defs": {
+  "blake3": {
+   "type": "string",
+   "pattern": "^blake3:[0-9a-f]{64}$"
+  },
+  "exit_status": {
+   "type": "integer",
+   "minimum": 0,
+   "maximum": 255
+  },
+  "file": {
+   "type": "object",
+   "required": [
+    "type",
+    "size",
+    "mode",
+    "uid",
+    "gid",
+    "mtime_ns"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "type": {
+     "const": "file"
+    },
+    "path": {
+     "type": "string",
+     "minLength": 1,
+     "maxLength": 4096,
+     "x-sitate-data": true
+    },
+    "path_b64": {
+     "type": "string",
+     "pattern": "^[A-Za-z0-9+/]*={0,2}$",
+     "maxLength": 16384
+    },
+    "size": {
+     "type": "integer",
+     "minimum": 0
+    },
+    "mode": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 4095
+    },
+    "uid": {
+     "type": "integer",
+     "minimum": 0
+    },
+    "gid": {
+     "type": "integer",
+     "minimum": 0
+    },
+    "mtime_ns": {
+     "type": "integer"
+    }
+   },
+   "oneOf": [
+    {
+     "required": [
+      "path"
+     ],
+     "not": {
+      "required": [
+       "path_b64"
+      ]
+     }
+    },
+    {
+     "required": [
+      "path_b64"
+     ],
+     "not": {
+      "required": [
+       "path"
+      ]
+     }
+    }
+   ]
+  },
+  "file_retry": {
+   "type": "object",
+   "required": [
+    "type",
+    "size",
+    "mode",
+    "uid",
+    "gid",
+    "mtime_ns"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "type": {
+     "const": "file-retry"
+    },
+    "path": {
+     "type": "string",
+     "minLength": 1,
+     "maxLength": 4096,
+     "x-sitate-data": true
+    },
+    "path_b64": {
+     "type": "string",
+     "pattern": "^[A-Za-z0-9+/]*={0,2}$",
+     "maxLength": 16384
+    },
+    "size": {
+     "type": "integer",
+     "minimum": 0
+    },
+    "mode": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 4095
+    },
+    "uid": {
+     "type": "integer",
+     "minimum": 0
+    },
+    "gid": {
+     "type": "integer",
+     "minimum": 0
+    },
+    "mtime_ns": {
+     "type": "integer"
+    }
+   },
+   "oneOf": [
+    {
+     "required": [
+      "path"
+     ],
+     "not": {
+      "required": [
+       "path_b64"
+      ]
+     }
+    },
+    {
+     "required": [
+      "path_b64"
+     ],
+     "not": {
+      "required": [
+       "path"
+      ]
+     }
+    }
+   ]
+  },
+  "unchanged": {
+   "type": "object",
+   "required": [
+    "type",
+    "size",
+    "mode",
+    "uid",
+    "gid",
+    "mtime_ns"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "type": {
+     "const": "unchanged"
+    },
+    "path": {
+     "type": "string",
+     "minLength": 1,
+     "maxLength": 4096,
+     "x-sitate-data": true
+    },
+    "path_b64": {
+     "type": "string",
+     "pattern": "^[A-Za-z0-9+/]*={0,2}$",
+     "maxLength": 16384
+    },
+    "size": {
+     "type": "integer",
+     "minimum": 0
+    },
+    "mode": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 4095
+    },
+    "uid": {
+     "type": "integer",
+     "minimum": 0
+    },
+    "gid": {
+     "type": "integer",
+     "minimum": 0
+    },
+    "mtime_ns": {
+     "type": "integer"
+    }
+   },
+   "oneOf": [
+    {
+     "required": [
+      "path"
+     ],
+     "not": {
+      "required": [
+       "path_b64"
+      ]
+     }
+    },
+    {
+     "required": [
+      "path_b64"
+     ],
+     "not": {
+      "required": [
+       "path"
+      ]
+     }
+    }
+   ]
+  },
+  "dir": {
+   "type": "object",
+   "required": [
+    "type",
+    "mode",
+    "uid",
+    "gid",
+    "mtime_ns"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "type": {
+     "const": "dir"
+    },
+    "path": {
+     "type": "string",
+     "minLength": 1,
+     "maxLength": 4096,
+     "x-sitate-data": true
+    },
+    "path_b64": {
+     "type": "string",
+     "pattern": "^[A-Za-z0-9+/]*={0,2}$",
+     "maxLength": 16384
+    },
+    "mode": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 4095
+    },
+    "uid": {
+     "type": "integer",
+     "minimum": 0
+    },
+    "gid": {
+     "type": "integer",
+     "minimum": 0
+    },
+    "mtime_ns": {
+     "type": "integer"
+    }
+   },
+   "oneOf": [
+    {
+     "required": [
+      "path"
+     ],
+     "not": {
+      "required": [
+       "path_b64"
+      ]
+     }
+    },
+    {
+     "required": [
+      "path_b64"
+     ],
+     "not": {
+      "required": [
+       "path"
+      ]
+     }
+    }
+   ]
+  },
+  "symlink": {
+   "type": "object",
+   "required": [
+    "type",
+    "uid",
+    "gid",
+    "mtime_ns"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "type": {
+     "const": "symlink"
+    },
+    "path": {
+     "type": "string",
+     "minLength": 1,
+     "maxLength": 4096,
+     "x-sitate-data": true
+    },
+    "path_b64": {
+     "type": "string",
+     "pattern": "^[A-Za-z0-9+/]*={0,2}$",
+     "maxLength": 16384
+    },
+    "target": {
+     "type": "string",
+     "maxLength": 4096,
+     "x-sitate-data": true
+    },
+    "target_b64": {
+     "type": "string",
+     "pattern": "^[A-Za-z0-9+/]*={0,2}$",
+     "maxLength": 16384
+    },
+    "uid": {
+     "type": "integer",
+     "minimum": 0
+    },
+    "gid": {
+     "type": "integer",
+     "minimum": 0
+    },
+    "mtime_ns": {
+     "type": "integer"
+    }
+   },
+   "allOf": [
+    {
+     "oneOf": [
+      {
+       "required": [
+        "path"
+       ],
+       "not": {
+        "required": [
+         "path_b64"
+        ]
+       }
+      },
+      {
+       "required": [
+        "path_b64"
+       ],
+       "not": {
+        "required": [
+         "path"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "oneOf": [
+      {
+       "required": [
+        "target"
+       ],
+       "not": {
+        "required": [
+         "target_b64"
+        ]
+       }
+      },
+      {
+       "required": [
+        "target_b64"
+       ],
+       "not": {
+        "required": [
+         "target"
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  },
+  "dump": {
+   "type": "object",
+   "required": [
+    "type",
+    "format"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "type": {
+     "const": "dump"
+    },
+    "format": {
+     "enum": [
+      "globals",
+      "custom"
+     ]
+    }
+   }
+  },
+  "data": {
+   "type": "object",
+   "required": [
+    "type",
+    "size"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "type": {
+     "const": "data"
+    },
+    "size": {
+     "type": "integer",
+     "minimum": 1,
+     "maximum": 1048576
+    }
+   }
+  },
+  "item_end": {
+   "type": "object",
+   "required": [
+    "type",
+    "bytes",
+    "hash",
+    "status",
+    "exit_status"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "type": {
+     "const": "item_end"
+    },
+    "bytes": {
+     "type": "integer",
+     "minimum": 0
+    },
+    "hash": {
+     "$ref": "#/$defs/blake3"
+    },
+    "status": {
+     "enum": [
+      "ok",
+      "changed",
+      "error"
+     ]
+    },
+    "exit_status": {
+     "oneOf": [
+      {
+       "type": "null"
+      },
+      {
+       "$ref": "#/$defs/exit_status"
+      }
+     ]
+    }
+   }
+  },
+  "end": {
+   "type": "object",
+   "required": [
+    "type",
+    "bytes",
+    "hash",
+    "exit_status"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "type": {
+     "const": "end"
+    },
+    "bytes": {
+     "type": "integer",
+     "minimum": 0
+    },
+    "hash": {
+     "$ref": "#/$defs/blake3"
+    },
+    "exit_status": {
+     "$ref": "#/$defs/exit_status"
+    }
+   }
+  },
+  "frame": {
+   "oneOf": [
+    {
+     "$ref": "#/$defs/file"
+    },
+    {
+     "$ref": "#/$defs/file_retry"
+    },
+    {
+     "$ref": "#/$defs/unchanged"
+    },
+    {
+     "$ref": "#/$defs/dir"
+    },
+    {
+     "$ref": "#/$defs/symlink"
+    },
+    {
+     "$ref": "#/$defs/dump"
+    },
+    {
+     "$ref": "#/$defs/data"
+    },
+    {
+     "$ref": "#/$defs/item_end"
+    },
+    {
+     "$ref": "#/$defs/end"
+    }
+   ]
+  }
+ }
+}

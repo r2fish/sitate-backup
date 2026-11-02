@@ -1,0 +1,320 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://sitate.invalid/schema/adapter/adapter-json.json",
+ "$defs": {
+  "acquire": {
+   "type": "object",
+   "required": [
+    "kind",
+    "name",
+    "version",
+    "contract",
+    "exe",
+    "secrets",
+    "network"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "kind": {
+     "const": "acquire"
+    },
+    "name": {
+     "$ref": "https://sitate.invalid/schema/adapter/common.json#/$defs/name"
+    },
+    "version": {
+     "$ref": "https://sitate.invalid/schema/adapter/common.json#/$defs/semver"
+    },
+    "contract": {
+     "const": "sitate.acquire/v1"
+    },
+    "exe": {
+     "type": "string",
+     "pattern": "^[^/\\x00-\\x1f]{1,255}$"
+    },
+    "sha256": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/hex64"
+    },
+    "secrets": {
+     "type": "array",
+     "uniqueItems": true,
+     "items": {
+      "enum": []
+     },
+     "maxItems": 0
+    },
+    "network": {
+     "const": false
+    }
+   }
+  },
+  "check": {
+   "type": "object",
+   "required": [
+    "kind",
+    "name",
+    "version",
+    "contract",
+    "exe",
+    "secrets",
+    "network",
+    "inputs",
+    "phases",
+    "params",
+    "metrics",
+    "finding_codes"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "kind": {
+     "const": "check"
+    },
+    "name": {
+     "$ref": "https://sitate.invalid/schema/adapter/common.json#/$defs/name"
+    },
+    "version": {
+     "$ref": "https://sitate.invalid/schema/adapter/common.json#/$defs/semver"
+    },
+    "contract": {
+     "const": "sitate.check/v1"
+    },
+    "exe": {
+     "type": "string",
+     "pattern": "^[^/\\x00-\\x1f]{1,255}$"
+    },
+    "sha256": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/hex64"
+    },
+    "secrets": {
+     "type": "array",
+     "uniqueItems": true,
+     "items": {
+      "enum": []
+     },
+     "maxItems": 0
+    },
+    "network": {
+     "const": false
+    },
+    "image_digest": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/sha256"
+    },
+    "inputs": {
+     "type": "array",
+     "items": {
+      "enum": [
+       "stream",
+       "tree",
+       "db"
+      ]
+     },
+     "uniqueItems": true,
+     "minItems": 1
+    },
+    "phases": {
+     "type": "array",
+     "items": {
+      "enum": [
+       "ingest",
+       "restore-test"
+      ]
+     },
+     "uniqueItems": true,
+     "minItems": 1
+    },
+    "params": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+     },
+     "uniqueItems": true
+    },
+    "metrics": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+     },
+     "uniqueItems": true
+    },
+    "finding_codes": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/acode"
+     },
+     "uniqueItems": true
+    }
+   }
+  },
+  "restore_dest": {
+   "type": "object",
+   "required": [
+    "kind",
+    "name",
+    "version",
+    "contract",
+    "exe",
+    "secrets",
+    "network",
+    "pair"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "kind": {
+     "const": "restore-dest"
+    },
+    "name": {
+     "$ref": "https://sitate.invalid/schema/adapter/common.json#/$defs/name"
+    },
+    "version": {
+     "$ref": "https://sitate.invalid/schema/adapter/common.json#/$defs/semver"
+    },
+    "contract": {
+     "const": "sitate.restore-dest/v1"
+    },
+    "exe": {
+     "type": "string",
+     "pattern": "^[^/\\x00-\\x1f]{1,255}$"
+    },
+    "sha256": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/hex64"
+    },
+    "secrets": {
+     "type": "array",
+     "uniqueItems": true,
+     "items": {
+      "enum": [
+       "host_key",
+       "restore-dest-ssh",
+       "dest_key"
+      ]
+     },
+     "maxItems": 3
+    },
+    "network": {
+     "const": true
+    },
+    "pair": {
+     "enum": [
+      "create_destroy",
+      "start_stop"
+     ]
+    }
+   }
+  },
+  "notify": {
+   "type": "object",
+   "required": [
+    "kind",
+    "name",
+    "version",
+    "contract",
+    "exe",
+    "secrets",
+    "network"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "kind": {
+     "const": "notify"
+    },
+    "name": {
+     "$ref": "https://sitate.invalid/schema/adapter/common.json#/$defs/name"
+    },
+    "version": {
+     "$ref": "https://sitate.invalid/schema/adapter/common.json#/$defs/semver"
+    },
+    "contract": {
+     "const": "sitate.notify/v1"
+    },
+    "exe": {
+     "type": "string",
+     "pattern": "^[^/\\x00-\\x1f]{1,255}$"
+    },
+    "sha256": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/hex64"
+    },
+    "secrets": {
+     "type": "array",
+     "uniqueItems": true,
+     "items": {
+      "enum": [
+       "url",
+       "smtp"
+      ]
+     },
+     "maxItems": 2
+    },
+    "network": {
+     "const": true
+    }
+   }
+  },
+  "provision": {
+   "type": "object",
+   "required": [
+    "kind",
+    "name",
+    "version",
+    "contract",
+    "exe",
+    "secrets",
+    "network"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "kind": {
+     "const": "provision"
+    },
+    "name": {
+     "$ref": "https://sitate.invalid/schema/adapter/common.json#/$defs/name"
+    },
+    "version": {
+     "$ref": "https://sitate.invalid/schema/adapter/common.json#/$defs/semver"
+    },
+    "contract": {
+     "const": "sitate.provision/v1"
+    },
+    "exe": {
+     "type": "string",
+     "pattern": "^[^/\\x00-\\x1f]{1,255}$"
+    },
+    "sha256": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/hex64"
+    },
+    "secrets": {
+     "type": "array",
+     "uniqueItems": true,
+     "items": {
+      "enum": [
+       "admin",
+       "key"
+      ]
+     },
+     "maxItems": 2
+    },
+    "network": {
+     "const": true
+    }
+   }
+  },
+  "adapter": {
+   "oneOf": [
+    {
+     "$ref": "#/$defs/acquire"
+    },
+    {
+     "$ref": "#/$defs/check"
+    },
+    {
+     "$ref": "#/$defs/restore_dest"
+    },
+    {
+     "$ref": "#/$defs/notify"
+    },
+    {
+     "$ref": "#/$defs/provision"
+    }
+   ]
+  }
+ },
+ "$ref": "#/$defs/adapter"
+}

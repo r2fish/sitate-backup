@@ -1,0 +1,3 @@
+{"schema":"sitate.out/v1","command":["backup"],"ok":false,"dry_run":false,"run_id":"r-20261018T173000Z-3f9a","result":null,"warnings":[],
+ "error":{"code":"SOURCE_HOSTKEY_MISMATCH","class":"precondition","retryable":false,"detail":{"expected_fp":"SHA256:a","seen_fp":"SHA256:b","session_id":null},
+  "next":[{"argv":["sitate","propose","source-change","--source","{{source}}"],"requires_human":false,"requires_approval":true,"why":"APPROVAL_REQUIRED"}]}}

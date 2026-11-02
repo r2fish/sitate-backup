@@ -1,0 +1,44 @@
+{
+ "description": "先の file が無い file-retry",
+ "frames": [
+  {
+   "h": {
+    "type": "file-retry",
+    "path": "a",
+    "size": 1,
+    "mode": 420,
+    "uid": 1000,
+    "gid": 1000,
+    "mtime_ns": 1760808600123456789
+   }
+  },
+  {
+   "h": {
+    "type": "data",
+    "size": 1
+   },
+   "body": "x"
+  },
+  {
+   "h": {
+    "type": "item_end",
+    "bytes": 1,
+    "hash": "blake3:3ae7d805f6789a6402acb70ad4096a85a56bf6804eaf25c0493ac697548d30b5",
+    "status": "ok",
+    "exit_status": null
+   }
+  },
+  {
+   "h": {
+    "type": "end",
+    "bytes": 1,
+    "hash": "blake3:864b5c2eda66de0b72a357b49e3e66ef17f001fad360acedeef0862ab44f1d62",
+    "exit_status": 0
+   }
+  }
+ ],
+ "error": {
+  "kind": "contract",
+  "reason": "order"
+ }
+}

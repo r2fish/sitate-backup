@@ -1,0 +1,233 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://sitate.invalid/schema/adapter/notify.json",
+ "$defs": {
+  "request": {
+   "type": "object",
+   "required": [
+    "contract",
+    "to",
+    "event",
+    "secrets"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "contract": {
+     "const": "sitate.notify/v1"
+    },
+    "to": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/data"
+    },
+    "event": {
+     "$ref": "https://sitate.invalid/schema/data/event.json#/$defs/event"
+    },
+    "secrets": {
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "url": {
+       "type": "string",
+       "maxLength": 2048,
+       "x-sitate-data": true
+      },
+      "smtp": {
+       "type": "string",
+       "maxLength": 8192,
+       "x-sitate-data": true
+      }
+     }
+    }
+   }
+  },
+  "result": {
+   "type": "object",
+   "required": [
+    "contract",
+    "delivered",
+    "channel",
+    "reason",
+    "http_status",
+    "provider_ref"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "contract": {
+     "const": "sitate.notify/v1"
+    },
+    "delivered": {
+     "type": "boolean"
+    },
+    "channel": {
+     "enum": [
+      "webhook",
+      "email"
+     ]
+    },
+    "reason": {
+     "anyOf": [
+      {
+       "enum": [
+        "url_invalid",
+        "connect",
+        "tls",
+        "timeout",
+        "redirect",
+        "http_status",
+        "rejected"
+       ]
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "http_status": {
+     "anyOf": [
+      {
+       "type": "integer",
+       "minimum": 100,
+       "maximum": 599
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "provider_ref": {
+     "anyOf": [
+      {
+       "type": "string",
+       "maxLength": 998,
+       "x-sitate-data": true
+      },
+      {
+       "type": "null"
+      }
+     ]
+    }
+   },
+   "allOf": [
+    {
+     "if": {
+      "properties": {
+       "delivered": {
+        "const": true
+       }
+      }
+     },
+     "then": {
+      "properties": {
+       "reason": {
+        "type": "null"
+       }
+      }
+     },
+     "else": {
+      "properties": {
+       "reason": {
+        "enum": [
+         "url_invalid",
+         "connect",
+         "tls",
+         "timeout",
+         "redirect",
+         "http_status",
+         "rejected"
+        ]
+       }
+      }
+     }
+    }
+   ]
+  },
+  "error": {
+   "type": "object",
+   "required": [
+    "code",
+    "detail"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "code": {
+     "anyOf": [
+      {
+       "enum": [
+        "INTERNAL",
+        "NOT_IMPLEMENTED"
+       ]
+      },
+      {
+       "$ref": "https://sitate.invalid/schema/adapter/common.json#/$defs/adapter_code"
+      }
+     ]
+    },
+    "detail": {
+     "$ref": "https://sitate.invalid/schema/adapter/common.json#/$defs/generic_detail"
+    }
+   },
+   "allOf": [
+    {
+     "if": {
+      "properties": {
+       "code": {
+        "const": "INTERNAL"
+       }
+      },
+      "required": [
+       "code"
+      ]
+     },
+     "then": {
+      "properties": {
+       "detail": {
+        "$ref": "https://sitate.invalid/schema/adapter/common.json#/$defs/internal_detail"
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "code": {
+        "const": "NOT_IMPLEMENTED"
+       }
+      },
+      "required": [
+       "code"
+      ]
+     },
+     "then": {
+      "properties": {
+       "detail": {
+        "$ref": "https://sitate.invalid/schema/adapter/common.json#/$defs/not_implemented_detail"
+       }
+      }
+     }
+    }
+   ]
+  },
+  "response": {
+   "oneOf": [
+    {
+     "type": "object",
+     "required": [
+      "contract",
+      "error"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "contract": {
+       "const": "sitate.notify/v1"
+      },
+      "error": {
+       "$ref": "#/$defs/error"
+      }
+     }
+    },
+    {
+     "$ref": "#/$defs/result"
+    }
+   ]
+  }
+ }
+}

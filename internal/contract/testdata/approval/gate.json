@@ -1,0 +1,87 @@
+{
+ "$comment": "gate の判定のベクトル(spec 3.1.5)。line は SSH_ORIGINAL_COMMAND の字面。拒否は GATE_DENIED の detail.reason と detail.index(null か、違反した語の位置)。判定の持ち主は approval(U1d)。cli は結果に従って実行するだけ(結合は U1f-2)。",
+ "denied": [
+  {
+   "name": "empty",
+   "line": "",
+   "reason": "lexical"
+  },
+  {
+   "name": "double-space",
+   "line": "version  --dry-run",
+   "reason": "lexical"
+  },
+  {
+   "name": "not-in-list",
+   "line": "nosuch",
+   "reason": "not_allowed"
+  },
+  {
+   "name": "gate-itself",
+   "line": "gate",
+   "reason": "not_allowed"
+  },
+  {
+   "name": "invoked-by",
+   "line": "version --invoked-by timer",
+   "reason": "invoked_by"
+  },
+  {
+   "name": "local-restore",
+   "line": "restore --to /var/restore",
+   "reason": "local_restore"
+  },
+  {
+   "name": "relay",
+   "line": "restore --to restore-dest:/var/restore --relay",
+   "reason": "relay"
+  },
+  {
+   "name": "file-path",
+   "line": "def validate --file /etc/sitate/sitate.yaml",
+   "reason": "file_path"
+  },
+  {
+   "name": "flag-equals",
+   "line": "version --dry-run=1",
+   "reason": "flag_form"
+  },
+  {
+   "name": "duplicate",
+   "line": "version --dry-run --dry-run",
+   "reason": "duplicate"
+  },
+  {
+   "name": "secret-fd-on-version",
+   "line": "version --secret-fd 3",
+   "reason": "secret_fd"
+  }
+ ],
+ "allowed": [
+  {
+   "name": "version",
+   "line": "version",
+   "argv": [
+    "version"
+   ],
+   "secret_out": ""
+  },
+  {
+   "name": "init-secret-fd",
+   "line": "init --secret-fd 3",
+   "argv": [
+    "init"
+   ],
+   "secret_out": "stdout-first-record"
+  },
+  {
+   "name": "dry-run",
+   "line": "version --dry-run",
+   "argv": [
+    "version",
+    "--dry-run"
+   ],
+   "secret_out": ""
+  }
+ ]
+}

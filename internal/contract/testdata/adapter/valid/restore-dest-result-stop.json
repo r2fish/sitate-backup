@@ -1,0 +1,11 @@
+{
+ "contract": "sitate.restore-dest/v1",
+ "done": false,
+ "verified_by": "ssh",
+ "remaining": [
+  {
+   "type": "process",
+   "id": "1234"
+  }
+ ]
+}

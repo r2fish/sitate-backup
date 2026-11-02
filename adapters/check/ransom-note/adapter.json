@@ -1,0 +1,14 @@
+{
+  "kind": "check",
+  "name": "ransom-note",
+  "version": "0.0.0",
+  "contract": "sitate.check/v1",
+  "exe": "ransom-note",
+  "secrets": [],
+  "network": false,
+  "inputs": [],
+  "phases": [],
+  "params": [],
+  "metrics": [],
+  "finding_codes": []
+}
