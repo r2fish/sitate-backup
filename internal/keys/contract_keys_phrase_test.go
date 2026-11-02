@@ -91,6 +91,20 @@ func bundleFile(path, arch string, data string) contract.BundleFile {
 		Want: contract.TrustedComment{Version: "1.0.0", Arch: arch, Path: path}}
 }
 
+func provisionDecl(exe string) string {
+	sum := sha256.Sum256([]byte(exe))
+	aj, _ := json.Marshal(map[string]string{"kind": "provision", "name": "b2", "exe": "b2", "sha256": hex.EncodeToString(sum[:])})
+	return string(aj)
+}
+
+// provisionFiles は保管先準備アダプタの署名付きの adapter.json と、署名の無い実行ファイル。
+func provisionFiles(arch, exe string) []contract.BundleFile {
+	return []contract.BundleFile{
+		bundleFile(arch+"/adapters/provision/b2/adapter.json", arch, provisionDecl(exe)),
+		{Path: arch + "/adapters/provision/b2/b2", Data: []byte(exe)},
+	}
+}
+
 func newPhraseEnv(withPending bool) *phraseEnv {
 	e := &phraseEnv{kenv: newEnv(), ver: &wantVerifier{Reject: map[string]bool{}}}
 	e.keyring = []byte("KEYRING-BYTES")
@@ -101,10 +115,12 @@ func newPhraseEnv(withPending bool) *phraseEnv {
 		e.istore.expectPending = true
 	}
 	e.ks.Open, e.ks.Info = true, &contract.KeyringInfo{Version: 1, KeyringID: testKeyringID, RepoID: testRepoID, KeyIDs: []string{"k1", "k2"}}
+	// 配布物の並びは tools/build.sh と tools/sign.sh のとおり(実行ファイルは署名せず、adapter.json の sha256 で照らす。spec 3.2.1、4.2)。
 	a, b := "linux-x86_64", "linux-arm64"
 	e.k.Bundle = &fake.Bundle{Version: "1.0.0", FilesBy: map[string][]contract.BundleFile{
-		a: {bundleFile(a+"/sitate", a, "core-x"), bundleFile(a+"/adapters/provision/b2/adapter.json", a, "prov-x"), bundleFile(a+"/adapters/check/fsck/adapter.json", a, "check-x")},
-		b: {bundleFile(b+"/sitate", b, "core-a"), bundleFile(b+"/adapters/provision/b2/adapter.json", b, "prov-a")},
+		a: append(provisionFiles(a, "exe-x"), bundleFile(a+"/sitate", a, "core-x"), bundleFile(a+"/adapters/check/fsck/adapter.json", a, "check-x"),
+			bundleFile("sitate-1.0.0-src.tar.gz", "any", "src"), bundleFile("sitate-1.0.0.spdx.json", "any", "sbom")),
+		b: append(provisionFiles(b, "exe-a"), bundleFile(b+"/sitate", b, "core-a")),
 	}}
 	e.k.Verifier = e.ver
 	e.st.Items = map[string]json.RawMessage{}
@@ -177,12 +193,22 @@ func TestContractKeysPhraseVerify(t *testing.T) {
 	}
 	// bin/: 核とアダプタ(保管先準備)を両方の arch で、署名つきで、同じ相対パスに書く。check と価格表などは書かない。
 	for rel, want := range map[string]string{"linux-x86_64/sitate": "core-x", "linux-arm64/sitate": "core-a",
-		"linux-x86_64/adapters/provision/b2/adapter.json": "prov-x", "linux-arm64/adapters/provision/b2/adapter.json": "prov-a"} {
+		"linux-x86_64/adapters/provision/b2/adapter.json": provisionDecl("exe-x"), "linux-arm64/adapters/provision/b2/adapter.json": provisionDecl("exe-a"),
+		"sitate-1.0.0-src.tar.gz": "src", "sitate-1.0.0.spdx.json": "sbom"} {
 		if bodies["bin/1.0.0/"+rel] != want {
 			t.Errorf("bin/1.0.0/%s を書いていない: %v", rel, bodies)
 		}
 		if bodies["bin/1.0.0/"+rel+".sig"] != "sig:"+want {
 			t.Errorf("bin/1.0.0/%s.sig を書いていない", rel)
+		}
+	}
+	// 実行ファイルは写すが署名を書かない(adapter.json の sha256 で照らす)。
+	for rel, want := range map[string]string{"linux-x86_64/adapters/provision/b2/b2": "exe-x", "linux-arm64/adapters/provision/b2/b2": "exe-a"} {
+		if bodies["bin/1.0.0/"+rel] != want {
+			t.Errorf("bin/1.0.0/%s を書いていない", rel)
+		}
+		if _, ok := bodies["bin/1.0.0/"+rel+".sig"]; ok {
+			t.Errorf("bin/1.0.0/%s.sig を書いた", rel)
 		}
 	}
 	for k := range bodies {
@@ -300,7 +326,8 @@ func phraseCheckSigs(t *testing.T, e *phraseEnv) {
 		t.Errorf("署名を検証していない: %v", e.ver.Seen)
 	}
 	for _, w := range e.ver.Seen {
-		if w.Version != "1.0.0" || !strings.HasPrefix(w.Path, w.Arch+"/") {
+		top := w.Arch == "any" && !strings.Contains(w.Path, "/") // 版ディレクトリ直下のソースと SBOM
+		if w.Version != "1.0.0" || (!top && !strings.HasPrefix(w.Path, w.Arch+"/")) {
 			t.Errorf("trusted comment の期待値が配布物の形でない: %+v", w)
 		}
 	}

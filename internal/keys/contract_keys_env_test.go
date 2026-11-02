@@ -205,7 +205,8 @@ type kenv struct {
 }
 
 func newEnv() *kenv {
-	store, _, _ := fake.NewTestStore(fake.RoleWrite)
+	store, _, core := fake.NewTestStore(fake.RoleWrite)
+	_ = core.SetDefaultRetention("b", contract.RetentionDailyDays) // spec 4.2 の既定保持。無ければ BUCKET_MISMATCH
 	e := &kenv{st: &stateT{StateFiles: &fake.StateFiles{}}, ks: &recKS{}, run: &opRunner{Resp: map[string]func() (json.RawMessage, error){}}, pr: &recProbe{}, rec: &fake.Recorder{}, dir: nextDir()}
 	e.pr.rec = e.rec
 	e.istore = &intentStore{ObjectStore: store, rec: e.rec, dir: e.dir}

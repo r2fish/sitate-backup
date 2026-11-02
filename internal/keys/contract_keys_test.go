@@ -173,7 +173,7 @@ func keyringV(t *testing.T, entropy []byte, ver int) []byte {
 	}
 	body, _ := json.Marshal(map[string]any{"format": "sitate.keyring/v1", "repo_id": "rp-1", "keyring_id": "kr-99999999999999999999999999999999",
 		"keyring_version": ver, "current_key_id": "k1", "keys": []map[string]string{{"key_id": "k1", "key": hex.EncodeToString(master)}}})
-	obj, err := (&harness.RefCodec{}).Encode(contract.MagicKeyring, strings.Repeat("99", 16), contract.Header{FormatVersion: contract.FormatVersion, Mark: mark}, body, kek)
+	obj, err := (&harness.RefCodec{}).Encode(contract.MagicKeyring, strings.Repeat("99", 16), contract.Header{Kind: contract.MagicKeyring, FormatVersion: contract.FormatVersion, Mark: mark}, body, kek)
 	if err != nil {
 		t.Fatal(err)
 	}
