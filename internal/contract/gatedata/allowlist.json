@@ -285,7 +285,7 @@
    "flags": [
     {
      "name": "kit-version",
-     "value": "int"
+     "value": "word"
     },
     {
      "name": "copies",
