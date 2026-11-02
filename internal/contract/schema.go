@@ -60,13 +60,33 @@ func SchemaPaths() ([]string, error) {
 	return r, err
 }
 
-// Validate は JSON 文書を相対パスで指定したスキーマ(例 "cli/envelope.json")で検証する。
-func Validate(schemaPath string, doc []byte) error {
+var (
+	compileMu sync.Mutex
+	schemas   = map[string]*jsonschema.Schema{}
+)
+
+// compiled はスキーマをパスごとに 1 回だけコンパイルする。Compiler は並行に呼べない(Run の並行で Validate が重なる)。
+func compiled(schemaPath string) (*jsonschema.Schema, error) {
+	compileMu.Lock()
+	defer compileMu.Unlock()
+	if sch, ok := schemas[schemaPath]; ok {
+		return sch, nil
+	}
 	c, err := loadCompiler()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	sch, err := c.Compile(SchemaBase + schemaPath)
+	if err != nil {
+		return nil, err
+	}
+	schemas[schemaPath] = sch
+	return sch, nil
+}
+
+// Validate は JSON 文書を相対パスで指定したスキーマ(例 "cli/envelope.json")で検証する。
+func Validate(schemaPath string, doc []byte) error {
+	sch, err := compiled(schemaPath)
 	if err != nil {
 		return err
 	}

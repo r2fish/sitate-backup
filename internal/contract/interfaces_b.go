@@ -67,8 +67,8 @@ type AdapterRunner interface {
 	// Run は要求 JSON を渡して結果 JSON を返す。取得アダプタは結果の前に onFrame へストリームのフレームを渡す
 	// (背圧: onFrame が返るまで次を読まない。途中で子が終わったら onFrame の後に ErrAdapterExited 相当の *Error を返す)。
 	// 取得アダプタの end のフレームも onFrame に渡す(呼び出し側が終わりの鍵を照らす)。
-	// アダプタの終了 1 は結果として返さず必ず誤りで返す。NOT_IMPLEMENTED・INTERNAL 以外の error.code は ADAPTER_ERROR の *Error
-	// (detail.adapter_code に error.code)で、Error.Adapter に error の全体を載せる。誤りが nil の結果は終了 0 だけ。
+	// アダプタの終了 1 は結果として返さず必ず誤りで返し、どの経路でも Error.Adapter に error の全体を載せる。NOT_IMPLEMENTED・INTERNAL 以外の
+	// error.code は ADAPTER_ERROR の *Error(detail.adapter_code に error.code)。誤りが nil の結果は終了 0 だけ。
 	Run(ctx context.Context, rc RunContext, kind, name string, req json.RawMessage, onFrame func(Frame) error) (json.RawMessage, error)
 }
 

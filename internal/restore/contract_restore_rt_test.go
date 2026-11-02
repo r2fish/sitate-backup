@@ -143,6 +143,7 @@ type adReq struct {
 // 失敗した start(何も作らなかった)は ADAPTER_ERROR で返り、復元は読み出しを始めない。
 func TestContractRestoreTestStartRequest(t *testing.T) {
 	e := rtWorld(t)
+	e.St.Items["host_keys"] = json.RawMessage(`[{"role":"restore_dest","host":"dest.example.invalid","host_key_fp":"` + fpDest + `"}]`) // 固定した指紋が無ければ start の前に止まる
 	e.AR.Script("restore-dest",
 		fake.Step{Outcome: fake.OutcomeSuccess, Result: json.RawMessage(`{"resources":[],"state":"absent"}`)}, // 掃引の inspect
 		fake.Step{Outcome: fake.OutcomeError, ErrCode: "ADAPTER_FAILED"})                                      // start
