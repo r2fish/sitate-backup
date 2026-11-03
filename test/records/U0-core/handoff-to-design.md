@@ -275,3 +275,21 @@ U1f-1 の途中から: `--snapshot-key-stdin` の標準入力の終わりの `RU
 導入の話の流れに毎回の警告が混ざるので、A2 の前に決めたい。
 
 急がない疑義: 導入中に飛ばした結果 `{"skipped":true,"reason":"setup_incomplete"}` は結果のスキーマに形が無い。`init` の再実行で `journal/pre-master` へ戻す `write_intent` の平文は、`probe/` のほかに `repo.json`・`keyring/` などのキー名を含む(秘密は含まない)。
+
+## 34. 主経路の第 3 段から(2026-11-03)
+
+### 34.1 裁定が要る(実物の導入の seal が止まる)
+
+`seal` の `apply` が書く `/etc/sitate/sitate.yaml` の置き場を、`sitate` が書ける形にする段が `bootstrap`(仕様 3.7、`bootstrap.ts`)に無い。無いと `apply` が `DEF_FILE_WRITE_FAILED` で `applying` のまま止まる。第 3 段の台本は段 (5) に 1 行足して通した。案 A: 段 (5) で `/etc/sitate` を所有者 `sitate` で作る。案 B: 定義の写しを状態ディレクトリの下に置く。
+
+### 34.2 報告
+
+- D-0163: 実物の `sshd` の強制コマンド経由で確かめた。`memlock 64` で 38 / 38 回の封筒に `MLOCK_FAILED`、`memlock unlimited` で 0 回。
+- メモリのピーク(合成データ約 2.6 MB、`mlockall` あり): `restore-test` のバックアップサーバーの核 438840 kB、`backup` 約 74 MB、復元先の核 23796 kB。1 GB のサーバーで余裕が小さいので、A2 の実機で記録する。
+
+### 34.3 疑義(急がない)
+
+- G2: 承認の前の `apply --id` が `SIGNATURE_INVALID` を返す。`CHANGE_STATE_INVALID` が自然かもしれない。
+- G3: `ssh-host` が作業ディレクトリを作れない失敗が `SESSION_EXISTS` と報告される。
+- G4: 復元で symlink の `mtime_ns` を戻さない(仕様 3.1.2.4 のとおり)。
+- G5: `seal` の後の `notify-add`・`notify-change` の試験通知は `facts.change_id` に提案の id を載せるはずだが、核は null を送る(未検証の経路)。
