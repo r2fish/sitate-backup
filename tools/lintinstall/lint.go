@@ -95,6 +95,7 @@ func lintDoc(root, doc string, complete bool) ([]string, bool, error) {
 	if complete {
 		problems = append(problems, lintSteps(seen)...)
 		problems = append(problems, lintStep1(lines)...)
+		problems = append(problems, lintStep13(lines)...)
 	}
 	return problems, false, nil
 }

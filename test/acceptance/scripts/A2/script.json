@@ -1,5 +1,5 @@
 {
-  "version": "0.1",
+  "version": "1.0",
   "exit_codes": {"0": "完了", "1": "不合格", "2": "台本に無いカード", "3": "無効(H5 が起きた)"},
   "unscripted_question_answer": "分かりません。推奨の案でお願いします",
   "continue_input": "続けてください",

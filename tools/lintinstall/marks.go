@@ -12,7 +12,6 @@ type markRule struct{ ptr, op string }
 
 var allowedMarks = map[string]markRule{
 	"DIST_KEY_FINGERPRINT": {"/result/signing_key_fp", "="},
-	"TIMER_NAMES":          {"/result/schedule", "⊇"},
 	"WARNING_ALLOWLIST":    {"/warnings/<i>/code", "⊆"},
 }
 
@@ -28,7 +27,7 @@ func lintMarks(doc string) []string {
 		name := strings.TrimSuffix(strings.TrimPrefix(m, "{{"), "}}")
 		if _, ok := allowedMarks[name]; !ok && !seen[m] {
 			seen[m] = true
-			out = append(out, fmt.Sprintf("印 %s は許可リスト(DIST_KEY_FINGERPRINT・TIMER_NAMES・WARNING_ALLOWLIST)に無い", m))
+			out = append(out, fmt.Sprintf("印 %s は許可リスト(DIST_KEY_FINGERPRINT・WARNING_ALLOWLIST)に無い", m))
 		}
 	}
 	return out
@@ -105,6 +104,21 @@ func lintStep1(lines []string) []string {
 		c := cells(l)
 		if strings.HasPrefix(strings.TrimSpace(l), "|") && len(c) == len(tableHeader) && c[0] == "1" && !fpRowRe.MatchString(c[4]) {
 			out = append(out, fmt.Sprintf("%s:%d: 手順 1 の期待する値に `%s` = `{{DIST_KEY_FINGERPRINT}}` が無い", path, i+1, fingerprintPtr))
+		}
+	}
+	return out
+}
+
+var scheduleRowRe = regexp.MustCompile("`/result/schedule` *= *`<定義の schedule>`")
+
+// lintStep13 は手順 13 の行の期待する値に、定義の schedule との照合(schedule = <定義の schedule>)があることを検査する
+// (照合が消えると、タイマーの確認が何も確かめない合格になる。D-0168)。
+func lintStep13(lines []string) []string {
+	var out []string
+	for i, l := range lines {
+		c := cells(l)
+		if strings.HasPrefix(strings.TrimSpace(l), "|") && len(c) == len(tableHeader) && c[0] == "13" && !scheduleRowRe.MatchString(c[4]) {
+			out = append(out, fmt.Sprintf("%s:%d: 手順 13 の期待する値に `/result/schedule` = `<定義の schedule>` が無い", path, i+1))
 		}
 	}
 	return out

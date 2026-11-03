@@ -47,14 +47,14 @@ cp app/src/i18n/ja/catalog.json "$assets/i18n/ja/"; cp app/src/i18n/en/catalog.j
 for f in app/src/tools/*.json; do [ -e "$f" ] && cp "$f" "$assets/tools/"; done
 # models.json の候補が空だとエージェントが起動しない(LLM_MODEL_NOT_FOUND)。空の一覧は署名しない。
 jq -e '.models | length > 0' "$assets/models.json" >/dev/null || { echo "sign($mode): assets/models/models.json の候補が空。署名しない" >&2; exit 1; }
-# 手順書の印の値。TIMER_NAMES と WARNING_ALLOWLIST は手順書の文面にも marks.json にも同じ値を入れる(手順の合格の判定は marks.json、エージェントは文面を読む)。
-# TIMER_NAMES: 核の status.schedule は日次の時刻の文字列で、タイマーの単位の名前の一覧を返さない(仕様の穴として報告済み)ため、空の一覧にする。
+# 手順書の印の値。WARNING_ALLOWLIST は手順書の文面にも marks.json にも同じ値を入れる(手順の合格の判定は marks.json、エージェントは文面を読む)。
+# 手順 13 の schedule の期待は定義の値(D-0168)で、署名のときに埋める印ではない。
 # 指紋は仕様 4.5 の「指紋」の形: SHA256: + OpenSSH の blob(ssh-ed25519 と鍵 32 バイト)の SHA-256 の base64(= なし)。核の version の signing_key_fp と同じ文字列にする。
 # 引数は minisign の公開鍵(base64 の 1 行。方式 2 バイト + 鍵 ID 8 バイト + 鍵 32 バイト)。
 ssh_fp() {
   { printf '\x00\x00\x00\x0bssh-ed25519\x00\x00\x00\x20'; printf '%s' "$1" | base64 -d | tail -c 32; } | openssl dgst -sha256 -binary | base64 | tr -d '=' | sed 's/^/SHA256:/'
 }
-timer_names='[]'; warning_allowlist='[]'
+warning_allowlist='[]'
 if [ "$mode" = test ]; then
   fp="$(ssh_fp "$(sed -n 2p "$pub")")"
 else
@@ -64,9 +64,9 @@ else
 fi
 # 指紋の印が無い手順書(置換が何も起きず、利用者が確かめる指紋が無い)には署名しない。
 grep -q '{{DIST_KEY_FINGERPRINT}}' docs/install.md || { echo "sign($mode): docs/install.md に {{DIST_KEY_FINGERPRINT}} の印が無い。署名しない" >&2; exit 1; }
-sed -e "s#{{DIST_KEY_FINGERPRINT}}#$fp#g" -e "s#{{TIMER_NAMES}}#$timer_names#g" -e "s#{{WARNING_ALLOWLIST}}#$warning_allowlist#g" docs/install.md > "$assets/install.md"
+sed -e "s#{{DIST_KEY_FINGERPRINT}}#$fp#g" -e "s#{{WARNING_ALLOWLIST}}#$warning_allowlist#g" docs/install.md > "$assets/install.md"
 if grep -q '{{[A-Z_]*}}' "$assets/install.md"; then echo "sign($mode): 手順書に埋まっていない印が残っている: $(grep -o '{{[A-Z_]*}}' "$assets/install.md" | sort -u | tr '\n' ' ')" >&2; exit 1; fi
-jq -n --arg fp "$fp" --argjson t "$timer_names" --argjson w "$warning_allowlist" '{DIST_KEY_FINGERPRINT: $fp, TIMER_NAMES: $t, WARNING_ALLOWLIST: $w}' > "$assets/marks.json"
+jq -n --arg fp "$fp" --argjson w "$warning_allowlist" '{DIST_KEY_FINGERPRINT: $fp, WARNING_ALLOWLIST: $w}' > "$assets/marks.json"
 # 元の手順書の sha256(5.19 の完了条件で使う)は署名の対象でないので、同梱物の置き場の外に出す。
 sha256sum docs/install.md | cut -d' ' -f1 > "dist/$mode/install.md.orig.sha256"
 # 署名の対象を集める(署名はまだしない)

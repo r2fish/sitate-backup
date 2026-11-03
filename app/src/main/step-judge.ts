@@ -81,7 +81,15 @@ function literal(rhs: string, marks: Marks): { ok: true; value: unknown } | { ok
   try { return { ok: true, value: JSON.parse(rhs) }; } catch { return { ok: true, value: rhs }; }
 }
 
-function holds(env: unknown, e: Expect, marks: Marks): boolean {
+/** 手順 13 の右辺 `<定義の schedule>`: 手順 4 の定義の `schedule` の値(D-0168)。定義に書かなければ既定(spec 4.1 の `02:30`)。 */
+const DEF_SCHEDULE_REF = "<定義の schedule>";
+const DEFAULT_SCHEDULE = "02:30";
+
+function holds(env: unknown, e: Expect, marks: Marks, defSchedule: string): boolean {
+  if (e.rhs === DEF_SCHEDULE_REF) {
+    const vals = resolve(env, e.pointer);
+    return e.op === "=" && vals !== undefined && vals.length > 0 && vals.every((v) => v === defSchedule);
+  }
   if (e.rhs.startsWith("/")) {
     // 別の欄への参照: 同じ要素番号の対で等しい。
     const left = resolve(env, e.pointer);
@@ -102,6 +110,8 @@ export class StepJudge {
   readonly #steps: readonly Step[];
   readonly #marks: Marks;
   readonly #passed = new Set<string>();
+  /** 手順 4 の定義の schedule。`def validate` の合格した結果の `/result/normalized/schedule`(無ければ既定)。 */
+  #defSchedule = DEFAULT_SCHEDULE;
   /** 手順 → コマンドの番号 → 最後の結果。完了確認コマンドが 2 つの手順は両方の最後の結果で判定する。 */
   readonly #last = new Map<string, Map<number, unknown>>();
 
@@ -118,12 +128,17 @@ export class StepJudge {
   reset(): void {
     this.#passed.clear();
     this.#last.clear();
+    this.#defSchedule = DEFAULT_SCHEDULE;
   }
 
   /** 道具の結果(整形した封筒)を受ける。この結果で新しく合格した手順の ID を返す(同じ手順は 2 度返さない)。 */
   judge(env: { command?: unknown; dry_run?: unknown } & Record<string, unknown>): string[] {
     const cmd = Array.isArray(env.command) ? (env.command as unknown[]).map(String) : [];
     const dry = env.dry_run === true;
+    if (same(cmd, ["def", "validate"]) && env["ok"] === true) {
+      const sched = resolve(env, "/result/normalized/schedule")?.[0];
+      this.#defSchedule = typeof sched === "string" ? sched : DEFAULT_SCHEDULE;
+    }
     const fresh: string[] = [];
     for (const step of this.#steps) {
       if (this.#passed.has(step.id)) continue;
@@ -136,7 +151,7 @@ export class StepJudge {
       });
       const m = this.#last.get(step.id);
       if (step.checks.length === 0 || m === undefined || step.checks.some((_c, i) => !m.has(i))) continue;
-      if (step.checks.every((c, i) => c.expects.length > 0 && c.expects.every((e) => holds(m.get(i), e, this.#marks)))) { this.#passed.add(step.id); fresh.push(step.id); }
+      if (step.checks.every((c, i) => c.expects.length > 0 && c.expects.every((e) => holds(m.get(i), e, this.#marks, this.#defSchedule)))) { this.#passed.add(step.id); fresh.push(step.id); }
     }
     return fresh;
   }

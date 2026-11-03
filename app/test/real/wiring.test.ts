@@ -229,7 +229,7 @@ test("[mp-app 結線] bootstrap → 手順 2〜10(承認カード・署名・確
     assert.equal(rig.boxLog.find((b) => b.ref === "admin")?.mode, "no-save");
     const passedSteps = rig.lines.map((l) => /^手順 (\d+) が合格しました/.exec(l.text)?.[1]).filter((x): x is string => x !== undefined);
     const missing = Array.from({ length: 13 }, (_, i) => String(i + 1)).filter((n) => !passedSteps.includes(n));
-    // 手順 13 の合格は、TIMER_NAMES が空の一覧のため status.schedule の中身を確かめない(仕様の食い違いは test/records/mp-core3/notes.md)。
+    // 手順 13 の合格は、status.schedule が手順 4 の定義の schedule と同じ値で、doctor の timers_registered が合格のときだけ(D-0168)。
     for (const n of ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13"]) assert.ok(passedSteps.includes(n), `手順 ${n} が手順書の判定で合格する`);
     console.log("手順書の判定で合格した手順:", passedSteps.join(","), "/ 合格しなかった手順:", missing.join(",") || "なし");
     console.log("steps:\n" + steps.join("\n") + "\n--- 合格した手順(表示)---\n" + rig.lines.filter((l) => l.role === "tool").map((l) => l.text).join("\n"));

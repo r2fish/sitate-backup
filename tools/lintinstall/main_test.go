@@ -115,7 +115,7 @@ const stepsShape = `| 1 | 道具の配置 | ` + "`bootstrap`" + ` | ` + "`sitate
 | 10 | 確定 | ` + "`sitate propose seal --file -`" + ` → H4 → ` + "`sitate apply`" + ` | ` + "`sitate def show` と `sitate status`" + ` | 1 つ目: ` + "`/result/sealed` = `true`" + `。2 つ目: ` + "`/result/notify/proof_confirmed` = `true`" + ` | ` + "`NOTIFY_PROOF_MISMATCH`" + ` → 通知先を確かめる |
 | 11 | 初回の取得 | ` + "`sitate backup`" + ` | ` + "`sitate status`" + ` | ` + "`/result/last_backup/ok` = `true`" + ` | — |
 | 12 | 復元の試験 | ` + "`sitate restore-test`" + ` | ` + "`sitate status`" + ` | ` + "`/result/last_restore_test/ok` = `true`" + ` | — |
-| 13 | タイマーの確認 | 確認だけ | ` + "`sitate status` と `sitate doctor`" + ` | 1 つ目: ` + "`/result/schedule` ⊇ `{{TIMER_NAMES}}`、`/warnings/<i>/code` ⊆ `{{WARNING_ALLOWLIST}}`" + `。2 つ目: ` + "`/result/passed` = `true`" + ` | — |
+| 13 | タイマーの確認 | 確認だけ | ` + "`sitate status` と `sitate doctor`" + ` | 1 つ目: ` + "`/result/schedule` = `<定義の schedule>`、`/warnings/<i>/code` ⊆ `{{WARNING_ALLOWLIST}}`" + `。2 つ目: ` + "`/result/passed` = `true`" + ` | — |
 `
 
 func TestSteps1to13ShapePass(t *testing.T) {
@@ -201,15 +201,22 @@ func TestMarkAllowList(t *testing.T) {
 	wantProblem(t, lint(t, "| 1 | a | 確認だけ | `sitate version` | `/result/signing_key_fp` = `{{DIST_KEY_FINGERPRNT}}` | — |\n"), "は許可リスト(")
 	wantProblem(t, lintFull(t, stepsDoc()+"\n本文 {{OTHER_MARK}}\n"), "は許可リスト(")
 	// 印は決まった Pointer・演算子の右辺だけ
-	wantProblem(t, lint(t, "| 1 | a | 確認だけ | `sitate doctor` | `/result/passed` = `{{TIMER_NAMES}}` | — |\n"), "形だけに置ける")
-	wantProblem(t, lint(t, "| 1 | a | 確認だけ | `sitate status` | `/result/schedule` = `{{TIMER_NAMES}}` | — |\n"), "形だけに置ける")
+	wantProblem(t, lint(t, "| 1 | a | 確認だけ | `sitate doctor` | `/result/passed` = `{{WARNING_ALLOWLIST}}` | — |\n"), "形だけに置ける")
+	wantProblem(t, lint(t, "| 1 | a | 確認だけ | `sitate status` | `/result/schedule` = `{{WARNING_ALLOWLIST}}` | — |\n"), "形だけに置ける")
+	wantProblem(t, lint(t, "| 1 | a | 確認だけ | `sitate status` | `/result/schedule` = `{{TIMER_NAMES}}` | — |\n"), "は許可リスト(")
 	wantProblem(t, lint(t, "| 1 | a | 確認だけ | `sitate doctor` | `/result/passed` = `{{DIST_KEY_FINGERPRINT}}` | — |\n"), "形だけに置ける")
+}
+
+func TestStep13ScheduleCheck(t *testing.T) {
+	// 定義の schedule との照合が消えた手順 13 を落とす(空虚な合格。D-0168)
+	wantProblem(t, lintFull(t, strings.Replace(stepsDoc(), "`/result/schedule` = `<定義の schedule>`、", "", 1)), "手順 13 の期待する値")
+	wantProblem(t, lintFull(t, strings.Replace(stepsDoc(), "`/result/schedule` = `<定義の schedule>`", "`/result/schedule` = `02:30`", 1)), "手順 13 の期待する値")
 }
 
 func TestFingerprintOfStep1(t *testing.T) {
 	// 指紋の直書き・別の印・印の無い手順 1 を落とす
 	wantProblem(t, lint(t, "| 2 | a | 確認だけ | `sitate version` | `/result/signing_key_fp` = `SHA256:abcdefghijklmnopqrstuvwxyzabcdefghijklmnopq` | — |\n"), "指紋の直書き")
-	wantProblem(t, lint(t, "| 2 | a | 確認だけ | `sitate version` | `/result/signing_key_fp` = `{{TIMER_NAMES}}` | — |\n"), "指紋の直書き")
+	wantProblem(t, lint(t, "| 2 | a | 確認だけ | `sitate version` | `/result/signing_key_fp` = `{{WARNING_ALLOWLIST}}` | — |\n"), "指紋の直書き")
 	wantProblem(t, lintFull(t, strings.Replace(stepsDoc(), "`/result/signing_key_fp` = `{{DIST_KEY_FINGERPRINT}}`", "`/result/version` = `1.0.0`", 1)), "手順 1 の期待する値")
 	wantProblem(t, lintFull(t, strings.Replace(stepsDoc(), "`/result/signing_key_fp` = `{{DIST_KEY_FINGERPRINT}}`", "`/ok` = `true`", 1)), "手順 1 の期待する値")
 }

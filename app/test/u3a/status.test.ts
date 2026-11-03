@@ -136,10 +136,10 @@ const PROC = `
 |---|---|---|---|---|---|
 | 1 | a | \`bootstrap\` | \`sitate version\` と \`sitate doctor\` | 1 つ目: \`/ok\` = \`true\`、\`/result/signing_key_fp\` = \`{{DIST_KEY_FINGERPRINT}}\`。2 つ目: \`/result/passed\` = \`true\` | — |
 | 2 | b | x | \`sitate init-storage --dry-run --endpoint ...\` | \`/result/plan/errors\` = \`[]\` | — |
-| 3 | c | x | \`sitate status\` | \`/result/kit/confirmed\` = \`true\`、\`/result/schedule\` ⊇ \`{{TIMER_NAMES}}\`、\`/warnings/<i>/code\` ⊆ \`{{WARNING_ALLOWLIST}}\` | — |
+| 3 | c | x | \`sitate status\` | \`/result/kit/confirmed\` = \`true\`、\`/result/schedule\` = \`<定義の schedule>\`、\`/warnings/<i>/code\` ⊆ \`{{WARNING_ALLOWLIST}}\` | — |
 | 4 | d | x | \`sitate bucket check\` | \`/result/permissions/<i>/actual\` = \`/result/permissions/<i>/expected\` | — |
 `;
-const marks = { DIST_KEY_FINGERPRINT: "SHA256:abc", TIMER_NAMES: ["backup", "verify"], WARNING_ALLOWLIST: ["OK_WARN"] };
+const marks = { DIST_KEY_FINGERPRINT: "SHA256:abc", WARNING_ALLOWLIST: ["OK_WARN"] };
 
 test("step judge: reads the table, judges each step once, needs both commands for a two-command step and honours --dry-run", () => {
   assert.deepEqual(parseSteps(PROC).map((s) => s.id), ["1", "2", "3", "4"]);
@@ -149,12 +149,12 @@ test("step judge: reads the table, judges each step once, needs both commands fo
   assert.deepEqual(j.judge({ command: ["doctor"], ok: true, result: { passed: true } } as never), [], "同じ手順の合格を 2 度数えない");
   assert.deepEqual(j.judge({ command: ["init-storage"], dry_run: false, ok: true, result: { plan: { errors: [] } } } as never), [], "dry-run でない結果は照らさない");
   assert.deepEqual(j.judge({ command: ["init-storage"], dry_run: true, ok: true, result: { plan: { errors: [] } } } as never), ["2"]);
-  assert.deepEqual(j.judge({ command: ["status"], ok: true, result: { kit: { confirmed: true }, schedule: ["backup", "verify", "x"] }, warnings: [{ code: "OK_WARN" }] } as never), ["3"]);
+  assert.deepEqual(j.judge({ command: ["status"], ok: true, result: { kit: { confirmed: true }, schedule: "02:30" }, warnings: [{ code: "OK_WARN" }] } as never), ["3"]);
   assert.deepEqual(j.judge({ command: ["bucket", "check"], ok: true, result: { permissions: [{ actual: 1, expected: 1 }, { actual: 2, expected: 2 }] } } as never), ["4"]);
   j.reset();
   assert.deepEqual(j.judge({ command: ["bucket", "check"], ok: true, result: { permissions: [{ actual: 1, expected: 2 }] } } as never), [], "等式が外れれば合格しない");
   const k = new StepJudge(PROC, {});
-  assert.deepEqual(k.judge({ command: ["status"], ok: true, result: { kit: { confirmed: true }, schedule: [] }, warnings: [] } as never), [], "値の無い印を含む期待は満たされない");
+  assert.deepEqual(k.judge({ command: ["status"], ok: true, result: { kit: { confirmed: true }, schedule: "02:30" }, warnings: [{ code: "OTHER" }] } as never), [], "印の値が無ければ許容の外の警告は合格しない");
 });
 
 test("session: a passing step draws the passed line once and signals a round trip reset; a repeat does not", async () => {

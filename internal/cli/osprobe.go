@@ -302,24 +302,24 @@ func (p *HostProbe) timersRegistered(ctx context.Context) bool {
 			backend = t.Backend
 		}
 	}
-	if backend == "cron" {
-		out, err := p.run(ctx, "crontab", "-l")
-		return err == nil && strings.Contains(string(out), "--invoked-by timer")
-	}
-	ents, err := os.ReadDir(p.TimersDir)
-	if err != nil {
+	tab, err := contract.LoadTimerTable()
+	if err != nil || len(tab.Units) == 0 {
 		return false
 	}
-	n := 0
-	for _, e := range ents {
-		if name := e.Name(); strings.HasSuffix(name, ".timer") {
-			if out, err := p.run(ctx, "systemctl", "--user", "is-enabled", name); err != nil || strings.TrimSpace(string(out)) != "enabled" {
-				return false
-			}
-			n++
+	if backend == "cron" {
+		out, err := p.run(ctx, "crontab", "-l")
+		return err == nil && strings.Count(string(out), "--invoked-by timer") >= len(tab.Units) // 単位ごとに 1 行以上(@reboot の行は余分に数える)
+	}
+	for _, u := range tab.Units { // 表の単位がすべて置かれ、有効であること(1 つでも欠ければ不合格)
+		name := tab.UnitPrefix + u.Name + ".timer"
+		if _, err := os.Stat(filepath.Join(p.TimersDir, name)); err != nil {
+			return false
+		}
+		if out, err := p.run(ctx, "systemctl", "--user", "is-enabled", name); err != nil || strings.TrimSpace(string(out)) != "enabled" {
+			return false
 		}
 	}
-	return n > 0
+	return true
 }
 
 func (p *HostProbe) fileModes() bool {
