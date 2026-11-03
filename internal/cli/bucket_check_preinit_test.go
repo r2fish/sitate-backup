@@ -26,8 +26,9 @@ func errCodeOf(t *testing.T, args ...string) string {
 }
 
 func TestBucketCheckBeforeInitIsNotNotInitialized(t *testing.T) {
-	if c := errCodeOf(t, "bucket", "check"); c == "NOT_INITIALIZED" {
-		t.Errorf("bucket check は init の前も前提で止めない: %s", c)
+	// init の前に候補の key_ref も無ければ DEF_INVALID(spec 3.1.2 の bucket check。D-0160)。NOT_INITIALIZED ではない。
+	if c := errCodeOf(t, "bucket", "check"); c != "DEF_INVALID" {
+		t.Errorf("bucket check は init の前も前提で止めない(候補が無ければ DEF_INVALID): %s", c)
 	}
 	if c := errCodeOf(t, "verify"); c != "NOT_INITIALIZED" {
 		t.Errorf("verify は init の前は NOT_INITIALIZED のまま: %q", c)

@@ -71,8 +71,8 @@ func TestEstimateEndpointWithoutDefinition(t *testing.T) {
 	if u := out["uncounted"].([]any); len(u) != 2 || u[0] != "server" || u[1] != "restore_dest" {
 		t.Errorf("uncounted: %v", u)
 	}
-	if out["over_ceiling"] != nil {
-		t.Errorf("定義が無ければ上限と比べない: %v", out["over_ceiling"])
+	if out["over_ceiling"] != false || out["cost_ceiling_yen"] != 3000.0 {
+		t.Errorf("定義が無くても既定の上限 3,000 と比べる(月額が出るので null にならない): %v %v", out["over_ceiling"], out["cost_ceiling_yen"])
 	}
 }
 

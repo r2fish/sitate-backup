@@ -55,6 +55,7 @@ func statusEntry(d *Deps, ctx context.Context, _ contract.Call) (contract.Reply,
 	get("snapshots", &snaps)
 	sort.Slice(snaps, func(i, j int) bool { return snaps[i].CreatedAt < snaps[j].CreatedAt })
 
+	est := statusEstimateOf(ctx, d)
 	res := map[string]any{
 		"initialized": initialized, "running": runningOf(d), "schedule": scheduleOf(ctx, d),
 		"last_backup": lastBackupOf(snaps), "last_restore_test": lastRestoreOf(ctx, d, now),
@@ -63,8 +64,8 @@ func statusEntry(d *Deps, ctx context.Context, _ contract.Call) (contract.Reply,
 		"notify": notifyOf(ctx, d), "restore_sessions": []any{}, "teardown_pending": []any{},
 		"storage_reads_this_month": readsOf(ctx, d, now), "storage": storageOf(ctx, d),
 		"retention": retentionOf(ctx, d, snaps), "uncovered": []any{}, "uncovered_count": 0,
-		"estimate": map[string]any{"monthly_jpy": nil, "cost_ceiling_yen": ceilingOf(ctx, d), "over_ceiling": nil, "uncounted": []string{"server", "restore_dest"}},
-		"warnings": warningsOf(ctx, d),
+		"estimate": est.result,
+		"warnings": warningsOf(ctx, d, est.warnings, now),
 	}
 	b, _ := json.Marshal(res)
 	return contract.Reply{Result: b}, nil
@@ -111,16 +112,6 @@ func scheduleOf(ctx context.Context, d *Deps) string {
 		return scheduleDefault
 	}
 	return def.Schedule
-}
-
-func ceilingOf(ctx context.Context, d *Deps) int64 {
-	var def struct {
-		Ceiling int64 `json:"cost_ceiling_yen"`
-	}
-	if norm, _, err := d.State.ReadDef(ctx); err == nil {
-		_ = json.Unmarshal(norm, &def)
-	}
-	return def.Ceiling
 }
 
 // lastBackupOf: ok は health が pass で全対象 ok。checks_count は、イテレーション 1 にはチェックが無いので 0(状態ファイルの世代の項目に件数は無い)。
@@ -291,7 +282,7 @@ func retentionOf(ctx context.Context, d *Deps, snaps []stSnap) any {
 	return map[string]any{"last_expires_at": last, "last_extend_ok_at": ext, "protection_ends_at": prot}
 }
 
-func warningsOf(ctx context.Context, d *Deps) []any {
+func warningsOf(ctx context.Context, d *Deps, computed []string, now time.Time) []any {
 	var ws []struct {
 		Code  string `json:"code"`
 		Since string `json:"since"`
@@ -300,8 +291,15 @@ func warningsOf(ctx context.Context, d *Deps) []any {
 		_ = json.Unmarshal(v, &ws)
 	}
 	out := []any{}
+	seen := map[string]bool{}
 	for _, w := range ws {
+		seen[w.Code] = true
 		out = append(out, map[string]any{"code": w.Code, "detail": map[string]any{}, "next": []any{}, "since": w.Since})
+	}
+	for _, code := range computed { // 見積もりから今求めた継続中の警告(材料の記録が無いものは今を since とする)
+		if !seen[code] {
+			out = append(out, map[string]any{"code": code, "detail": json.RawMessage(priceUnknownDetail), "next": []any{}, "since": now.UTC().Format(time.RFC3339)})
+		}
 	}
 	return out
 }
