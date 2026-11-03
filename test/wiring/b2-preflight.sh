@@ -16,6 +16,9 @@ if [ -z "$fake" ]; then
   done
   case "$SITATE_ROLE_B2_ENDPOINT" in https://s3.*.backblazeb2.com) ;; *) echo "SITATE_ROLE_B2_ENDPOINT は https://s3.<リージョン>.backblazeb2.com の形" >&2; exit 64;; esac
 fi
+if [ -s "$out/record.jsonl" ]; then # 前の回の記録は日時つきの名前に退避する(要約に混ぜない。record.<日時>.jsonl は .gitignore の対象)
+  mv "$out/record.jsonl" "$out/record.$(date +%Y%m%dT%H%M%S).jsonl"
+fi
 bash test/env/bin/accept-env.sh prepare-a2 "$name"
 rm -f dist/test/wiring/need-doubles dist/test/wiring/doubles-done
 watcher=""

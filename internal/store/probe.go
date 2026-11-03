@@ -126,26 +126,28 @@ func (p *StoreProbe) onVersion(ctx context.Context, s contract.ObjectStore, op, 
 		return false, internalErr("contract")
 	}
 	if op == "unversioned_delete" {
-		return triedDenied(o.UnversionedDelete(ctx, key))
+		return allowed(o.UnversionedDelete(ctx, key))
 	}
 	err := o.SetLegalHold(ctx, key, ver, true)
 	if err != nil {
-		return triedDenied(err)
+		return allowed(err)
 	}
 	return true, o.SetLegalHold(ctx, key, ver, false) // 通ったら外して終える
 }
 
 func result[T any](_ T, err error) (bool, error) { return allowed(err) }
 
-// triedDenied は「試す」操作(保持の短縮・版指定なしの削除・リーガルホールド)の結果を許可の真偽にする。
-// 拒否されれば理由を問わず合格(spec 3.2.6)なので、権限・ロックの拒否に加え、保管先が返した 4xx(事業者ごとに InvalidArgument などで拒む)も拒否とする。
-// 到達不能・取り消し・時計のずれ・5xx は誤りのまま。正当な操作(延長など)の 4xx はここを通らず誤りのまま。
+// refusalCodes は、保管先が保持の短縮を 4xx で拒むときの S3 の符号(事業者ごとに権限・不正な引数・ロックのどれかで拒む)。
+var refusalCodes = map[string]bool{
+	"AccessDenied": true, "InvalidRequest": true, "InvalidArgument": true, "ObjectLocked": true, "ObjectLockedException": true,
+}
+
+// triedDenied は保持の短縮の試しだけに使う(spec 3.2.6 の「拒否されれば理由を問わず合格」はこの操作の行だけ)。
+// 権限・ロックの拒否に加え、refusalCodes の符号の 4xx も拒否とする。それ以外の 4xx(形式誤り・404 など)・到達不能・取り消し・時計のずれ・5xx は誤りのまま。
 func triedDenied(err error) (bool, error) {
-	var ce *contract.Error
-	if errors.As(err, &ce) && ce.Code == contract.CodeInternal {
-		if st := httpStatusOf(ce); st >= 400 && st < 500 {
-			return false, nil
-		}
+	var se *statusErr
+	if errors.As(err, &se) && refusalCodes[se.s3code] {
+		return false, nil
 	}
 	return allowed(err)
 }

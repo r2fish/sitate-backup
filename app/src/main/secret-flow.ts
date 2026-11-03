@@ -12,7 +12,7 @@ export interface SecretFlowDeps {
 }
 
 /** この参照名を取った引数の名前(ラベルと値の形を決める)。secret_refs だけで来たものは道具から決める(決められなければ null)。 */
-const argOf = (plan: ToolPlan, ref: string): string | null => KEYCHAIN_REF_ARGS.find((k) => plan.input[k] === ref) ?? defaultArgFor(plan.tool);
+const argOf = (plan: ToolPlan, ref: string): string | null => KEYCHAIN_REF_ARGS.find((k) => plan.input[k] === ref) ?? defaultArgFor(plan.tool, ref, plan.input, plan.secretRefs);
 
 /** 人が入れた値を、道具と引数に合う形にして返す。取り消し(閉じた)なら null。 */
 export async function askSecret(d: SecretFlowDeps, tool: string, arg: string | null, ref: string, mode: "save" | "no-save"): Promise<unknown> {

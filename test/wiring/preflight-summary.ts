@@ -6,7 +6,9 @@ import { parseEnvelope } from "../../app/test/e2e/envelope.ts";
 const WATCH = ["sitate_init_storage", "sitate_bucket_check", "sitate_backup", "sitate_extend", "sitate_restore_test"];
 const file = process.argv[2];
 if (file === undefined) { console.error("使い方: node test/wiring/preflight-summary.ts <record.jsonl>"); process.exit(64); }
-const rows = readFileSync(file, "utf8").split("\n").filter((l) => l !== "").map((l) => JSON.parse(l) as { kind: string; tool?: string; envelope?: string });
+const all = readFileSync(file, "utf8").split("\n").filter((l) => l !== "").map((l) => JSON.parse(l) as { kind: string; tool?: string; envelope?: string });
+const lastHeader = all.map((r) => r.kind).lastIndexOf("header"); // 最後の回だけを読む(追記された前の回を混ぜない)
+const rows = lastHeader < 0 ? all : all.slice(lastHeader);
 let bad = 0;
 const seen = new Set<string>();
 for (const r of rows) {

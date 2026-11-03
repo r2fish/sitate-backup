@@ -98,7 +98,9 @@ test("[mp-a2] LLM_RATE_LIMITED: 待って続行の入力で再試行し、記録
   const r = await drive([{ end: { outcome: "failure", code: "LLM_RATE_LIMITED" } }, { lines: agent("次へ進みます。") }, END_FAIL]);
   assert.equal(r.app.chats[1], script.continue_input);
   assert.equal(r.loop.counts.rateRetries, 1);
-  assert.match(readFileSync(r.file, "utf8"), /"kind":"rate_limit_wait"/);
+  const recorded = readFileSync(r.file, "utf8");
+  assert.match(recorded, /"kind":"rate_limit_wait"[^\n]*"retry":true/);
+  assert.ok(!/"kind":"continue_intervention"[^\n]*rate_limited/.test(recorded), "再試行は続行の介入の記録に混ぜない(continues に数えないため)");
   cleanup(r);
   const lim = (): AgentTurn => ({ end: { outcome: "failure", code: "LLM_RATE_LIMITED" } });
   const r2 = await drive(Array.from({ length: 8 }, lim));

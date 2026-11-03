@@ -141,6 +141,7 @@ async function compose(res: string, locale: string, keys: TrustedKey[], b: Extra
     label: t, emit: ui, onProceed: () => void session.refreshStatus(),
   });
   const session: Session = new Session({
+    canStart: () => targets.read() === null,
     registry, refs: new PathRefTable(), keychain, service: () => serviceFor("repo"), t, approvalKey: await approvalKeyOf(keychain), runner,
     now: () => signedAtOf(new Date()), sendToAgent: (id, text) => { recorder.runStart(id); host.send(id, text); },
     onChat: (l) => { chat.push(l); renderChat(); },

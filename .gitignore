@@ -9,3 +9,5 @@ node_modules/
 /.claude/worktrees/
 *.test
 /app/dist/
+/test/records/b2-preflight/record.jsonl
+/test/records/b2-preflight/record.*.jsonl

@@ -309,8 +309,8 @@ type clockFn func() time.Time
 
 func (c clockFn) Now(context.Context) (time.Time, error) { return c(), nil }
 
-// spec 3.2.6: 「試す」操作は拒否されれば理由を問わず合格。保管先が InvalidArgument などの 4xx で拒んでも拒否として扱い、
-// 正当な操作(延長)の同じ 4xx は誤りのまま。5xx は拒否にしない。
+// spec 3.2.6: 「拒否されれば理由を問わず合格」は retention_shorten の行だけ。保管先が既知の符号(InvalidArgument など)の 4xx で拒んだら拒否として扱う。
+// 権限以外の 4xx(形式誤り・404)・符号の無い 4xx・5xx は拒否にしない。legal_hold と unversioned_delete は符号が既知でも拒否と読まない(権限の拒否だけ)。
 func TestProbeTriedOps4xxIsDenied(t *testing.T) {
 	px := newProxied(t)
 	p := &StoreProbe{Keys: map[string]contract.ObjectStore{"write": px.S}}
@@ -318,6 +318,7 @@ func TestProbeTriedOps4xxIsDenied(t *testing.T) {
 		t.Fatal(err)
 	}
 	status := 400
+	px.P.hookBody = "<Error><Code>InvalidArgument</Code><Message>x</Message></Error>"
 	px.P.hook = func(n int, r *http.Request, w http.ResponseWriter) int {
 		q := r.URL.Query()
 		_, ret := q["retention"]
@@ -327,9 +328,12 @@ func TestProbeTriedOps4xxIsDenied(t *testing.T) {
 		}
 		return 0
 	}
-	for _, op := range []string{"retention_shorten", "legal_hold", "unversioned_delete"} {
-		if ok, err := p.Try(ctx, "write", op); err != nil || ok {
-			t.Errorf("%s: 4xx は拒否(false, nil)のはず: %v %v", op, ok, err)
+	if ok, err := p.Try(ctx, "write", "retention_shorten"); err != nil || ok {
+		t.Errorf("retention_shorten: 既知の符号の 4xx は拒否(false, nil)のはず: %v %v", ok, err)
+	}
+	for _, op := range []string{"legal_hold", "unversioned_delete"} {
+		if ok, err := p.Try(ctx, "write", op); err == nil || ok {
+			t.Errorf("%s: 拒否でない 4xx は拒否と読まない(誤りのまま): %v %v", op, ok, err)
 		}
 	}
 	ver, _ := p.last()
@@ -339,5 +343,37 @@ func TestProbeTriedOps4xxIsDenied(t *testing.T) {
 	status = 503
 	if ok, err := p.Try(ctx, "write", "retention_shorten"); err == nil || ok {
 		t.Errorf("5xx は拒否にしない: %v %v", ok, err)
+	}
+}
+
+// 権限以外の 4xx(400 の形式誤り・404)では、読み取り鍵の unversioned_delete も retention_shorten も拒否と読まれない。
+func TestProbeNonPermission4xxIsNotDenied(t *testing.T) {
+	for _, c := range []struct {
+		status int
+		body   string
+	}{
+		{400, "<Error><Code>MalformedXML</Code></Error>"},
+		{404, "<Error><Code>NoSuchBucket</Code></Error>"},
+		{400, ""},
+	} {
+		px := newProxied(t)
+		p := &StoreProbe{Keys: map[string]contract.ObjectStore{"read": px.S, "write": px.S}}
+		if _, err := p.PutProbe(ctx, "probe/x", []byte("p")); err != nil {
+			t.Fatal(err)
+		}
+		px.P.hookBody = c.body
+		px.P.hook = func(n int, r *http.Request, w http.ResponseWriter) int {
+			q := r.URL.Query()
+			_, ret := q["retention"]
+			if r.Method == http.MethodPut && ret || r.Method == http.MethodDelete && q.Get("versionId") == "" {
+				return c.status
+			}
+			return 0
+		}
+		for _, op := range []string{"unversioned_delete", "retention_shorten"} {
+			if ok, err := p.Try(ctx, "read", op); err == nil || ok {
+				t.Errorf("%d %q %s: 拒否と読んではならない(誤りのまま): %v %v", c.status, c.body, op, ok, err)
+			}
+		}
 	}
 }

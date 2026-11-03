@@ -203,7 +203,7 @@ export class A2Loop {
     this.counts.rateRetries += 1;
     this.#d.rec.write("rate_limit_wait", { attempt: this.counts.rateRetries, max: RATE_RETRY_MAX, wait_ms: RATE_WAIT_MS });
     await this.#d.sleep(RATE_WAIT_MS);
-    return this.#say("continue_intervention", this.#d.script.continue_input, undefined, { reason: "rate_limited" });
+    return this.#say("rate_limit_wait", this.#d.script.continue_input, undefined, { reason: "rate_limited", retry: true }); // 続行の介入(continues)には数えないので、種類も分ける
   }
 
   async #answer(reply: string): Promise<Outcome | null> {

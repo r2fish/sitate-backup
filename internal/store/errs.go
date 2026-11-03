@@ -30,19 +30,20 @@ func internalErr(reason string) *contract.Error {
 	return newErr(contract.CodeInternal, map[string]any{"component": "store", "http_status": nil, "kind": nil, "name": nil, "reason": nilReason(r)})
 }
 
-// internalStatus は保管先の想定外の 4xx(INTERNAL。detail.http_status に状態コードを残す)。bucket check の試しは 4xx を拒否として扱う。
+// internalStatus は保管先の想定外の 4xx(INTERNAL。detail.http_status に状態コードを残す)。
 func internalStatus(status int) *contract.Error {
 	return newErr(contract.CodeInternal, map[string]any{"component": "store", "http_status": status, "kind": nil, "name": nil, "reason": "contract"})
 }
 
-// httpStatusOf は internalStatus が残した状態コード(無ければ 0)。
-func httpStatusOf(ce *contract.Error) int {
-	var d struct {
-		S int `json:"http_status"`
-	}
-	_ = json.Unmarshal(ce.Detail, &d)
-	return d.S
+// statusErr は想定外の 4xx に S3 の誤りの符号を添える(契約の detail には符号の欄が無いので、包んで持つ)。
+// 保持の短縮の試しが「拒否」と読む符号を限る(probe.go の triedDenied)ために使う。
+type statusErr struct {
+	ce     *contract.Error
+	s3code string
 }
+
+func (e *statusErr) Error() string { return e.ce.Error() }
+func (e *statusErr) Unwrap() error { return e.ce }
 
 // nilReason は INTERNAL の detail.reason の列挙(exit_code / output / contract)に合わない値を contract に寄せる。
 func nilReason(r *string) any {

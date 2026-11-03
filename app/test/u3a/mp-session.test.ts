@@ -87,3 +87,20 @@ test("[mp-a2 D-0169] 「始める」: カタログの固定の指示を人の発
   assert.equal(ja["chat.start.label"], "始める");
   assert.match(ja["chat.start.guide"]!, /^バックアップの準備をお手伝いします。始めてよければ、下のボタンを押してください。分からないことは、そのまま聞いてください$/);
 });
+
+test("[mp-fix F6] 「始める」は 2 回目以降・人の発話の後・接続先の記録があるときは何も送らない", async () => {
+  const sent: string[] = [];
+  const h = harness(() => env(["status"], {}), { kind: "close" }, "x", { sendToAgent: (_id, text) => { sent.push(text); } });
+  h.s.start();
+  h.s.start();
+  assert.deepEqual(sent, ["chat.start.instruction"], "2 回押しても指示は 1 回");
+  const sent2: string[] = [];
+  const h2 = harness(() => env(["status"], {}), { kind: "close" }, "x", { sendToAgent: (_id, text) => { sent2.push(text); }, canStart: () => false });
+  h2.s.start();
+  assert.deepEqual(sent2, [], "接続先の記録があれば送らない");
+  const sent3: string[] = [];
+  const h3 = harness(() => env(["status"], {}), { kind: "close" }, "x", { sendToAgent: (_id, text) => { sent3.push(text); } });
+  await h3.s.submit("こんにちは");
+  h3.s.start();
+  assert.deepEqual(sent3, ["こんにちは"], "人の発話の後は案内の指示を送らない");
+});

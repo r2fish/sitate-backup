@@ -33,6 +33,7 @@ type proxy struct {
 	date func() time.Time
 	// hook は n 番目(0 から)の要求の前に呼ばれ、0 でなければその状態で応答して中身のサーバーへ渡さない。
 	hook     func(n int, r *http.Request, w http.ResponseWriter) int
+	hookBody string // hook が状態で応答するときの本文(S3 の誤りの XML)
 	inflight int
 	maxIn    int
 	delay    time.Duration
@@ -59,6 +60,9 @@ func (p *proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if p.hook != nil {
 		if st := p.hook(n, r, w); st != 0 {
 			w.WriteHeader(st)
+			if p.hookBody != "" {
+				_, _ = w.Write([]byte(p.hookBody))
+			}
 			return
 		}
 	}

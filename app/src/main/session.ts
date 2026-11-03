@@ -54,6 +54,8 @@ export interface SessionDeps {
   readonly judge?: StepJudge;
   /** 状態と報告の表示(`status` の読み直しと「AI に見立てを聞く」)。 */
   readonly status?: StatusView;
+  /** 「始める」を受けてよいか(接続先の記録が無いとき真)。主プロセスの側で確かめる(描き直しの前の連打や、表示の古さに頼らない)。無ければ人の発話の有無だけで決める。 */
+  readonly canStart?: () => boolean;
   /** 状態の表示が変わったとき(描画を促す)。 */
   readonly onStatus?: () => void;
   /** `source survey` が成功したとき、核の結果の全体(実名つき。モデルへは送らず、状態と報告の表示の区画にだけ描く)。 */
@@ -80,6 +82,7 @@ export class Session {
   #newSteps: string[] = [];
   #stepPassed = false;
   #seq = 0;
+  #started = false;
 
   constructor(deps: SessionDeps) {
     this.#d = deps;
@@ -95,6 +98,8 @@ export class Session {
 
   /** 最初の一歩の「始める」(spec 3.7。D-0169): カタログの固定の指示を、人の発話として描いてエージェントへ送る(秘密の検出は通さない固定文)。 */
   start(): void {
+    if (this.#started || this.#humanTexts.length > 0 || this.#d.canStart?.() === false) return;
+    this.#started = true;
     this.#deliver(this.#d.t("chat.start.instruction"));
   }
 

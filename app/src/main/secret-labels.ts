@@ -9,10 +9,15 @@ export const BUSINESS_KEY_TOOLS: ReadonlySet<string> = new Set(["sitate_init_sto
 
 /**
  * 参照名を `secret_refs` だけで渡されたとき(全道具の説明が勧める形)、その道具で秘密を取る引数の名前を道具から決める。
- * 道具が 1 種類の秘密しか取らないものだけ決め、決められなければ null(一般の文)。
+ * 道具が 1 種類の秘密しか取らないもの(sitate_init は key_ref を除いて 1 つだけのとき)だけ決め、決められなければ null(一般の文)。
  */
-export function defaultArgFor(tool: string): string | null {
+export function defaultArgFor(tool: string, ref?: string, input: Record<string, unknown> = {}, secretRefs: readonly string[] = []): string | null {
   if (tool === "sitate_notify_set") return "secret_ref";
+  if (tool === "sitate_apply") return null; // admin_ref・source_admin_ref・host_ref の 3 種を取る
+  if (tool === "sitate_init") { // key_ref(保管先の鍵。秘密ファイルから読む)を除いて、参照名が 1 つだけのときに限る
+    const others = secretRefs.filter((r) => r !== input["key_ref"] && !KEYCHAIN_REF_ARGS.some((k) => input[k] === r));
+    return ref !== undefined && others.length === 1 && others[0] === ref ? "admin_ref" : null;
+  }
   if (BUSINESS_KEY_TOOLS.has(tool) || tool === "sitate_bootstrap") return "admin_ref";
   if (tool.startsWith("sitate_source_")) return "source_admin_ref";
   if (tool.startsWith("sitate_restore_dest_")) return "host_ref";
