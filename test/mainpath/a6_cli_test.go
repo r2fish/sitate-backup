@@ -127,7 +127,10 @@ func (r *a6Run) toNotBefore(id string) {
 	if err != nil {
 		r.t.Fatalf("%s: not_before が読めない", id)
 	}
-	r.setSimTime(nb.Add(time.Minute))
+	// 同じ秒に承認した 2 件は not_before が同じで、2 件目では共有の時刻が既に過ぎている(test-tick は時刻を戻さない)
+	if to := nb.Add(time.Minute); r.simNow().Before(to) {
+		r.setSimTime(to)
+	}
 }
 
 func (r *a6Run) approveOK(id string) {
@@ -137,6 +140,13 @@ func (r *a6Run) approveOK(id string) {
 
 // a6Flow は (1)〜(5)(7): 提案 → 承認 → (遅延の経過) → 前提の変更 → apply。
 func (r *a6Run) a6Flow() {
+	r.a6Signatures()
+	r.a6Preconditions()
+	r.a6Delays()
+}
+
+// a6Signatures は (1)(2): 署名を欠く・壊した承認と、他の鍵の署名。
+func (r *a6Run) a6Signatures() {
 	t := r.t
 	// A6-1 署名なしの apply: 承認の記録(pending/approvals/<id>.json)の署名を欠かせる(試験の側で書き換える。連鎖 log.jsonl は触らない)。
 	id := r.propose("A6-1 propose", "", "delay-change", "--hours", "24")
@@ -165,10 +175,14 @@ func (r *a6Run) a6Flow() {
 		r.call("A6-2", "", "apply", "--id", id)
 	}
 	r.g.call("", "cancel", "--id", id)
+}
 
+// a6Preconditions は (3): 承認後に前提(承認済みの定義)や変更の記録を変えた apply。
+func (r *a6Run) a6Preconditions() {
+	t := r.t
 	// A6-3a 承認後に、承認済みの定義の置き場 def/approved.json(核が前提のハッシュを取る定義ファイル。{"def_hash","normalized"})の内容を変えた apply。
 	// 内容(normalized)に項目を足し、def_hash を別の値にする。終わりに元へ戻す。
-	id = r.propose("A6-3a propose", "", "delay-change", "--hours", "30")
+	id := r.propose("A6-3a propose", "", "delay-change", "--hours", "30")
 	r.approveOK(id)
 	r.toNotBefore(id)
 	r.bak.root("cp " + stateDir + "/def/approved.json /root/a6-def.bak")
@@ -198,9 +212,13 @@ func (r *a6Run) a6Flow() {
 	r.toNotBefore(id)
 	r.bak.root(`f=` + stateDir + `/pending/changes/` + id + `.json; sed -i 's/"hours":31/"hours":8/' $f; grep -c '"hours":8' $f`)
 	r.call("A6-3b", "", "apply", "--id", id)
+}
 
+// a6Delays は (4)(5)(7): 遅延中の apply、短縮の即時適用、古い signed_at の署名。
+func (r *a6Run) a6Delays() {
+	t := r.t
 	// A6-4 遅延中の apply
-	id = r.propose("A6-4 propose", "", "delay-change", "--hours", "25")
+	id := r.propose("A6-4 propose", "", "delay-change", "--hours", "25")
 	r.approveOK(id)
 	r.call("A6-4", "", "apply", "--id", id)
 
