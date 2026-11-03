@@ -111,11 +111,24 @@ func (h *host) prerequisites(t *testing.T, packages bool) {
 		"id sitate >/dev/null 2>&1 || useradd --system --create-home --home-dir "+stateDir+" --shell /bin/bash sitate",
 		"grep -q '^sitate:' /etc/subuid || usermod --add-subuids 200000-265535 --add-subgids 200000-265535 sitate",
 		"install -d -m 0700 -o sitate -g sitate "+stateDir+" "+stateDir+"/run && for f in run.lock state.lock; do [ -e "+stateDir+"/$f ] || install -m 0600 -o sitate -g sitate /dev/null "+stateDir+"/$f; done",
-		"loginctl enable-linger sitate")
+		"loginctl enable-linger sitate",
+		// 代役(第 3 段で見つけた仕様の穴): seal の apply は sitate ユーザーとして /etc/sitate/sitate.yaml を書くが、bootstrap の段 (5) にそのディレクトリを
+		// sitate が書ける形で置く手順が無い(bootstrap.ts にも仕様 3.7 にも無い)。台本が置く。記録 stage3 の「代役」。
+		"install -d -m 0755 -o sitate -g sitate /etc/sitate")
 	for _, s := range steps {
 		h.root(s)
 	}
+	// D-0163: sitate の memlock を無制限にして、sshd の PAM(pam_limits)で強制コマンド gate 経由の核にも効かせる。
+	// 環境の置き場に no-mlock という名前のファイルがあると(noMlock)足す前の状態を再現する(MLOCK_FAILED が毎回載っていたかの確認用)。
+	if !noMlock() {
+		h.root(memlockLimitsScript)
+	}
 }
+
+// memlockLimitsScript は bootstrap の段 (5) の追加(D-0163)。sshd が PAM を使い pam_limits を通すことも確かめる(無ければ止める)。
+const memlockLimitsScript = `printf 'sitate - memlock unlimited\n' > /etc/security/limits.d/sitate.conf
+chmod 0644 /etc/security/limits.d/sitate.conf
+/usr/sbin/sshd -T 2>/dev/null | grep -qi '^usepam yes' && grep -rqs 'pam_limits.so' /etc/pam.d/sshd /etc/pam.d/common-session`
 
 // registerGateKey は段 (6): 管理用 SSH 鍵を作り、強制コマンド付きの行を authorized_keys に登録する。
 func (h *host) registerGateKey(t *testing.T) ssh.Signer {

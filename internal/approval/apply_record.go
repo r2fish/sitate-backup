@@ -177,7 +177,7 @@ func (a *Approval) appendApplied(ctx context.Context, s *pstore, rec changeRec, 
 	}
 	h.Release()
 	if err == nil {
-		a.emit(ctx, "change.applied", map[string]any{"change_id": rec.ChangeID, "op": rec.Op, "not_before": nil})
+		a.emit(ctx, "change.applied", map[string]any{"change_id": rec.ChangeID, "op": rec.Op, "not_before": nil, "expired_reason": nil})
 	}
 	return err
 }

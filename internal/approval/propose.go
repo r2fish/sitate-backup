@@ -129,7 +129,7 @@ func (a *Approval) persistProposal(ctx context.Context, kind string, spec kindSp
 			return out, err
 		}
 	}
-	a.emit(ctx, "change.proposed", map[string]any{"change_id": rec.ChangeID, "op": kind, "not_before": nil})
+	a.emit(ctx, "change.proposed", map[string]any{"change_id": rec.ChangeID, "op": kind, "not_before": nil, "expired_reason": nil})
 	return out, nil
 }
 

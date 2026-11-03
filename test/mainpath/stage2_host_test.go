@@ -22,7 +22,9 @@ import (
 type host struct {
 	role, addr, fp string
 	t              *testing.T
-	holdStdin      bool // run が標準入力を終わりまで閉じない
+	holdStdin      bool            // run が標準入力を終わりまで閉じない
+	lockLim        map[string]bool // 第 3 段: 実行中の核の Max locked memory の観測値
+	via            *host           // 設定すると、この host への接続は via へ入った SSH の中の直接 TCP で張る(登録後の dest は受信がバックアップサーバーだけ)
 }
 
 type execResult struct {
@@ -61,19 +63,11 @@ func adminSigner(t *testing.T) ssh.Signer {
 
 // run は user として cmd を 1 つ実行する(強制コマンドの鍵ではその鍵のコマンドが走り、cmd は SSH_ORIGINAL_COMMAND になる)。
 func (h *host) run(user string, key ssh.Signer, cmd string, stdin []byte) (execResult, error) {
-	cfg := &ssh.ClientConfig{User: user, Auth: []ssh.AuthMethod{ssh.PublicKeys(key)}, Timeout: 30 * time.Second,
-		HostKeyAlgorithms: []string{ssh.KeyAlgoED25519}, // 起動時に記録した指紋は ed25519 のホスト鍵のもの
-		HostKeyCallback: func(_ string, _ net.Addr, k ssh.PublicKey) error {
-			if got := ssh.FingerprintSHA256(k); got != h.fp {
-				return fmt.Errorf("ホスト鍵の指紋が記録と違う: %s", got)
-			}
-			return nil
-		}}
-	c, err := ssh.Dial("tcp", h.addr, cfg)
+	c, closeAll, err := h.dial(user, key)
 	if err != nil {
 		return execResult{}, err
 	}
-	defer c.Close()
+	defer closeAll()
 	s, err := c.NewSession()
 	if err != nil {
 		return execResult{}, err
@@ -100,6 +94,45 @@ func (h *host) run(user string, key ssh.Signer, cmd string, stdin []byte) (execR
 		err = nil
 	}
 	return r, err
+}
+
+func (h *host) config(user string, key ssh.Signer) *ssh.ClientConfig {
+	return &ssh.ClientConfig{User: user, Auth: []ssh.AuthMethod{ssh.PublicKeys(key)}, Timeout: 30 * time.Second,
+		HostKeyAlgorithms: []string{ssh.KeyAlgoED25519}, // 起動時に記録した指紋は ed25519 のホスト鍵のもの
+		HostKeyCallback: func(_ string, _ net.Addr, k ssh.PublicKey) error {
+			if got := ssh.FingerprintSHA256(k); got != h.fp {
+				return fmt.Errorf("ホスト鍵の指紋が記録と違う: %s", got)
+			}
+			return nil
+		}}
+}
+
+// dial は SSH の接続を張る。via があれば、via の管理用アカウントの SSH の中で h.addr へ張る(送信元は via のアドレスになる)。
+func (h *host) dial(user string, key ssh.Signer) (*ssh.Client, func(), error) {
+	if h.via == nil {
+		c, err := ssh.Dial("tcp", h.addr, h.config(user, key))
+		if err != nil {
+			return nil, nil, err
+		}
+		return c, func() { c.Close() }, nil
+	}
+	vc, err := ssh.Dial("tcp", h.via.addr, h.via.config(adminUser(h.t), adminSigner(h.t)))
+	if err != nil {
+		return nil, nil, err
+	}
+	raw, err := vc.Dial("tcp", h.addr)
+	if err != nil {
+		vc.Close()
+		return nil, nil, err
+	}
+	cc, chans, reqs, err := ssh.NewClientConn(raw, h.addr, h.config(user, key))
+	if err != nil {
+		raw.Close()
+		vc.Close()
+		return nil, nil, err
+	}
+	c := ssh.NewClient(cc, chans, reqs)
+	return c, func() { c.Close(); vc.Close() }, nil
 }
 
 // root は管理用アカウントで入って sudo -n sh -s に script を流す。失敗(終了コード≠0)は試験を止める。

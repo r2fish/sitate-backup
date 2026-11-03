@@ -221,7 +221,7 @@ func (t *TestNotifier) test(ctx context.Context, to []string) (map[string]string
 		saltB64 := base64.StdEncoding.EncodeToString(salt)
 		hashes[addr] = saltB64 + "|" + h // 契約の注釈: <word_salt>|<word_hash>
 		proofs = append(proofs, map[string]string{"to": addr, "word_salt": saltB64, "word_hash": h})
-		facts, _ := json.Marshal(map[string]any{"confirmation_word": word})
+		facts, _ := json.Marshal(map[string]any{"confirmation_word": word, "change_id": nil}) // facts_notify_test は change_id も必須(notify test では null。notify-add・notify-change の試験通知は提案の change_id)
 		ev := contract.Event{ID: "e-" + base + "-" + twoDigits(i+1), Type: "notify.test", Severity: "info", Time: now, Facts: facts, Next: []contract.Next{}}
 		results = append(results, nn.deliverOne(ctx, ev, addr))
 	}

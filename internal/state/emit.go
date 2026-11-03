@@ -188,7 +188,13 @@ func (r *Recorder) recipients(ctx context.Context) ([]string, *string, error) {
 	}
 	def, _, err := r.State.ReadDef(ctx)
 	if err != nil || len(def) == 0 {
-		return nil, repoID, nil // 定義の無い段階(init の前)は宛先が無い
+		// seal の前は承認済みの定義が無い。seal の提案・承認の通知(change.proposed・change.approved)を届けるため、候補の定義の宛先を使う
+		// (notify test も候補の宛先に送る。確認語で届いたことを確かめる相手と同じ)。候補も無い段階(init の前)は宛先が無い。
+		cand, _, found, cerr := r.State.ReadCandidate(ctx)
+		if cerr != nil || !found || len(cand) == 0 {
+			return nil, repoID, nil
+		}
+		def = cand
 	}
 	var d struct {
 		Notify struct {

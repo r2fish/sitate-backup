@@ -199,7 +199,7 @@ func (a *Approval) commitApproval(ctx context.Context, s *pstore, rec changeRec,
 	}
 	h.Release()
 	released = true
-	res := a.emit(ctx, "change.approved", map[string]any{"change_id": rec.ChangeID, "op": rec.Op, "not_before": fmtTime(nb)})
+	res := a.emit(ctx, "change.approved", map[string]any{"change_id": rec.ChangeID, "op": rec.Op, "not_before": fmtTime(nb), "expired_reason": nil})
 	if rec.DelayHours > 0 {
 		a.noteDeliveries(ctx, rec.ChangeID, "change.approved", res, true)
 	}

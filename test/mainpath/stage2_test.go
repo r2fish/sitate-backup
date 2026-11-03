@@ -39,7 +39,10 @@ type s2 struct {
 	approvalPub       string
 	phrase            string
 	repoID, keyringID string
-	backupIP          string // 元サーバー・復元先から見たバックアップサーバーのアドレス(SSH の送信元)
+	approvalPriv      ed25519.PrivateKey // 承認鍵の秘密鍵(第 3 段の承認の署名。第 2 段は使わない)
+	notifyTo          string             // 空なら電子メールの宛先(第 2 段)。第 3 段は Webhook の参照名
+	lastMarker        string             // 第 3 段: 直近の世代の元データに入れた平文の目印(復元先に平文が残らないことの確認に使う)
+	backupIP          string             // 元サーバー・復元先から見たバックアップサーバーのアドレス(SSH の送信元)
 }
 
 func (w *s2) definition() string {
@@ -47,9 +50,16 @@ func (w *s2) definition() string {
 		"source":  map[string]any{"host": accEnv(w.t, "SITATE_ACCEPT_SOURCE_HOST"), "targets": []any{map[string]any{"id": "t1", "files": "/srv/shopapp"}}},
 		"storage": []any{map[string]any{"endpoint": w.s3.endpoint, "bucket": w.s3.bucket, "key_ref": "storage", "prefix": "sitate/"}},
 		"restore": map[string]any{"adapter": "ssh-host", "dest": map[string]any{"at": w.destAt(), "key_ref": "restore-init"}},
-		"notify":  map[string]any{"to": []string{"owner@example.invalid"}}}
+		"notify":  map[string]any{"to": []string{w.notifyDest()}}}
 	b, _ := json.Marshal(d)
 	return string(b)
+}
+
+func (w *s2) notifyDest() string {
+	if w.notifyTo != "" {
+		return w.notifyTo
+	}
+	return "owner@example.invalid"
 }
 
 func newS2(t *testing.T) *s2 {
@@ -62,7 +72,8 @@ func newS2(t *testing.T) *s2 {
 	}
 	w.bundle = buildAndSign(t)
 	w.g = bootstrapBackup(t, w.bak, w.bundle)
-	pub, _, _ := ed25519.GenerateKey(rand.Reader)
+	pub, priv, _ := ed25519.GenerateKey(rand.Reader)
+	w.approvalPriv = priv
 	sp, _ := ssh.NewPublicKey(pub)
 	w.approvalPub = base64.StdEncoding.EncodeToString(sp.Marshal())
 	return w

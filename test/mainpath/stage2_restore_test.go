@@ -26,9 +26,9 @@ const (
 )
 
 // listing は根の下を (種別 モード サイズ 更新時刻 相対パス リンク先 内容のハッシュ) の行にする。元データと復元先で同じ計算をする。
-// 保存済みマニフェストは使わない。特殊ファイル(FIFO・ソケットなど)は記録に無いので種別 f・d・l だけを見る。uid・gid は復元先の実行ユーザーになるので除く。
+// シンボリックリンク自身の更新時刻は仕様 3.1.2.4 が戻さないので比べない("-")。保存済みマニフェストは使わない。特殊ファイル(FIFO・ソケットなど)は記録に無いので種別 f・d・l だけを見る。uid・gid は復元先の実行ユーザーになるので除く。
 func listing(root string) string {
-	return `cd ` + shq(root) + ` && find . \( -type f -o -type d -o -type l \) -printf '%y\t%m\t%s\t%T@\t%P\t%l\n' | LC_ALL=C sort -t "$(printf '\t')" -k5,5 && ` +
+	return `cd ` + shq(root) + ` && find . \( -type f -o -type d -o -type l \) -printf '%y\t%m\t%s\t%T@\t%P\t%l\n' | awk -F'\t' 'BEGIN{OFS="\t"} $1=="l"{$4="-"} 1' | LC_ALL=C sort -t "$(printf '\t')" -k5,5 && ` +
 		`find . -type f -print0 | LC_ALL=C sort -z | xargs -0 -r sha256sum`
 }
 

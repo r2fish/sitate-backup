@@ -50,6 +50,9 @@ type gateCLI struct {
 	h   *host
 	key ssh.Signer
 	t   *testing.T
+	// warns は gate 経由の封筒に載った警告の原因コードの回数(第 3 段: MLOCK_FAILED が載らないことの判定)。calls は呼び出し回数。
+	warns map[string]int
+	calls int
 }
 
 // call は argv を gate へ渡す。stdin は秘密の入力(1 行目が --secrets-stdin、次が --phrase-stdin など)。
@@ -63,7 +66,15 @@ func (g *gateCLI) call(stdin string, argv ...string) cliOut {
 	if err != nil {
 		g.t.Fatalf("gate 経由の呼び出しに失敗: %v", err)
 	}
-	return parseOut(g.t, r)
+	o := parseOut(g.t, r)
+	if g.warns == nil {
+		g.warns = map[string]int{}
+	}
+	g.calls++
+	for _, wn := range o.Env.Warnings {
+		g.warns[wn.Code]++
+	}
+	return o
 }
 
 func parseOut(t *testing.T, r execResult) cliOut {
