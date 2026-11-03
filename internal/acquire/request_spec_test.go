@@ -1,6 +1,6 @@
 package acquire
 
-// 取得アダプタの要求の対象の形(spec 3.2.2。D-0172): files は spec.path 必須、postgresql は port だけで path を置かない。
+// 取得アダプタの要求の対象の形(spec 3.2.2。D-0172): files は spec.path 必須、postgresql は path を置かず、定義に port があれば port だけを置く。
 
 import (
 	"encoding/json"
@@ -40,6 +40,11 @@ func TestTargetSpecRequestShapeByKind(t *testing.T) {
 	}
 	if err := contract.Validate("adapter/acquire.json#/$defs/request", requestOf(t, checkTarget{ID: "t1"})); err == nil {
 		t.Error("path の無い files の要求がスキーマを通った")
+	}
+	// 定義の port は任意(4.1)。無ければ要求の spec にも置かず、受け口が唯一のクラスタを使う(3.3)。
+	noPort := requestOf(t, checkTarget{ID: "t3", Postgresql: "shopdb"})
+	if err := contract.Validate("adapter/acquire.json#/$defs/request", noPort); err != nil {
+		t.Errorf("port の無い postgresql の要求が要求のスキーマを通らない: %v %s", err, noPort)
 	}
 }
 

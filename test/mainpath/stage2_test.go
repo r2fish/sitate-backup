@@ -43,7 +43,7 @@ type s2 struct {
 	notifyTo          string             // 空なら電子メールの宛先(第 2 段)。第 3 段は Webhook の参照名
 	lastMarker        string             // 第 3 段: 直近の世代の元データに入れた平文の目印(復元先に平文が残らないことの確認に使う)
 	backupIP          string             // 元サーバー・復元先から見たバックアップサーバーのアドレス(SSH の送信元)
-	dbTargets         []string           // 空でなければ、定義に DB の対象(t2 から。ポート 5432)を足す(TestStage3DB)
+	dbTargets         []string           // 空でなければ、定義に DB の対象(t2 から。ポート 5432)を足す(TestStageDB)
 }
 
 func (w *s2) definition() string {

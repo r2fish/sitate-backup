@@ -34,3 +34,10 @@ func TestBucketCheckBeforeInitIsNotNotInitialized(t *testing.T) {
 		t.Errorf("verify は init の前は NOT_INITIALIZED のまま: %q", c)
 	}
 }
+
+func TestInitStorageRequiresAdapter(t *testing.T) {
+	// init-storage の --adapter は必須(spec 3.1.2 の引数、3.8 の手順 2。D-0175)。
+	if c := errCodeOf(t, "init-storage", "--endpoint", "https://s3.example.invalid", "--bucket", "b", "--prefix", "sitate/"); c != "ARG_INVALID" {
+		t.Errorf("--adapter の無い init-storage は ARG_INVALID: %q", c)
+	}
+}

@@ -2,7 +2,7 @@
 
 package mainpath
 
-// 第 3 段の DB の対象(fix-db): 変種 add の元サーバー(sawatari_ryo_shop・shopdb を持つクラスタ)の DB を対象に含む定義で、
+// DB の対象(fix-db。make test-mainpath STAGE=DB。第 3 段とは別の環境で流す。backup の状態を残すので同じ環境の第 3 段の前提を壊す): 変種 add の元サーバー(sawatari_ryo_shop・shopdb を持つクラスタ)の DB を対象に含む定義で、
 // 実物の sitate の backup が DB の対象を ok で取り(ダンプが空でない)、dest への restore がダンプを固定名で置くことを確かめる。
 // 主経路の第 1〜3 段の他の関数は DB のクラスタを declined にしてファイルの対象だけを通すので、DB の取得はここだけが通す。
 
@@ -15,7 +15,7 @@ import (
 	"testing"
 )
 
-func TestStage3DB(t *testing.T) {
+func TestStageDB(t *testing.T) {
 	if os.Getenv("SITATE_ACCEPT_NAME") == "" {
 		t.Fatal("受入試験の環境の変数が無い(ACCEPT=<NAME> を付けて実行)")
 	}
