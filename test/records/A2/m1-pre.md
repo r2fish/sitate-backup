@@ -17,3 +17,10 @@
 - ほかの所見: 手順の順を外れて Q4 と Q1 を先に聞いた。`init-storage` を `--adapter` なし(`ARG_INVALID`)と定義の前(`DEF_INVALID`)で呼んだ。開始時の入力の前に `version`・`status`・`doctor` を呼んで `SSH_UNREACHABLE`。
 - 記録は accept の worktree の `test/acceptance/records/A2/m1/1/`。利用者の貼り付けにはこの回の前にもう 1 回の実行(手順 8〜12 が未合格)があるが、同じ出力先に上書きされ記録が残っていない。環境 a2r1 を作り直さずに続けて流した回で、原因は確かめられない。
 - 環境 a2r1 は 2 回使ったので、次の回は作り直す。
+
+## 往復の直し 1(D-0171)と測定 1 のやり直しの用意(2026-11-03 の夜)
+
+- 測定 1 は 1 回で打ち切り(D-0171)。打ち切った回の記録は accept の worktree の `test/acceptance/records/A2/m1/aborted-1/`。手順 13 のドライバの不具合の回は `1-driver-defect/`。
+- 直し `bda552a`: 規則ファイル `quote-check-forms.md` に問いの出し方の節(疑問符で終える、1 回に 1 つ、最後の文、手順の順、開始時の入力の前に道具を呼ばない)。システムプロンプトがこれを含む試験。ドライバは既存の記録を退避し、`question_not_last`・`multi_question`・`repeated_requests` を `a2_fields` に出す。`npm --prefix app test` は pass 295、fail 0。`make lint-install` 合格。偽の LLM の A2・A6 は終了コード 0(担当の実行)。
+- 製品の説明書には足していない(契約の試験が見出しを固定している)。
+- 用意: accept の worktree を `bda552a` に進め、試験ビルドを作り直し(写しの sha256 一致 `be4a0ece...`)、環境 `a2r1`(変種 add)を作り直して `prepare-a2` まで済ませた。朝に利用者が 1 回目を流す。
