@@ -1,6 +1,7 @@
 // 試験用ドライバの受け口(完了条件 12)。試験用のアプリのビルド(`make build-app-test`)だけが束ね、製品のビルドには入れない
 // (scripts/build-app.mjs が成果物にこのモジュールが無いことを検査する)。UNIX ソケットで 1 行 1 命令の JSON を受け、画面の 5 面を操作する。
 import { createServer } from "node:net";
+import { StringDecoder } from "node:string_decoder";
 import type { Server } from "node:net";
 
 /** 画面の操作の差し込み口(実体は webContents.executeJavaScript)。 */
@@ -47,8 +48,9 @@ export function scriptFor(c: DriverCommand): string {
 export function startDriverServer(socketPath: string, page: PageControl, setLang: (l: "ja" | "en") => void, drainEvents: () => TestEvent[] = () => []): Server {
   const server = createServer((sock) => {
     let buf = "";
-    sock.on("data", (d) => {
-      buf += d.toString("utf8");
+    const dec = new StringDecoder("utf8"); // チャンクの境目で多バイト文字を割らない
+    sock.on("data", (d: Buffer) => {
+      buf += dec.write(d);
       for (let nl = buf.indexOf("\n"); nl >= 0; nl = buf.indexOf("\n")) {
         const line = buf.slice(0, nl);
         buf = buf.slice(nl + 1);
