@@ -547,6 +547,9 @@
    "fields": [
     {
      "pointer": "/result/def_hash"
+    },
+    {
+     "pointer": "/result/pending_refs"
     }
    ]
   },
@@ -639,6 +642,9 @@
    "fields": [
     {
      "pointer": "/result/plan/errors/*/code"
+    },
+    {
+     "pointer": "/result/host_key_fp"
     }
    ]
   },
