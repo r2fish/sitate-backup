@@ -15,6 +15,9 @@ for r in backup dest; do
   docker exec -i "$c" sh -c 'cat > /etc/sitate-test/trust.pub && chmod 0644 /etc/sitate-test/trust.pub' < test/env/.run/keys/sitate-test.pub
   docker exec "$c" sh -c "grep -q '^SITATE_TEST_TRUST_PUBKEY_FILE=' /etc/environment || echo 'SITATE_TEST_TRUST_PUBKEY_FILE=/etc/sitate-test/trust.pub' >> /etc/environment"
 done
+# 試験ビルドの核の時計と信頼の起点は環境変数(/etc/environment)から読む。sudo は環境を落とすので、bootstrap の段 (8) の
+# `sudo -u sitate sitate attest` に渡るよう、バックアップサーバーの sudoers に env_file を置く(試験の環境の準備。製品のビルドは環境変数を読まない)。
+docker exec "sitate-acc-$name-backup" sh -c 'printf "Defaults env_file=\"/etc/environment\"\n" > /etc/sudoers.d/91-sitate-test-env && chmod 0440 /etc/sudoers.d/91-sitate-test-env && visudo -c -q'
 # bootstrap は最後に管理アクセスを閉じ、同梱の b2 アダプタで libexec の b2 を上書きする。保管先準備アダプタの代役は、その後に root で置く
 # (第 2・3 段の provisionDouble と同じ)。試験が dist/test/wiring/need-doubles を作ったら、ここで置いて doubles-done を作る。
 rm -f dist/test/wiring/need-doubles dist/test/wiring/doubles-done

@@ -36,6 +36,9 @@ var newHostRequired = map[string][]string{
 // precheck は部品を呼ぶ前の前提の確認: 必須の引数(ARG_INVALID の missing)と、記録を持つホストの前提(NOT_INITIALIZED)。
 func precheck(ctx context.Context, d *Deps, p *parsed) *contract.Error {
 	key := strings.Join(p.sub.Words, " ")
+	if key == "attest" && unsignedAttestStep(p) {
+		return nil // 署名を要さない 3 段は init の前も記録できる(spec 3.1.2 の「attest の段」。bootstrap の段 (8) は init の前に呼ぶ)
+	}
 	if needsInit[key] {
 		return checkInitialized(ctx, d)
 	}
@@ -55,6 +58,19 @@ func precheck(ctx context.Context, d *Deps, p *parsed) *contract.Error {
 		return nil
 	}
 	return missing(p, required[key])
+}
+
+// unsignedAttestStep は --step が署名を要さない段(admin_access_closed・admin_access_opened・dest_disposed)か。
+func unsignedAttestStep(p *parsed) bool {
+	v := p.args["step"]
+	if len(v) != 1 {
+		return false
+	}
+	switch v[0] {
+	case "admin_access_closed", "admin_access_opened", "dest_disposed":
+		return true
+	}
+	return false
 }
 
 func missing(p *parsed, names []string) *contract.Error {

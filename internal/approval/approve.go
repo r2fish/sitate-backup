@@ -180,6 +180,11 @@ func (a *Approval) commitApproval(ctx context.Context, s *pstore, rec changeRec,
 			return approveOut{}, derr
 		}
 	}
+	if rec.Op == "seal" && proof != nil && *proof {
+		if perr := a.setNotifyProofConfirmed(ctx, h); perr != nil {
+			return approveOut{}, perr
+		}
+	}
 	if rec.DelayHours > 0 {
 		ds, derr := a.readDelays(ctx)
 		if derr != nil {

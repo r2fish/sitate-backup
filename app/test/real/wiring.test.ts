@@ -229,8 +229,8 @@ test("[mp-app 結線] bootstrap → 手順 2〜10(承認カード・署名・確
     assert.equal(rig.boxLog.find((b) => b.ref === "admin")?.mode, "no-save");
     const passedSteps = rig.lines.map((l) => /^手順 (\d+) が合格しました/.exec(l.text)?.[1]).filter((x): x is string => x !== undefined);
     const missing = Array.from({ length: 13 }, (_, i) => String(i + 1)).filter((n) => !passedSteps.includes(n));
-    // 手順 1・5・13(doctor の admin_access_closed が bootstrap の直後に記録されない)と 10(status の proof_confirmed が真にならない)は、核の側の未解決(notes.md)。
-    for (const n of ["2", "3", "4", "6", "7", "8", "9", "11", "12"]) assert.ok(passedSteps.includes(n), `手順 ${n} が手順書の判定で合格する`);
+    // 手順 13 の合格は、TIMER_NAMES が空の一覧のため status.schedule の中身を確かめない(仕様の食い違いは test/records/mp-core3/notes.md)。
+    for (const n of ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13"]) assert.ok(passedSteps.includes(n), `手順 ${n} が手順書の判定で合格する`);
     console.log("手順書の判定で合格した手順:", passedSteps.join(","), "/ 合格しなかった手順:", missing.join(",") || "なし");
     console.log("steps:\n" + steps.join("\n") + "\n--- 合格した手順(表示)---\n" + rig.lines.filter((l) => l.role === "tool").map((l) => l.text).join("\n"));
   } catch (e) {

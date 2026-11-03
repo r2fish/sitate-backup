@@ -49,11 +49,16 @@ for f in app/src/tools/*.json; do [ -e "$f" ] && cp "$f" "$assets/tools/"; done
 jq -e '.models | length > 0' "$assets/models.json" >/dev/null || { echo "sign($mode): assets/models/models.json の候補が空。署名しない" >&2; exit 1; }
 # 手順書の印の値。TIMER_NAMES と WARNING_ALLOWLIST は手順書の文面にも marks.json にも同じ値を入れる(手順の合格の判定は marks.json、エージェントは文面を読む)。
 # TIMER_NAMES: 核の status.schedule は日次の時刻の文字列で、タイマーの単位の名前の一覧を返さない(仕様の穴として報告済み)ため、空の一覧にする。
+# 指紋は仕様 4.5 の「指紋」の形: SHA256: + OpenSSH の blob(ssh-ed25519 と鍵 32 バイト)の SHA-256 の base64(= なし)。核の version の signing_key_fp と同じ文字列にする。
+# 引数は minisign の公開鍵(base64 の 1 行。方式 2 バイト + 鍵 ID 8 バイト + 鍵 32 バイト)。
+ssh_fp() {
+  { printf '\x00\x00\x00\x0bssh-ed25519\x00\x00\x00\x20'; printf '%s' "$1" | base64 -d | tail -c 32; } | openssl dgst -sha256 -binary | base64 | tr -d '=' | sed 's/^/SHA256:/'
+}
 timer_names='[]'; warning_allowlist='[]'
 if [ "$mode" = test ]; then
-  fp="$(bash tools/fingerprint.sh "$(sed -n 2p "$pub")")"
+  fp="$(ssh_fp "$(sed -n 2p "$pub")")"
 else
-  fp="$(bash tools/fingerprint.sh "$(sed -n 2p "${PUBLIC_KEY_FILE:?PUBLIC_KEY_FILE=<配布用の公開鍵のパス> が要ります}")")"
+  fp="$(ssh_fp "$(sed -n 2p "${PUBLIC_KEY_FILE:?PUBLIC_KEY_FILE=<配布用の公開鍵のパス> が要ります}")")"
   # 未完成の手順書には署名しない。
   if grep -q 'sitate:not-implemented' docs/install.md; then echo "sign(product): docs/install.md が未実装の印のまま。署名しない" >&2; exit 1; fi
 fi

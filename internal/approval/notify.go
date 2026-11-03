@@ -97,6 +97,20 @@ func (a *Approval) editNotifyProofs(ctx context.Context, h contract.StateLockHan
 	return a.putItem(ctx, h, "notify", m)
 }
 
+// setNotifyProofConfirmed は state.json の notify.proof_confirmed を true にする(seal の承認で確認語が一致したとき。spec 3.1.2.7)。他の項目はそのまま。
+func (a *Approval) setNotifyProofConfirmed(ctx context.Context, h contract.StateLockHandle) error {
+	m := map[string]json.RawMessage{}
+	if raw, err := a.State.Get(ctx, "notify"); err != nil {
+		return err
+	} else if len(raw) > 0 && string(raw) != "null" {
+		if err := json.Unmarshal(raw, &m); err != nil {
+			return err
+		}
+	}
+	m["proof_confirmed"] = json.RawMessage("true")
+	return a.putItem(ctx, h, "notify", m)
+}
+
 // issueChangeProofs は notify-add・notify-change の提案の作成時に、足した宛先へ確認語付きの試験通知を送り、確認語のハッシュを change_proofs[] に記録する
 // (確認語そのものは記録しない。3.6)。試験通知が送れなければ提案を取り消す。TestNotifier の返す値は "<word_salt>|<word_hash>"(契約の確認が要る)。
 func (a *Approval) issueChangeProofs(ctx context.Context, s *pstore, rec changeRec) error {
