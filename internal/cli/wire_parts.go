@@ -43,6 +43,7 @@ func wireParts(d *Deps, stateDir string) {
 	write, read := newDynStore(d, "write"), newDynStore(d, "read")
 	d.Object = write
 	ver := &keys.Verifier{}
+	d.Prices = (&signedPrices{Dir: PricesDirDefault, Ver: ver, Version: func() string { return Version }}).Load
 	d.Adapters = &adapter.Runner{Root: AdaptersDirDefault, Version: Version, Arch: hostArch(), Verifier: ver, Stderr: adapterStderrSink(stateDir)}
 	d.KeyS = &keys.KeyService{Dir: stateDir, Codec: d.Codec, Crypto: d.Crypto, Provision: d.Adapters, ProvisionName: ProvisionNameDefault}
 	n := &state.Notifier{State: d.State, Adapters: d.Adapters, Clock: d.Clock, Secrets: d.Secrets}

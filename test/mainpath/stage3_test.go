@@ -56,6 +56,7 @@ func TestStage3MainPath(t *testing.T) {
 	w.afterSealDenied(gens)
 	w.afterSealKinds()
 	w.checkMlock()
+	w.retention(gens)
 }
 
 // destEnrollAndCheck は restore-dest enroll → check(第 2 段と同じ呼び出し)。
