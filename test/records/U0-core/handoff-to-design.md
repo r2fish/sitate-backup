@@ -388,3 +388,12 @@ A2 の測定 1 の 1 回目の手順 11 の原因(`test/records/A2/m1-pre.md`)�
 
 - 仕様 3.7 の送る欄の `next/<i>/op`: `next` の要素は `argv`・`requires_human`・`requires_approval`・`why` で、`op` が無い。今は書かれたとおり足したので実質モデルに届かない。`argv` など既存の欄にするか。
 - 対象の失敗の `next`: アダプタ由来の失敗(STORAGE_UNREACHABLE など)に、3.1.3 の例(`sitate doctor` の再実行など)を出すか。今は空配列。
+
+## 44. 直し 2 の残り(D-0172)から(2026-11-04。急がない)
+
+`wp/fix-db` の cbc2bc6 に用意した(測定 1 の後に統合)。`estimate` と `status` の費用の上限は、定義に無ければ既定の 3,000 にし、`over_ceiling` は `PRICE_UNKNOWN` のときだけ null にした。`status` は保管先が価格表に無いときに `warnings[]` に `PRICE_UNKNOWN` を出す。監督の再実行は `make test` 0(ok 73)、変異 3 件がすべて赤。
+
+- (1) `status.estimate` の月額: 行が引ける保管先(B2)でも `monthly_jpy` と `over_ceiling` は null で、警告も出ない。月額の入力(直近 30 日の `backup` の記録)がイテレーション 3 だから。このため「null は `PRICE_UNKNOWN` のときだけ」を `status` では満たせない。案 A: 導入の直後は null のまま(仕様 3.1.2.7 に「記録が無い間は null」と足す)。案 B: 定義の対象の大きさから目安を出す(入力の出どころを仕様で決める)。
+- (2) `status.warnings[]` の `PRICE_UNKNOWN`: 仕様に明文が無い。3.1.2.7 の「今も続いている状態の警告」から出した。
+- (3) `init-storage` の `--adapter`: 仕様 3.1.2 の行が、必須かどうかと値を書いていない。実装は必須で、道具の説明は「必須。b2」。`docs/install.md` の例は `--adapter` を付けていない(段 8 で手順書を直すときに合わせる)。
+- (4) 指示の節番号: `--host` の形は 3.1.2 の `source enroll` の行と 3.3、`--adapter` は 3.1.2 の `init-storage` の行にある(3.1.2.8 は `estimate`)。
