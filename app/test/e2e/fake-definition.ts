@@ -39,13 +39,39 @@ export function surveyFrom(messages: readonly unknown[]): Survey | undefined {
   return found;
 }
 
-export function sourceTargets(survey: Survey | undefined): { targets: Record<string, unknown>[]; declined: Record<string, unknown>[] } {
+/** 手順 8 の `source check` の足せる候補(actionable)のうち、人に問わず足す種別(mount・db)。 */
+export interface Candidate { readonly kind: string; readonly path: string; readonly port?: number | null }
+
+/** 履歴の `source check` の結果のうち、最初に actionable が空でないもの。mount と db の候補だけを返す(無ければ空)。 */
+export function candidatesFrom(messages: readonly unknown[]): Candidate[] {
+  for (const m of messages) {
+    const content = (m as { content?: unknown }).content;
+    if (!Array.isArray(content)) continue;
+    for (const b of content as { type?: string; content?: unknown }[]) {
+      if (b.type !== "tool_result") continue;
+      const t = textOf(b.content);
+      const i = t.indexOf('<sitate-data command="source check">');
+      const j = t.indexOf(SURVEY_CLOSE, i);
+      if (i < 0 || j < 0) continue;
+      try {
+        const env = JSON.parse(t.slice(t.indexOf("\n", i), j)) as { result?: { actionable?: Candidate[] } };
+        const found = (env.result?.actionable ?? []).filter((c) => c.kind === "mount" || c.kind === "db");
+        if (found.length > 0) return found;
+      } catch { /* 読めない結果は無いものとして扱う */ }
+    }
+  }
+  return [];
+}
+
+export function sourceTargets(survey: Survey | undefined, added: readonly Candidate[] = []): { targets: Record<string, unknown>[]; declined: Record<string, unknown>[] } {
   const targets: Record<string, unknown>[] = [{ id: "t1", files: "/srv/shopapp" }];
   const declined: Record<string, unknown>[] = [];
-  if (survey === undefined) return { targets, declined };
+  const addExtra = (): void => added.forEach((c) => targets.push({ id: `t${targets.length + 1}`, ...(c.kind === "mount" ? { files: c.path } : { postgresql: c.path, ...(c.port != null ? { port: c.port } : {}) }) }));
+  if (survey === undefined) { addExtra(); return { targets, declined }; }
   const ports = survey.clusters.map((c) => c.port).sort((x, y) => x - y);
   const primary = ports[0];
   survey.databases.filter((d) => d.port === primary).forEach((d, i) => targets.push({ id: `t${i + 2}`, postgresql: d.name, port: d.port }));
   ports.slice(1).forEach((p, i) => declined.push({ id: `d${i + 1}`, postgresql_cluster: p }));
+  addExtra(); // 手順 8 で足す分(手順 4 の調査の後に現れた候補)
   return { targets, declined };
 }
