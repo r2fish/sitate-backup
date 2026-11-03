@@ -4,6 +4,8 @@
 import type { FakeResponder, FakeStep } from "./llm-endpoint.ts";
 import { HOOK_NAME } from "./script.ts";
 import type { Answers } from "./script.ts";
+import { sourceTargets, surveyFrom } from "./fake-definition.ts";
+import type { Survey } from "./fake-definition.ts";
 
 interface PlanStep { readonly hold?: () => Promise<void>; readonly make: (prevResult: string) => FakeStep }
 const call = (name: string, input: Record<string, unknown> = {}): PlanStep => ({ make: () => ({ toolUses: [{ name, input }] }) });
@@ -16,10 +18,10 @@ const Q4_TEXT = "元サーバーを調べました。何のために聞くか: �
 const Q4_PROPOSAL = "いただいた希望に当たる場所を対象にした案を作りました。取れない場所はその理由とともに状態の表示にあります。この案で進めてよろしいでしょうか?";
 const Q2_TEXT = "復旧のフレーズを控えたことを確かめます。何のために聞くか: バックアップサーバーを全部失ったときの唯一の手掛かりだからです。推奨の案: 別々の場所に 2 部置きます。分からなければ推奨の案でよいです。印刷か手書きで 2 か所に保管しましたか?";
 
-function definitionOf(a: Answers): Record<string, unknown> {
+function definitionOf(a: Answers, survey?: Survey): Record<string, unknown> {
   return {
     version: 1,
-    source: { host: a.sourceHost, targets: [{ id: "t1", files: "/srv/shopapp" }], declined: [{ id: "d1", postgresql_cluster: 5432 }] },
+    source: { host: a.sourceHost, ...sourceTargets(survey) },
     storage: [{ endpoint: a.storageEndpoint, bucket: a.bucket, key_ref: "storage", prefix: "sitate/" }],
     restore: { adapter: "ssh-host", dest: { at: `ssh://${a.adminUser}@${a.destHost}:${a.destPort}`, key_ref: "restore-init" } },
     notify: { to: [HOOK_NAME] },
@@ -34,11 +36,11 @@ export interface PlanOptions {
   readonly extras?: boolean;
 }
 
-export function planOf(a: Answers, afterBootstrap: () => Promise<void>, o: PlanOptions = {}): PlanStep[][] {
+export function planOf(a: Answers, afterBootstrap: () => Promise<void>, o: PlanOptions = {}, survey?: Survey): PlanStep[][] {
   const s3 = { endpoint: a.storageEndpoint, bucket: a.bucket, prefix: "sitate/", adapter: o.adapter ?? "minio", admin_ref: "admin" };
   const sourceHost = `ssh://${a.adminUser}@${a.sourceHost}`;
   const destAt = `ssh://${a.adminUser}@${a.destHost}:${a.destPort}`;
-  const definition = definitionOf(a);
+  const definition = definitionOf(a, survey);
   return [
     [say(LOCATION_Q_TEXT)], // 「始める」の固定の指示への応答。所在と管理アカウントは開始時の入力で、問いに数えない(spec 6.5 の A2)
     [call("sitate_bootstrap", { host: a.backupHost, admin_user: a.adminUser, admin_ref: "bak-admin" }), { hold: afterBootstrap, make: () => ({ toolUses: [{ name: "sitate_version", input: {} }] }) },
@@ -62,9 +64,9 @@ const isToolResult = (m: unknown): boolean => {
 };
 
 export function makeFakeAgent(a: Answers, afterBootstrap: () => Promise<void>, fixedText?: string, o: PlanOptions = {}): FakeResponder {
-  const plan = planOf(a, afterBootstrap, o);
   return async (body) => {
     const msgs = body.messages as { role: string }[];
+    const plan = planOf(a, afterBootstrap, o, surveyFrom(msgs)); // 定義の対象は履歴の調査の結果から決める(状態を持たない)
     if (fixedText !== undefined) return { text: fixedText };
     const humanIdx = msgs.flatMap((m, i) => (m.role === "user" && !isToolResult(m) ? [i] : []));
     const turn = humanIdx.length - 1;
