@@ -102,3 +102,21 @@ func TestInstallCompletionChecks(t *testing.T) {
 		}
 	}
 }
+
+// 手順 13 の右辺 <定義の schedule>: marks の DEF_SCHEDULE(直近に合格した def validate の normalized.schedule)、無ければ既定 02:30(D-0168)。
+func TestJudgeDefScheduleRef(t *testing.T) {
+	env := []byte(`{"ok":true,"result":{"schedule":"03:15"}}`)
+	e := Expect{"/result/schedule", "=", DefScheduleRef}
+	if err := Judge(env, e, Marks{"DEF_SCHEDULE": []byte(`"03:15"`)}); err != nil {
+		t.Errorf("定義の schedule と一致するのに落ちた: %v", err)
+	}
+	if err := Judge(env, e, Marks{}); err == nil {
+		t.Errorf("定義に schedule が無い(既定 02:30)のに 03:15 が通った")
+	}
+	if err := Judge([]byte(`{"result":{"schedule":"02:30"}}`), e, Marks{}); err != nil {
+		t.Errorf("既定: %v", err)
+	}
+	if err := Judge(env, e, Marks{"DEF_SCHEDULE": []byte(`"04:00"`)}); err == nil {
+		t.Errorf("違う schedule が通った")
+	}
+}

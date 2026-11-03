@@ -43,13 +43,20 @@ type envS3 struct{ ep, bucket, wk, ws, rk, rs string }
 
 func s3env(t *testing.T) envS3 {
 	t.Helper()
+	e := s3envRaw(t)
+	if os.Getenv(contract.EnvTestS3Kind) == "fake" {
+		t.Skip("MinIO に対する通し(KIND=fake では飛ばす)")
+	}
+	return e
+}
+
+// s3envRaw は KIND を問わず試験用の保管先の環境変数を読む(無ければ飛ばす)。
+func s3envRaw(t *testing.T) envS3 {
+	t.Helper()
 	e := envS3{os.Getenv(contract.EnvTestS3Endpoint), os.Getenv(contract.EnvTestS3Bucket), os.Getenv(contract.EnvTestS3WriteAccessKey),
 		os.Getenv(contract.EnvTestS3WriteSecretKey), os.Getenv(contract.EnvTestS3ReadAccessKey), os.Getenv(contract.EnvTestS3ReadSecretKey)}
 	if e.ep == "" || e.wk == "" || e.rk == "" {
 		t.Skip("試験用の保管先の環境変数が無い(make test-env-up NAME=mainpath の後に NAME=mainpath を付けて実行)")
-	}
-	if os.Getenv(contract.EnvTestS3Kind) == "fake" {
-		t.Skip("MinIO に対する通し(KIND=fake では飛ばす)")
 	}
 	return e
 }
@@ -104,9 +111,11 @@ func must[T any](t *testing.T, v T, err error) T {
 }
 
 // newWorld は Keys.Init → PhraseVerify まで通した世界を返す。
-func newWorld(t *testing.T) *world {
+func newWorld(t *testing.T) *world { return newWorldOn(t, s3env(t)) }
+
+func newWorldOn(t *testing.T, e envS3) *world {
 	t.Helper()
-	w := &world{t: t, ctx: context.Background(), s3: s3env(t), binVer: harnessVersion}
+	w := &world{t: t, ctx: context.Background(), s3: e, binVer: harnessVersion}
 	w.prefix = fmt.Sprintf("mp%d/", time.Now().UnixNano())
 	root := t.TempDir()
 	w.dir = filepath.Join(root, "state")

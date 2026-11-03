@@ -59,7 +59,7 @@ func (w *world) backup(parent string) gen {
 		healthy = false
 	}
 	now := time.Now().UTC().Truncate(time.Second)
-	class, err := w.ret.Class(contract.ClassInput{CreatedAt: now, Healthy: healthy, Timezone: "Asia/Tokyo"})
+	class, err := w.ret.Class(contract.ClassInput{CreatedAt: now, Healthy: healthy, Timezone: "Asia/Tokyo", Snapshots: w.classRefs()})
 	if err != nil {
 		t.Fatalf("Class: %v", err)
 	}
@@ -248,4 +248,21 @@ func (w *world) forgeEntries(g gen) (string, []byte) {
 	return w.forgeManifest(g, func(m map[string]any) {
 		m["entries"].(map[string]any)["chunks"].([]any)[0].(map[string]any)["version_id"] = res.VersionID
 	})
+}
+
+// classRefs は保持区分の判定(同じ月に月次の世代が既にあるか)に使う、記録済みの世代。
+func (w *world) classRefs() []contract.SnapshotClassRef {
+	var snaps []struct {
+		CreatedAt string `json:"created_at"`
+		Class     string `json:"retention_class"`
+	}
+	raw, _ := w.st.Get(w.ctx, "snapshots")
+	_ = json.Unmarshal(raw, &snaps)
+	var out []contract.SnapshotClassRef
+	for _, s := range snaps {
+		if at, err := time.Parse(time.RFC3339, s.CreatedAt); err == nil {
+			out = append(out, contract.SnapshotClassRef{CreatedAt: at, RetentionClass: contract.RetentionClass(s.Class)})
+		}
+	}
+	return out
 }

@@ -84,6 +84,7 @@ build-test:
 	@$(LINUX) 'make _build MODE=test VERSION=$(VERSION)'
 _build:
 	@bash tools/build.sh "$(MODE)" "$(VERSION)" "$(TEST_TAG)"
+	@cp data/prices/prices.json "dist/$(MODE)/bundle/$(VERSION)/prices/prices.json"
 
 build-app:
 	npm --prefix app run build
@@ -109,5 +110,8 @@ test-env-down:
 	@test -n "$(NAME)" || { echo "NAME=<WP> が要ります"; exit 64; }
 	@bash test/env/bin/test-env.sh down "$(NAME)"
 
+# 手順書の読み込みと判定の道具の試験。NAME=<WP> を付けると、受入試験の環境(accept-env.sh up と test-env-up を済ませたもの。test-mainpath の注を見よ)で
+# 第 3 段の台本を走らせ、その終わりで手順 1〜13 の完了確認コマンドを実物の核に実行して手順書の期待する値に照らす(test/mainpath/stage3_e2e_test.go)。
 test-e2e:
-	@$(LINUX) 'go test -tags $(TEST_TAG) ./test/e2e/...'
+	@$(LINUX) 'go test -count=1 -tags $(TEST_TAG) ./test/e2e/...'
+	@if [ -n "$(NAME)" ]; then $(MAKE) test-mainpath STAGE=3 NAME=$(NAME); fi

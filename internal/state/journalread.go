@@ -15,6 +15,9 @@ type JournalItem struct {
 	Kind  string          `json:"kind"`
 	RunID string          `json:"run_id"`
 	Body  json.RawMessage `json:"body"`
+	// PrevHash は平文の prev_hash(1 つ前の項目の entry_hash。seq 1 は null)。EntryHash は項目のキーの entry_hash(連鎖の検証 (5) に使う)。
+	PrevHash  *string `json:"prev_hash"`
+	EntryHash string  `json:"-"`
 }
 
 // Entries は状態ディレクトリの journal/ の項目を連番の順に復号して返す。復号できない項目があれば INTERNAL。
@@ -45,6 +48,7 @@ func (r *Recorder) Entries(_ context.Context) ([]JournalItem, error) {
 		if json.Unmarshal(plain, &it) != nil {
 			return nil, internalErr()
 		}
+		it.EntryHash = journalItemRe.FindStringSubmatch(n)[2]
 		out = append(out, it)
 	}
 	return out, nil

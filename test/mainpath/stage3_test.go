@@ -56,6 +56,9 @@ func TestStage3MainPath(t *testing.T) {
 	w.afterSealDenied(gens)
 	w.afterSealKinds()
 	w.checkMlock()
+	w.installChecks() // 手順 1〜13 の完了確認(retention の前: retention は削除停止と模擬時間 +91 日を残す)
+	w.tickOneDay()
+	w.rootChange()
 	w.retention(gens)
 }
 

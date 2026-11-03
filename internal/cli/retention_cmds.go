@@ -74,11 +74,13 @@ func verifyEntry(d *Deps, ctx context.Context, c contract.Call) (contract.Reply,
 		_ = d.emit(ctx, "storage.unexpected_version", map[string]any{"run_id": runID, "count": len(res.UnexpectedVersions), "previous": nil})
 		return contract.Reply{}, newErr(contract.CodeUnexpectedVersion, map[string]any{"objects": objverList(res.UnexpectedVersions)})
 	}
-	// sampled(抜き取りで retain-until を読んだ版の数)は契約の VerifyResult に無いので 0 を返す(報告の「契約の不足」)。
+	if len(res.Missing) == 0 && len(res.RetentionShort) == 0 {
+		d.markRefsVerified(ctx, runID)
+	}
 	b, _ := json.Marshal(map[string]any{
 		"missing": objverList(res.Missing), "retention_short": diffList(res.RetentionShort), "retention_long": diffList(res.RetentionLong),
 		"unexpected_versions": objverList(res.UnexpectedVersions), "noncurrent_versions": res.NoncurrentVersions, "delete_markers": res.DeleteMarkers,
-		"bytes_written_vs_bucket": res.BytesWrittenVsBucket, "journal_chain_ok": chain.ok, "sampled": 0,
+		"bytes_written_vs_bucket": res.BytesWrittenVsBucket, "journal_chain_ok": chain.ok, "sampled": res.Sampled,
 	})
 	return contract.Reply{Result: b, Warnings: warns}, nil
 }

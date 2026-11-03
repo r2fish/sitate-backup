@@ -197,3 +197,26 @@ func TestNotifyAddPassesChangeIDToTestNotice(t *testing.T) {
 		t.Errorf("試験通知に提案の change_id を渡す: got %v want %q", ct.ids, p.ChangeID)
 	}
 }
+
+// seal の承認で確認語がすべて一致したら notify.proof_confirmed を true にする(手順 10 の完了確認)。notify の他の項目は落とさず、
+// 一致しない承認では立てない。
+func TestSealProofSetsProofConfirmed(t *testing.T) {
+	e := newEnv(t, true)
+	salt := []byte("0123456789abcdef")
+	e.st.Items["notify"] = mustJSON(map[string]any{"last_test_at": "2026-11-02T00:00:00Z", "test_proofs": []proofRow{{To: "a@x", Salt: base64.StdEncoding.EncodeToString(salt), Hash: wordHash(salt, "one two three")}}})
+	e.st.Items["sealed"] = json.RawMessage(`false`)
+	e.a.State = &candState{StateFiles: e.st, cand: []byte(`{"notify":{"to":["a@x"]}}`), candHash: "sha256:" + strings.Repeat("2", 64), defHash: "sha256:" + strings.Repeat("2", 64)}
+	e.withDef(`{"notify":{"to":["a@x"]}}`)
+	p := e.propose("seal", map[string][]string{"file": {"-"}})
+	want(t, "違う語", approveWithProof(e, p, `{"a@x":"one two four"}`), contract.CodeNotifyProofMismatch, "")
+	if raw, _ := e.st.Get(ctx, "notify"); strings.Contains(string(raw), `"proof_confirmed":true`) {
+		t.Fatalf("不一致で proof_confirmed が立った: %s", raw)
+	}
+	if err := approveWithProof(e, p, `{"a@x":"one two three"}`); err != nil {
+		t.Fatal(err)
+	}
+	raw, _ := e.st.Get(ctx, "notify")
+	if !strings.Contains(string(raw), `"proof_confirmed":true`) || !strings.Contains(string(raw), `"last_test_at"`) || !strings.Contains(string(raw), `"test_proofs"`) {
+		t.Errorf("notify: %s", raw)
+	}
+}

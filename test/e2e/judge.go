@@ -37,11 +37,26 @@ func pointerValues(root any, ptr string) ([]any, error) {
 	return cur, nil
 }
 
+// DefScheduleRef は手順書の右辺 `<定義の schedule>`(D-0168)。DefaultSchedule は定義に schedule が無いときの既定(spec 4.1)。
+const (
+	DefScheduleRef  = "<定義の schedule>"
+	DefaultSchedule = "02:30"
+)
+
 func canon(v any) string { b, _ := json.Marshal(v); return string(b) }
 
 // rhs は右辺を値に直す。{{印}} は marks から、`/…` で始まる Pointer は同じ結果の別の欄から、
 // それ以外は JSON として読み、読めなければ文字列とする。
 func rhs(root any, val string, marks Marks, elem int, count int) (any, error) {
+	if val == DefScheduleRef { // 手順 13: 直近に合格した def validate の normalized.schedule(marks の DEF_SCHEDULE)。無ければ既定(spec 4.1)
+		raw, ok := marks["DEF_SCHEDULE"]
+		if !ok {
+			raw = json.RawMessage(`"` + DefaultSchedule + `"`)
+		}
+		var v any
+		err := json.Unmarshal(raw, &v)
+		return v, err
+	}
 	if strings.HasPrefix(val, "{{") && strings.HasSuffix(val, "}}") {
 		raw, ok := marks[strings.TrimSuffix(strings.TrimPrefix(val, "{{"), "}}")]
 		if !ok {

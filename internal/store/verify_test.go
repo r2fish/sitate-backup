@@ -102,8 +102,12 @@ func TestVerifyReadsNewVersionsAllAndOldBySample(t *testing.T) {
 	}
 	f.clk.Advance(day)
 	all := append(append([]contract.VersionRef{}, old...), fresh...)
-	if _, err := f.r.Verify(ctx, all); err != nil {
+	res2, err := f.r.Verify(ctx, all)
+	if err != nil {
 		t.Fatal(err)
+	}
+	if res2.Sampled != per { // 抜き取りの件数(前回以後に書いた 7 件は全件読む分で数えない)
+		t.Errorf("Sampled = %d, 期待 %d", res2.Sampled, per)
 	}
 	r2 := c.take()
 	for _, x := range fresh {

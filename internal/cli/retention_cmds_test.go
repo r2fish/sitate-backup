@@ -5,6 +5,9 @@ package cli
 import (
 	"context"
 	"encoding/json"
+	"os"
+	"path/filepath"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -270,5 +273,79 @@ func TestRoutesRegistered(t *testing.T) {
 		if _, ok := routeOwn[w]; !ok {
 			t.Errorf("%s が routeOwn に無い", w)
 		}
+	}
+}
+
+// 連鎖の確かめ(4.2 の (3)〜(5)): 素直な連鎖は ok、項目を抜くと gap、項目の prev_hash を食い違わせる(キーの entry_hash と合わない)と prev_mismatch。
+func TestJournalChainKinds(t *testing.T) {
+	f := newFlow(t)
+	for i := 0; i < 4; i++ {
+		if err := f.d.recordItem(bg, "hold", runA, map[string]any{"i": i}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	st, err := f.d.journalChain(bg)
+	if err != nil || !st.ok {
+		t.Fatalf("素直な連鎖: %+v %v", st, err)
+	}
+	dir := filepath.Join(f.d.StateDir, "journal")
+	names, _ := filepath.Glob(filepath.Join(dir, "*"))
+	sort.Strings(names)
+	if len(names) < 4 {
+		t.Fatalf("項目が %d 件: %v", len(names), names)
+	}
+	// 2 番目の項目のキーの entry_hash を書き換える(本体は同じ): 3 番目の prev_hash が合わなくなる。
+	base := filepath.Base(names[1])
+	fake := base[:13] + strings.Repeat("0", 64)
+	if err := os.Rename(names[1], filepath.Join(dir, fake)); err != nil {
+		t.Fatal(err)
+	}
+	st, err = f.d.journalChain(bg)
+	if err != nil || st.ok || st.kind != "prev_mismatch" {
+		t.Errorf("prev_mismatch: %+v %v", st, err)
+	}
+	if err := os.Rename(filepath.Join(dir, fake), names[1]); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Remove(names[2]); err != nil { // 3 番目を抜く
+		t.Fatal(err)
+	}
+	st, err = f.d.journalChain(bg)
+	if err != nil || st.ok || st.kind != "gap" {
+		t.Errorf("gap: %+v %v", st, err)
+	}
+}
+
+// 欠け・保持不足が無かった verify は snapshots[] の refs_verified を true にし、journal/ に refs_verified を書く。欠けがあれば変えない。
+func TestVerifyMarksRefsVerifiedOnlyWhenClean(t *testing.T) {
+	s := &stubRet{}
+	d, _ := retEnv(t, s)
+	f := newFlow(t)
+	d.Recorder, d.State = f.d.Recorder, f.d.State
+	h, _ := d.State.Lock(bg)
+	_ = d.State.Update(bg, h, "snapshots", json.RawMessage(`[{"ref":"m-`+strings.Repeat("a", 32)+`","refs_verified":null,"health":"pass"}]`))
+	h.Release()
+	s.verify = contract.VerifyResult{Missing: []contract.VersionRef{{Key: "k", VersionID: "v"}}}
+	if _, err := verifyEntry(d, bg, callOf2("verify")); err != nil {
+		t.Fatal(err)
+	}
+	if raw, _ := d.State.Get(bg, "snapshots"); strings.Contains(string(raw), `"refs_verified":true`) {
+		t.Fatalf("欠けがあるのに確認済みにした: %s", raw)
+	}
+	s.verify = contract.VerifyResult{}
+	if _, err := verifyEntry(d, bg, callOf2("verify")); err != nil {
+		t.Fatal(err)
+	}
+	raw, _ := d.State.Get(bg, "snapshots")
+	if !strings.Contains(string(raw), `"refs_verified":true`) || !strings.Contains(string(raw), `"health":"pass"`) {
+		t.Errorf("snapshots: %s", raw)
+	}
+	items, _ := d.journal(bg)
+	got := false
+	for _, it := range items {
+		got = got || it.Kind == "refs_verified"
+	}
+	if !got {
+		t.Errorf("journal/ に refs_verified が無い")
 	}
 }

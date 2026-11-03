@@ -75,6 +75,8 @@ type VerifyResult struct {
 	UnexpectedVersions                []VersionRef
 	NoncurrentVersions, DeleteMarkers int
 	BytesWrittenVsBucket              float64 // 書いた量と保管先の量の比(spec 4.2)
+	// Sampled は抜き取りで retain-until を読んだ版の数(前回の verify 以後に書いた版を全件読んだ分は含まない。結果の sampled)。
+	Sampled int
 }
 
 // ExtendResult は extend の結果。

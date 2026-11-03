@@ -139,6 +139,7 @@ func (r *Retention) checkRetention(ctx context.Context, res *contract.VerifyResu
 		}
 	}
 	sampled, cursor := pickSample(old, prev.SampleCursor, contract.VerifySamplePerMonth/verifyRunsPerMonth)
+	res.Sampled = len(sampled)
 	batch := append(fresh, sampled...)
 	if err := r.readRetention(ctx, batch); err != nil {
 		return nil, err

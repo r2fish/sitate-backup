@@ -47,7 +47,9 @@ type s2 struct {
 
 func (w *s2) definition() string {
 	d := map[string]any{"version": 1,
-		"source":  map[string]any{"host": accEnv(w.t, "SITATE_ACCEPT_SOURCE_HOST"), "targets": []any{map[string]any{"id": "t1", "files": "/srv/shopapp"}}},
+		"source": map[string]any{"host": accEnv(w.t, "SITATE_ACCEPT_SOURCE_HOST"), "targets": []any{map[string]any{"id": "t1", "files": "/srv/shopapp"}},
+			// 元サーバーの PostgreSQL のクラスタは DB の対象を持たないので対象にしない(A2 の変種 (c)。source check の actionable を空にする)。
+			"declined": []any{map[string]any{"id": "d1", "postgresql_cluster": 5432}}},
 		"storage": []any{map[string]any{"endpoint": w.s3.endpoint, "bucket": w.s3.bucket, "key_ref": "storage", "prefix": "sitate/"}},
 		"restore": map[string]any{"adapter": "ssh-host", "dest": map[string]any{"at": w.destAt(), "key_ref": "restore-init"}},
 		"notify":  map[string]any{"to": []string{w.notifyDest()}}}
@@ -194,6 +196,7 @@ func (w *s2) enrollSource() {
 	t := w.t
 	o := w.g.call(w.sourceAdmin(), "source", "survey", "--host", w.sourceHostArg(), "--admin-ref", "admin", "--secrets-stdin").ok(t, "source survey")
 	t.Logf("source survey: %.300s", o.Env.Result)
+	w.afterSurvey(o) // 調査の後の状態と、置けない根の source enroll の拒否(stage3_survey_test.go)
 	o = w.g.call(w.sourceAdmin(), "source", "enroll", "--host", w.sourceHostArg(), "--admin-ref", "admin", "--secrets-stdin").ok(t, "source enroll")
 	t.Logf("source enroll: %.600s", o.Env.Result)
 	// 核が固定した元サーバーのホスト鍵の指紋が、環境の起動時に記録した値と一致する(実際の SSH で見えた鍵)。
@@ -205,6 +208,7 @@ func (w *s2) enrollSource() {
 	if !strings.Contains(line, `from="`+w.backupIP+`"`) {
 		t.Fatalf("受け口の from= が、元サーバーから見たバックアップサーバーのアドレス %s と違う: %s", w.backupIP, redactKeys(line))
 	}
+	w.afterEnroll()
 }
 
 func redactKeys(s string) string {
