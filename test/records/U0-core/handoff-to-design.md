@@ -326,3 +326,15 @@ D-0164 の 34.2 の問いの答え。詳細は `test/records/mainpath/stage3-mem
 - 主因は `restore.placeScript`(累積割り当て 459 MB のうち 338 MB)。復元先の arch の配布物(核とアダプタで約 46 MB)を base64 で 1 本の台本に埋める。
 - Argon2id は `phrase verify` の別プロセスで呼ばれる(VmHWM は約 17 MB から約 280 MB へ。そのプロセスの最大は 503 MB、残り約 200 MB は未測定)。
 - 製品の監督の考え: `placeScript` は分けて送れば下げられる。1 GB のサーバーで `mlockall` のもとで問題になるかは A2 の実機の値で判断する。今は直さない。
+
+## 37. 核のまとめレビューの直しから(2026-11-03。裁定の依頼)
+
+詳細は `test/records/mp-harden/notes.md` の番号。担当が推測で埋めなかったもの。
+
+裁定が要る(第 3 段が赤、または約束に効く):
+
+- 10: `source-change` の適用で `source enroll` が管理用の利用者とポートを得られず `ARG_INVALID` で failed になる。定義の `source.host` はホスト名だけ。案 A: `source-change` の JSON に利用者とポートを持たせる。案 B: 管理用の秘密に利用者を持たせる。案 C: 直前の登録の記録を使う。第 3 段はここだけ赤で、この直しの統合はこの裁定を待つ。
+- 3: `source-change`・`restore-change` の dry-run でホスト鍵を取る継ぎ目が `propose` に無い。今は提案の節に書かれた値だけで、省くと `source-change` の適用を拒否する。案 A: 継ぎ目を足す(契約の変更)。案 B: 提案に指紋を必須にする。
+- 5: 全消去の後の 0 件の世代が `health: pass` で `latest` になる。乗っ取りやランサムウェアで元データが消えたときに検知されない。復元テストは 0 件を合格にしなくなった。取得の側で `incomplete` にするか。
+
+急がない: 1(カードの欄名は契約を `host_keys`・`weaker_items` に揃えた)、2(`weaker_items` の既定値の表が無い)、4(提案の見積もり)、6(`--dry-run` の journal、plan を作れない入口の `NOT_IMPLEMENTED`)、7・8(`--to` の核の側の規則)、9(記録の無い保留)、11(未読の標準入力での早期拒否が `RUN_ABORTED` になる競合)、12(提案の秘密の後始末)。
