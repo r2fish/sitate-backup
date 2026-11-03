@@ -37,11 +37,15 @@ function splitSections(text: string, n: number): string[] {
   return parts.length === n ? parts : [text];
 }
 
+/**
+ * 期待する値の列(「JSON Pointer 演算子 値」を「、」で区切ったもの)を読む。値は先頭の 1 語だけ: バッククォートで囲んだ語か、最初の空白か「(」までの語。
+ * 後ろの補足(「(必須の項目 … を含む。…)」など)は値に含めない。
+ */
 function parseExpects(text: string): Expect[] {
   const out: Expect[] = [];
   for (const part of text.split("、")) {
-    const m = /^\s*`?(\/\S*?)`?\s*(=|⊇|⊆)\s*(.+?)\s*$/.exec(part.replace(/。$/, ""));
-    if (m) out.push({ pointer: m[1]!, op: m[2] as Op, rhs: m[3]!.replace(/^`|`$/g, "") });
+    const m = /^\s*`?(\/[^\s`]*?)`?\s*(=|⊇|⊆)\s*(?:`([^`]*)`|([^\s(（]+))/.exec(part);
+    if (m) out.push({ pointer: m[1]!, op: m[2] as Op, rhs: (m[3] ?? m[4])! });
   }
   return out;
 }
@@ -73,7 +77,8 @@ const same = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.str
 function literal(rhs: string, marks: Marks): { ok: true; value: unknown } | { ok: false } {
   const m = /^\{\{([A-Z_]+)\}\}$/.exec(rhs);
   if (m) return Object.hasOwn(marks, m[1]!) ? { ok: true, value: marks[m[1]!] } : { ok: false };
-  try { return { ok: true, value: JSON.parse(rhs) }; } catch { return { ok: false }; }
+  // JSON として読めればその値、読めない語(COMPLIANCE、署名のときに埋まる鍵の指紋など)は文字列。
+  try { return { ok: true, value: JSON.parse(rhs) }; } catch { return { ok: true, value: rhs }; }
 }
 
 function holds(env: unknown, e: Expect, marks: Marks): boolean {

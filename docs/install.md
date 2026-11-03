@@ -66,9 +66,9 @@
 - 聞くこと: 保管先のエンドポイントとバケット名、事業者の管理用鍵、通知の受け口の URL。
 - 何のために聞くか: バックアップの送り先と、失敗したときの知らせ先を決めるため。
 - 推奨の案: 保管先は H1 で契約した事業者の値をそのまま使う。通知先は、普段見る場所にある受信 Webhook を 1 つ。
-- 入れ方: 管理用鍵は秘密の入力ボックスの保存するモードに入れる。管理用鍵は手順 5 の `init-storage` と続く `bucket check` の合格でキーチェーンから消え、以後は必要なときに人がその都度入れる。保管先準備アダプタの無い事業者では、書き込み鍵と読み取り鍵を入れる。
+- 入れ方: 事業者の管理用鍵は、呼び出し(手順 2 の確認と手順 5 の `init-storage`)のたびに秘密の入力ボックスの保存しないモードで入れる(1 行目にキー ID、2 行目に鍵)。キーチェーンには置かず、その呼び出しの間だけ使う。通知の受け口の URL は保存するモードで入れる(手順 4 の `notify set`)。保管先準備アダプタの無い事業者では、書き込み鍵と読み取り鍵を入れる。
 - 通知の受け口の要件: JSON を受けて人が表示できること。確認語は通知の本文に載る。
-- 手順 5 の前にアプリを閉じて鍵が消えたときは、Q1 の続きとして入れ直す。新しい問いには数えない。
+- 管理用鍵はその都度入れるので、入れ直しは新しい問いには数えない(Q1 の続き)。
 
 ### Q2 フレーズを保管したことの確認(手順 7)
 
@@ -113,15 +113,15 @@
 
 | 手順 | 目的 | 実行するもの | 完了確認コマンド | 期待する値 | 失敗時 |
 |---|---|---|---|---|---|
-| 1 | バックアップサーバーに道具を置き、配布物の署名を確かめ、管理アクセスを閉じる | `bootstrap`(バイナリの配置、gate の登録、専用ユーザー・容器実行環境・タイマー登録の権限の用意、最後に管理アクセスを閉じる) | `sitate version` と `sitate doctor` | 1 つ目: `/ok` = `true`、`/result/signing_key_fp` = `{{DIST_KEY_FINGERPRINT}}`。2 つ目: `/result/passed` = `true`(必須の項目 `admin_access_closed` を含む。参考の項目は合否に使わない) | `SSH_UNREACHABLE` → 接続先と 22 番の到達を確かめる。`SSH_AUTH_DENIED` → 管理アカウントと鍵を確かめる。`SSH_HOSTKEY_MISMATCH` → 接続先を確かめ、人が接続先を削除してやり直す。`BOOTSTRAP_PRIVILEGE_REQUIRED` → root か sudo を持つアカウントで行う。`SIGNATURE_INVALID` → 配布物を取り直す。止めて管理者へ知らせる |
-| 2 | 保管先の契約情報と通知の資格情報を入れ、保管先の設定を実行前に確かめる | Q1、`sitate init-storage --dry-run --endpoint ... --bucket ... --admin-ref ...` | `sitate init-storage --dry-run --endpoint ... --bucket ... --admin-ref ...` | `/result/plan/errors` = `[]` | `STORAGE_UNREACHABLE` → エンドポイントと到達を確かめる。`STORAGE_DENIED` → 鍵の権限と契約の状態を確かめる。`BUCKET_MISMATCH` → 既存のバケットの設定を人と確かめる。`SECRET_MISSING` → Q1 の鍵を入れ直す |
-| 3 | 復元先の資格情報を入れ、復元先の登録を実行前に確かめる | Q3、`sitate restore-dest enroll --dry-run --dest ... --adapter ... --admin-ref ...` | `sitate restore-dest enroll --dry-run --dest ... --adapter ... --admin-ref ...` | `/result/plan/errors` = `[]` | `RESTORE_HOST_DENIED` → 復元先の資格情報と権限を確かめる。`RESTORE_HOSTKEY_MISMATCH` → 復元先のホスト鍵を人と確かめる。`SECRET_MISSING` → Q3 の資格情報を入れ直す |
-| 4 | 守る対象を決めて定義を作り、通知先を登録して試験通知で確かめる | Q4、`sitate source survey --host ssh://<user>@<host> --admin-ref <参照名>`、`sitate estimate --endpoint ... --size-gb ... --daily-gb ... --dump-gb ...`、定義を組み立てて `sitate def validate --file -` に渡す、`sitate notify set --to <通知先> --secret-ref <参照名>`、`sitate notify test` | `sitate def validate --file -` と `sitate notify test` | 1 つ目: `/ok` = `true`。2 つ目: `/result/all_delivered` = `true`(試験の通知には宛先ごとに別の確認語が載る。人には、受け取った確認語を手順 10 の承認カードで宛先ごとに入力することを伝える。問いには数えない) | `SOURCE_SURVEY_FAILED` → 元サーバーの所在と管理アカウントを確かめる。`SOURCE_HOSTKEY_MISMATCH` → 元サーバーのホスト鍵を人と確かめる。`DEF_INVALID` → 定義を直して出し直す。`NOTIFY_UNDELIVERED` → 通知先を確かめ、`notify set` と `notify test` だけやり直す |
-| 5 | 保管先を作成し、消せない設定と鍵の権限を確かめる | `sitate init-storage --endpoint ... --bucket ... --admin-ref ...`(保管先準備アダプタの無い事業者は付録「事業者別(組 A)」。成功し続く確認が合格した時点で事業者の管理用鍵がキーチェーンから消える) | `sitate bucket check` と `sitate doctor` | 1 つ目: `/result/lock_mode` = `COMPLIANCE`、`/result/versioning` = `true`、`/result/permissions/<i>/actual` = `/result/permissions/<i>/expected`(書き込み鍵の版指定なしの削除の要素を除く)。2 つ目: `/result/passed` = `true` | `BUCKET_MISMATCH` → 設定の食い違いを人と直す(管理用鍵を保存しないモードで入れる)。`KEY_TOO_POWERFUL` → 鍵の権限を絞って発行し直す。`KEY_MISSING_PERMISSION` → 鍵に足りない権限を足す。`ALREADY_INITIALIZED` → 済みなので完了確認へ進む |
-| 6 | バックアップの暗号化の仕組みと承認鍵を初期化する | `sitate init --approval-pubkey <base64> --secret-fd ...`(`--approval-pubkey` は承認鍵の公開鍵の base64 の部分だけ。失敗として扱った出力のときは、手順 7 の前なら同じ `init` を再実行する) | `sitate status` | `/result/initialized` = `true` | `ALREADY_INITIALIZED` → 手順 7 の確認に進む。`SECRET_FD_REQUIRED` → 秘密の渡し方を確かめる。`KEYRING_MISMATCH` → 保管先の既存の内容を人と確かめる |
+| 1 | バックアップサーバーに道具を置き、配布物の署名を確かめ、管理アクセスを閉じる | `bootstrap --admin-ref bak-admin`(バイナリの配置、gate の登録、専用ユーザー・容器実行環境・タイマー登録の権限の用意、最後に管理アクセスを閉じる) | `sitate version` と `sitate doctor` | 1 つ目: `/ok` = `true`、`/result/signing_key_fp` = `{{DIST_KEY_FINGERPRINT}}`。2 つ目: `/result/passed` = `true`(必須の項目 `admin_access_closed` を含む。参考の項目は合否に使わない) | `SSH_UNREACHABLE` → 接続先と 22 番の到達を確かめる。`SSH_AUTH_DENIED` → 管理アカウントと鍵を確かめる。`SSH_HOSTKEY_MISMATCH` → 接続先を確かめ、人が接続先を削除してやり直す。`BOOTSTRAP_PRIVILEGE_REQUIRED` → root か sudo を持つアカウントで行う。`SIGNATURE_INVALID` → 配布物を取り直す。止めて管理者へ知らせる |
+| 2 | 保管先の契約情報を入れ、保管先の設定を実行前に確かめる(定義が無い状態で、引数だけで動く。何も作らない) | Q1、`sitate init-storage --dry-run --endpoint ... --bucket ... --prefix sitate/ --admin-ref admin` | `sitate init-storage --dry-run --endpoint ... --bucket ... --prefix sitate/ --admin-ref admin` | `/result/plan/errors` = `[]`(管理用鍵の拒否と前提の欠けはここに載る) | `STORAGE_UNREACHABLE` → エンドポイントと到達を確かめる。`STORAGE_DENIED` → 鍵の権限と契約の状態を確かめる。`BUCKET_MISMATCH` → 既存のバケットの設定を人と確かめる。`SECRET_MISSING` → Q1 の鍵を入れ直す |
+| 3 | 復元先の資格情報を入れ、復元先の登録を実行前に確かめる | Q3、`sitate restore-dest enroll --dry-run --dest ... --adapter ... --admin-ref dest-admin` | `sitate restore-dest enroll --dry-run --dest ... --adapter ... --admin-ref dest-admin` | `/result/plan/errors` = `[]`(定義が無い状態で、引数だけで動く。何も作らない) | `RESTORE_HOST_DENIED` → 復元先の資格情報と権限を確かめる。`RESTORE_HOSTKEY_MISMATCH` → 復元先のホスト鍵を人と確かめる。`SECRET_MISSING` → Q3 の資格情報を入れ直す |
+| 4 | 守る対象を決めて定義を作り、通知先を登録して試験通知で確かめる | Q4、`sitate source survey --host ssh://<user>@<host> --admin-ref source-admin`、`sitate estimate --endpoint ... --size-gb ... --daily-gb ... --dump-gb ...`、先に `sitate notify set --to <通知先> --secret-ref <通知先と同じ参照名>`(Webhook の URL は秘密の入力ボックスの保存するモード。定義の `notify.to` の参照名をここで解決するので、`def validate` より前に呼ぶ)、続けて定義を組み立てて `sitate def validate --file -` に渡す、`sitate notify test` | `sitate def validate --file -` と `sitate notify test` | 1 つ目: `/ok` = `true`。2 つ目: `/result/all_delivered` = `true`(試験の通知には宛先ごとに別の確認語が載る。人には、受け取った確認語を手順 10 の承認カードで宛先ごとに入力することを伝える。問いには数えない) | `SOURCE_SURVEY_FAILED` → 元サーバーの所在と管理アカウントを確かめる。`SOURCE_HOSTKEY_MISMATCH` → 元サーバーのホスト鍵を人と確かめる。`DEF_INVALID` → `pointer` と `reason` に従って定義を直して出し直す(`unresolved_ref` で通知先の参照名が挙がるときは、先に `notify set` を呼んだか確かめる)。`NOTIFY_UNDELIVERED` → 通知先を確かめ、`notify set` と `notify test` だけやり直す |
+| 5 | 保管先を作成し、消せない設定と鍵の権限を確かめる | `sitate init-storage --endpoint ... --bucket ... --prefix sitate/ --admin-ref admin`(保管先準備アダプタの無い事業者は付録「事業者別(組 A)」。事業者の管理用鍵は保存しないモードで入れ、キーチェーンに残らない) | `sitate bucket check` と `sitate doctor` | 1 つ目: `/result/lock_mode` = `COMPLIANCE`、`/result/versioning` = `true`、`/result/permissions/<i>/actual` = `/result/permissions/<i>/expected`(書き込み鍵の版指定なしの削除の要素を除く)。2 つ目: `/result/passed` = `true` | `BUCKET_MISMATCH` → 設定の食い違いを人と直す(管理用鍵を入れ直す)。`KEY_TOO_POWERFUL` → 鍵の権限を絞って発行し直す。`KEY_MISSING_PERMISSION` → 鍵に足りない権限を足す。`ALREADY_INITIALIZED` → 済みなので完了確認へ進む |
+| 6 | バックアップの暗号化の仕組みと承認鍵を初期化する | `sitate init`(道具 `sitate_init`。承認鍵の公開鍵と秘密の出力先 `--secret-fd` はアプリが付けるので、エージェントは渡さない。失敗として扱った出力のときは、手順 7 の前なら同じ `init` を再実行する) | `sitate status` | `/result/initialized` = `true` | `ALREADY_INITIALIZED` → 手順 7 の確認に進む。`SECRET_FD_REQUIRED` → 秘密の渡し方を確かめる。`KEYRING_MISMATCH` → 保管先の既存の内容を人と確かめる |
 | 7 | フレーズを人が保管したことと復旧キットの保管を確かめる | Q2、H2、面: `sitate phrase verify`、`sitate kit`、面: `sitate kit confirm` | `sitate status` | `/result/phrase_confirmed` = `true`、`/result/kit/confirmed` = `true` | `PHRASE_INVALID` → 入れ直してもらう。`PHRASE_UNCONFIRMED` → 保管を確かめるまで次へ進まない |
-| 8 | 元サーバーに受け口を設置し、対象の取得を自己検査する | `sitate source enroll`(元サーバーに道具が無いときは H5) | `sitate source check` | `/result/selftest/<i>/ok` = `true`、`/result/actionable` = `[]`(足せる候補が無い。知らせるだけの種別は完了の条件から除く) | `SOURCE_SETUP_FAILED` → 道具が無い(`tool_missing`)なら H5 を行う。`SOURCE_HOSTKEY_MISMATCH` → 元サーバーのホスト鍵を人と確かめる。`RECEIVER_SELFTEST_FAILED` → 結果の `next` に従う。`RECEIVER_TARGETS_MISMATCH` → 対象と受け口の設定を合わせる |
-| 9 | 復元先を登録し、隔離の設定を確かめる | `sitate restore-dest enroll` | `sitate restore-dest check` | `/result/isolation/<i>/ok` = `true` | `RESTORE_ENROLL_MISMATCH` → 登録の内容を確かめる。`RESTORE_ISOLATION_FAILED` → 復元先の隔離を直す。`RESTORE_HOST_DENIED` → 復元先の権限を確かめる |
+| 8 | 元サーバーに受け口を設置し、対象の取得を自己検査する | `sitate source enroll --admin-ref source-admin`(元サーバーに道具が無いときは H5) | `sitate source check` | `/result/selftest/<i>/ok` = `true`、`/result/actionable` = `[]`(足せる候補が無い。知らせるだけの種別は完了の条件から除く) | `SOURCE_SETUP_FAILED` → 道具が無い(`tool_missing`)なら H5 を行う。`SOURCE_HOSTKEY_MISMATCH` → 元サーバーのホスト鍵を人と確かめる。`RECEIVER_SELFTEST_FAILED` → 結果の `next` に従う。`RECEIVER_TARGETS_MISMATCH` → 対象と受け口の設定を合わせる |
+| 9 | 復元先を登録し、隔離の設定を確かめる | `sitate restore-dest enroll --admin-ref dest-admin` | `sitate restore-dest check` | `/result/isolation/<i>/ok` = `true` | `RESTORE_ENROLL_MISMATCH` → 登録の内容を確かめる。`RESTORE_ISOLATION_FAILED` → 復元先の隔離を直す。`RESTORE_HOST_DENIED` → 復元先の権限を確かめる |
 | 10 | 定義を承認して確定する | `sitate propose seal --file -`(定義を標準入力で渡す) → H4(承認カード。手順 4 の確認語を宛先ごとに入力)→ `sitate apply` | `sitate def show` と `sitate status` | 1 つ目: `/result/sealed` = `true`。2 つ目: `/result/notify/proof_confirmed` = `true` | `NOTIFY_PROOF_MISMATCH` → 通知先を確かめ、手順 4 の `notify set` と `notify test` だけやり直してこの手順を出し直す。`APPROVAL_REQUIRED` → 承認カードで承認する。`DELAY_NOT_ELAPSED` → 遅延の時刻まで待つ。`PRECONDITION_CHANGED` → 提案し直す |
 | 11 | 最初のバックアップを取る | `sitate backup` | `sitate status` | `/result/last_backup/ok` = `true`(読み取り中に変化したファイルは警告で、成功を妨げない) | `ALL_TARGETS_FAILED` → 結果の `next` に従い対象を確かめる。`STORAGE_UNREACHABLE` → 保管先への到達を確かめる。`NOT_SEALED` → 手順 10 を済ませる。`LOCKED` → 実行中の処理の終わりを待つ |
 | 12 | 別のサーバーへの復元テストで、戻せることを確かめる | `sitate restore-test` | `sitate status` | `/result/last_restore_test/ok` = `true` | `RESTORE_MISMATCH` → 復元した内容の差を結果で確かめる。`NO_HEALTHY_BACKUP` → 手順 11 をやり直す。`RESTORE_ISOLATION_FAILED` → 手順 9 を確かめる。`TEARDOWN_UNVERIFIED` → 復元先の後始末を確かめる |
@@ -133,10 +133,64 @@
 - 手順 2 は、書き込み鍵と読み取り鍵を秘密の入力ボックスに入れ、完了確認を `sitate bucket check` の `/ok` = `true` とする。`init-storage` は使わない。
 - 手順 5 は `init-storage` を実行せず、完了確認は上の表の手順 5 と同じ。
 
+## 参照名と定義の形
+
+### 参照名(固定)
+
+キーチェーンの秘密は参照名で指す。参照名はアプリが入力ボックスで受けた値の置き場の名前で、**別の資格情報に同じ名前を使わない**(取り違えると、元サーバーの鍵を保管先の管理用鍵として送ってしまう)。次の名前をそのまま使う。
+
+| 参照名 | 何の値か | 使う呼び出し |
+|---|---|---|
+| `bak-admin` | バックアップサーバーの管理アクセスの鍵 | 手順 1 の `bootstrap --admin-ref bak-admin` |
+| `source-admin` | 元サーバーの管理用アカウントの秘密鍵 | 手順 4 の `source survey --admin-ref source-admin`、手順 8 の `source enroll --admin-ref source-admin` |
+| `admin` | 保管先の事業者の管理用鍵(保存しない。キー ID と鍵の 2 行) | 手順 2・5 の `init-storage --admin-ref admin` |
+| `dest-admin` | 復元先の初期の資格情報 | 手順 3 の `restore-dest enroll --dry-run --admin-ref dest-admin`、手順 9 の `restore-dest enroll --admin-ref dest-admin` |
+| 通知先と同じ名前(例 `hook`) | 通知先の Webhook の URL | 手順 4 の `notify set --to hook --secret-ref hook` |
+| `storage` | 保管先の書き込み鍵・読み取り鍵(定義の `storage[0].key_ref`。`init-storage` が発行して秘密ファイルに置く) | 定義だけに書く |
+| `restore-init` | 復元先の初期の資格情報の参照名(定義の `restore.dest.key_ref`) | 定義だけに書く |
+
+秘密の値は道具の引数にもチャットにも書かない。引数に参照名を渡せば、アプリが入力ボックスを開いて人に値を求める(`secret_refs` を別に付ける必要は無い)。
+
+### 定義の形(手順 4 で組み立てる)
+
+Q1〜Q4 と手順 2・3 の値から、次の形の JSON を作って `sitate_def_validate` と `sitate_propose`(`seal`)の `definition` に渡す。キーの名前は仕様どおりで、勝手に増やさない。
+
+```json
+{
+  "version": 1,
+  "source": {
+    "host": "<元サーバーの所在>",
+    "targets": [
+      { "id": "t1", "files": "/srv/app/data" },
+      { "id": "t2", "postgresql": "appdb", "port": 5432 }
+    ],
+    "declined": [
+      { "id": "d1", "mount": "/mnt/archive" },
+      { "id": "d2", "postgresql_cluster": 5433 }
+    ]
+  },
+  "storage": [
+    { "endpoint": "<Q1 のエンドポイント>", "bucket": "<Q1 のバケット>", "key_ref": "storage", "prefix": "sitate/" }
+  ],
+  "restore": {
+    "adapter": "ssh-host",
+    "dest": { "at": "ssh://<ユーザー>@<復元先のホスト>:22", "key_ref": "restore-init" }
+  },
+  "notify": { "to": ["hook"] },
+  "server_monthly_yen": 0
+}
+```
+
+- 対象 `targets` の `id` は `t1`、`t2` の形(`t` と 1〜9999)。種別のキーは `files` か `postgresql` のどちらか 1 つ。除外 `declined` の `id` は `d1`、`d2` の形で、種別は `mount` か `postgresql_cluster`。
+- `files` の根は絶対パスで、`/`、`/etc`、`/var`、`/home`、`/srv`、`/opt` そのものと、`/proc` などのシステムの場所は置けない(`DEF_INVALID` の `root_forbidden`)。
+- `notify.to` は通知先の参照名(手順 4 の `notify set` で先に登録した名前)。メールアドレスの通知先はイテレーション 1 の範囲の外。
+- `server_monthly_yen` は価格表に当たるプランが分からなければ書かない(0 のまま)。
+- `DEF_INVALID` が返ったら、`detail` の `pointer` と `reason` の場所だけを直して出し直す。
+
 ## 手順のやり直し
 
 - 中断・失敗した導入をやり直すときは、まず `sitate bucket check`(書き込み鍵)、`sitate status`、`sitate def show` で現状を確かめ、完了確認に合格している手順は飛ばして差分だけを行う。
-- 手順 2 の完了は `sitate bucket check` で判定する。合格していれば手順 2 は済み。キーチェーンに事業者の管理用鍵が無いときは、`init-storage`(dry-run を含む)を管理用鍵の参照なしで実行し、`BUCKET_MISMATCH` が返ったときか書き込み鍵が無いときだけ参照を付けて呼び直す。アプリはそのとき保存しないモードの入力ボックスを開く。
+- 手順 2 の完了は `sitate bucket check` で判定する。合格していれば手順 2 は済み。事業者の管理用鍵はキーチェーンに置かないので、`init-storage`(dry-run を含む)を管理用鍵の参照なしで実行し、`BUCKET_MISMATCH` が返ったときか書き込み鍵が無いときだけ参照 `admin` を付けて呼び直す。アプリはそのとき保存しないモードの入力ボックスを開く。
 - 手順 5 の `init-storage` は、書き込み鍵で設定の一致を確かめられれば、管理用鍵なしで `ALREADY_INITIALIZED`(警告。成功)を返す。
 - 設定が食い違うときだけ、人が事業者の管理用鍵を保存しないモードで入れて直す。これは警告への対応として扱い、人への問いには数えない。
 - 手順 6 の `init` は、手順 7 の `phrase verify` で確定した後は `ALREADY_INITIALIZED` を返す。そのときはやり直さず、手順 7 の完了確認へ進む。
@@ -168,4 +222,4 @@
 | 手順 | 目的 | 実行するもの | 完了確認コマンド | 期待する値 | 失敗時 |
 |---|---|---|---|---|---|
 | S1 | 復元先の前提を満たし、登録できることを実行前に確かめる | 外: 復元先に `gocryptfs` と FUSE を入れる、H3、`sitate restore-dest enroll --dry-run --dest ... --adapter ssh-host --admin-ref ...` | `sitate restore-dest enroll --dry-run --dest ... --adapter ssh-host --admin-ref ...` | `/result/plan/errors` = `[]` | `RESTORE_HOST_DENIED` → 管理用アカウントの権限を確かめる。`RESTORE_HOSTKEY_MISMATCH` → ホスト鍵を人と確かめる |
-| S2 | 復元先を登録し、隔離を確かめる | `sitate restore-dest enroll` | `sitate restore-dest check` | `/result/isolation/<i>/ok` = `true` | `RESTORE_ISOLATION_FAILED` → 隔離の設定を直す。`RESTORE_ENROLL_MISMATCH` → 登録の内容を確かめる |
+| S2 | 復元先を登録し、隔離を確かめる | `sitate restore-dest enroll --admin-ref dest-admin` | `sitate restore-dest check` | `/result/isolation/<i>/ok` = `true` | `RESTORE_ISOLATION_FAILED` → 隔離の設定を直す。`RESTORE_ENROLL_MISMATCH` → 登録の内容を確かめる |

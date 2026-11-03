@@ -37,7 +37,7 @@ test("主プロセスと画面の本体のソースはドライバのモジュ�
     for (const f of readdirSync(join(root, dir)).filter((x) => x.endsWith(".ts"))) {
       const text = readFileSync(join(root, dir, f), "utf8");
       // 唯一の例外: 主プロセスの入口の `if (__TEST_BUILD__)` の枝(製品のビルドでは束ねられない。build.test.ts が成果物で確かめる)。
-      const allowed = `${dir}/${f}` === "main/index.ts" ? text.replace(/if \(__TEST_BUILD__\) \(await import\("\.\.\/testing\/attach\.ts"\)\)[^\n]*\n/, "") : text;
+      const allowed = `${dir}/${f}` === "main/index.ts" ? text.replace(/if \(__TEST_BUILD__\) \(await import\("\.\.\/testing\/attach\.ts"\)\)[^\n]*\n/, "").replace(/__TEST_BUILD__ \? \(await import\("\.\.\/testing\/test-keychain\.ts"\)\)\.securityForTest\(\) : undefined/, "") : text;
       assert.ok(!/testing\/|e2e\//.test(allowed), `${dir}/${f}`);
     }
   }

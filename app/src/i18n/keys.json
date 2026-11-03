@@ -586,10 +586,22 @@
  "chat.secret.label.admin": {
   "args": {}
  },
+ "chat.secret.label.dest_admin": {
+  "args": {}
+ },
  "chat.secret.label.generic": {
   "args": {}
  },
  "chat.secret.label.llm": {
+  "args": {}
+ },
+ "chat.secret.label.source_admin": {
+  "args": {}
+ },
+ "chat.secret.label.storage_admin": {
+  "args": {}
+ },
+ "chat.secret.label.webhook": {
   "args": {}
  },
  "chat.secret.revoke_reissue.admin_key": {

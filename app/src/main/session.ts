@@ -10,6 +10,7 @@ import { ingestCoreOutput } from "./core-output.ts";
 import { SshError } from "./ssh/connection.ts";
 import { UnsendableArgvError, newRunId } from "./ssh/core-runner.ts";
 import { SECRET_LABEL } from "./secret-box.ts";
+import { askSecret, collectSecrets } from "./secret-flow.ts";
 import type { SecretBox } from "./secret-box.ts";
 import type { StatusView } from "./status-view.ts";
 import type { StepJudge } from "./step-judge.ts";
@@ -19,6 +20,7 @@ import type { Keychain } from "./keychain.ts";
 import { SERVICE_PRE_ADMIN } from "./keychain.ts";
 import { PathRefTable } from "./path-ref.ts";
 import { QuoteRejections, checkQuotes } from "./quote-check.ts";
+import { renderMarks } from "./quote-render.ts";
 import { shapeEnvelope, toDataSection } from "./shape-envelope.ts";
 import type { StreamEnd } from "./stdout-records.ts";
 import { authorizeToolCall, buildStdin } from "./tool-gate.ts";
@@ -56,10 +58,10 @@ export interface SessionDeps {
   readonly onStatus?: () => void;
   /** `source survey` が成功したとき、核の結果の全体(実名つき。モデルへは送らず、状態と報告の表示の区画にだけ描く)。 */
   readonly onSurvey?: (result: Record<string, unknown>) => void;
+  /** 引用した手順書・説明書の本文(引用の照合で、これに出る値を引いた文は表示してよい。spec 3.7 の例外)。 */
+  readonly citedBodies?: () => readonly string[];
 }
 
-/** 事業者の管理用鍵を取る道具(spec 3.7 の写像): 保存しないモードで開く。 */
-const BUSINESS_KEY_TOOLS = new Set(["sitate_init_storage", "sitate_init", "sitate_apply"]);
 /** 元サーバーの管理用資格情報が通らなかったとき、その参照名の値をキーチェーンから消す(spec 3.7)。 */
 const SOURCE_AUTH_TOOLS = new Set(["sitate_source_survey", "sitate_source_enroll"]);
 const AUTH_REASONS = new Set(["auth", "key_unparsable"]);
@@ -72,11 +74,9 @@ export class Session {
   readonly #quotes = new QuoteRejections();
   readonly #results = new Map<string, unknown>();
   readonly #humanTexts: string[] = [];
-  /** 事業者の管理用鍵のうちキーチェーンに置いたもの(init-storage の ok:true と続く bucket check の合格、またはアプリを閉じる時点で消す)。 */
-  readonly #businessRefs = new Set<string>();
-  #storageInitialized = false;
   /** この呼び出しで開いたフレーズのパネルの待ち。 */
   #panelWait: Promise<"done" | "cancelled"> | null = null;
+  #chain: Promise<void> = Promise.resolve();
   #newSteps: string[] = [];
   #stepPassed = false;
   #seq = 0;
@@ -117,9 +117,9 @@ export class Session {
   }
 
   onReply(text: string): void {
-    const v = checkQuotes({ text, results: this.#results, humanTexts: this.#humanTexts });
+    const v = checkQuotes({ text, results: this.#results, humanTexts: this.#humanTexts, citedBodies: this.#d.citedBodies?.() ?? [] });
     // 引用の照合は参照名のままの文で行い、画面にはエージェントの文の参照名を実名に置き換えて描く(完了条件 33。モデルへ戻らない)。
-    if (v.ok) return this.#d.onChat({ role: "agent", text: this.#d.refs.renderText(text) });
+    if (v.ok) return this.#d.onChat({ role: "agent", text: this.#d.refs.renderText(renderMarks(text, (k) => this.#d.t(k))) });
     this.#quotes.record(v);
     this.#d.onChat({ role: "notice", text: this.#d.t("chat.quote.rejected_guide") });
   }
@@ -134,7 +134,14 @@ export class Session {
    * 道具の呼び出し(AgentRuntime のコールバック)。戻り値はモデルへ返す区画。
    * 人の操作が要る道具(フレーズのパネル)では、その操作の完了か取り消しまで戻らない(取り消しは HUMAN_CANCELLED)。
    */
-  async onToolCall(name: string, input: unknown): Promise<string> {
+  onToolCall(name: string, input: unknown): Promise<string> {
+    // 1 つの応答に道具の呼び出しが複数あっても並列に走らせない(承認カード・入力ボックス・パネルは同時に 1 つ。spec 3.7)。
+    const run = this.#chain.then(() => this.#serial(name, input));
+    this.#chain = run.then(() => undefined, () => undefined);
+    return run;
+  }
+
+  async #serial(name: string, input: unknown): Promise<string> {
     this.#panelWait = null;
     let out: string;
     try {
@@ -155,11 +162,11 @@ export class Session {
   }
 
   async #toolCall(name: string, input: unknown): Promise<string> {
-    const auth = authorizeToolCall(this.#d.registry, { id: "", name, input }, this.#d.refs);
+    const auth = authorizeToolCall(this.#d.registry, { id: "", name, input }, this.#d.refs, { approvalPubkey: this.#d.approvalKey.sshPublicKeyBase64() });
     if (!auth.ok) return this.#finish(name, toDataSection(auth.envelope as unknown as Record<string, unknown>), auth.envelope.error.code);
     const plan = this.#withRunId(auth.plan);
     if (plan.tool === "sitate_bootstrap") return this.#bootstrap(plan);
-    const secrets = await this.#collectSecrets(plan);
+    const secrets = await collectSecrets({ keychain: this.#d.keychain, service: this.#d.service, secretBox: this.#d.secretBox }, plan);
     if (secrets === null) return this.#cancelled(name);
     const first = await this.#run(plan.argv, buildStdin(plan, secrets));
     if ("discarded" in first) return this.#finish(name, first.text, first.code);
@@ -189,38 +196,10 @@ export class Session {
     return this.#finish(name, toDataSection(appErrorEnvelope("HUMAN_CANCELLED", ["app", "tool"]) as unknown as Record<string, unknown>), "HUMAN_CANCELLED");
   }
 
-  /**
-   * secret_refs の値を集める。キーチェーンに有ればそれ、無ければ入力ボックスを開く(人が閉じれば null)。
-   * 事業者の管理用鍵(init-storage・init・apply の admin_ref)は保存しないモード、ほかは保存するモード(spec 3.7 の写像)。
-   */
-  async #collectSecrets(plan: ToolPlan): Promise<Record<string, unknown> | null> {
-    const values: Record<string, unknown> = {};
-    const adminRef = typeof plan.input.admin_ref === "string" ? plan.input.admin_ref : null;
-    for (const ref of plan.secretRefs) {
-      const business = ref === adminRef && BUSINESS_KEY_TOOLS.has(plan.tool);
-      const have = await this.#d.keychain.get(this.#d.service(), ref);
-      if (have !== null) { values[ref] = have; if (business) this.#businessRefs.add(ref); continue; }
-      if (business && plan.tool === "sitate_apply") continue; // apply は HUMAN_SECRET_REQUIRED が返ったときに開く
-      const v = await this.#ask(business ? "no-save" : "save", ref);
-      if (v === null) return null;
-      values[ref] = v;
-    }
-    return values;
-  }
-
-  async #ask(mode: "save" | "no-save", ref: string): Promise<string | null> {
-    const box = this.#d.secretBox;
-    if (box === undefined) return null;
-    const out = await box.request(mode, ref, SECRET_LABEL.generic);
-    if (out.kind === "cancelled") return null;
-    if (out.kind === "transient") return out.value.take();
-    return this.#d.keychain.get(this.#d.service(), ref);
-  }
-
   async #applyWithBusinessKey(plan: ToolPlan): Promise<RunOutcome | null> {
     const ref = typeof plan.input.admin_ref === "string" ? plan.input.admin_ref : null;
     if (ref === null) return null;
-    const v = await this.#ask("no-save", ref);
+    const v = await askSecret({ keychain: this.#d.keychain, service: this.#d.service, secretBox: this.#d.secretBox }, plan.tool, "admin_ref", ref, "no-save");
     if (v === null) return null;
     const argv = plan.argv.includes("--secrets-stdin") ? plan.argv : [...plan.argv, "--secrets-stdin"];
     return this.#run(argv, JSON.stringify({ [ref]: v }) + "\n");
@@ -228,19 +207,11 @@ export class Session {
 
   /** 結果に応じた秘密の後始末: 事業者の管理用鍵の寿命、元サーバーの資格情報の失敗。 */
   async #afterRun(plan: ToolPlan, env: Record<string, unknown>): Promise<void> {
-    if (plan.tool === "sitate_init_storage" && env.ok === true && !plan.dryRun) this.#storageInitialized = true;
-    if (plan.tool === "sitate_bucket_check" && env.ok === true && this.#storageInitialized) await this.#dropBusinessKeys();
     if (SOURCE_AUTH_TOOLS.has(plan.tool) && env.ok === false) {
       const d = (env.error as { detail?: { step?: unknown; reason?: unknown } } | null)?.detail;
       const ref = plan.input.admin_ref;
       if (typeof ref === "string" && d?.step === "connect" && typeof d.reason === "string" && AUTH_REASONS.has(d.reason)) await this.#d.keychain.delete(this.#d.service(), ref);
     }
-  }
-
-  async #dropBusinessKeys(): Promise<void> {
-    for (const ref of this.#businessRefs) await this.#d.keychain.delete(this.#d.service(), ref);
-    this.#businessRefs.clear();
-    this.#storageInitialized = false;
   }
 
   /** この呼び出しで手順が合格したか(往復の数え直しの合図)。読むと下ろす。 */
@@ -250,9 +221,9 @@ export class Session {
     return v;
   }
 
-  /** アプリを閉じるとき。事業者の管理用鍵をキーチェーンから消す。 */
+  /** アプリを閉じるとき。事業者の管理用鍵は保存しないモードで受けるので、キーチェーンに残るものは無い(D-0159)。 */
   async dispose(): Promise<void> {
-    await this.#dropBusinessKeys();
+    await Promise.resolve();
   }
 
   async #bootstrap(plan: ToolPlan): Promise<string> {
@@ -290,7 +261,10 @@ export class Session {
     const pending = await this.#run(["pending", "--id", id], "");
     const record = "envelope" in pending ? firstChange(pending.envelope) : null;
     if (record === null) return this.#finish(name, this.#shape(proposeEnv), codeOf(proposeEnv));
-    const decision = await this.#d.onCard(buildCard(record, { t: this.#d.t }));
+    const card = buildCard(record, { t: this.#d.t });
+    const raw = await this.#d.onCard(card);
+    // 承認できないカード(ハッシュの不一致・未知の欄)への承認は、画面の操作が何であれ閉じるとして扱う(主プロセスでも確かめる)。
+    const decision: CardDecision = raw.kind === "approve" && !card.approveEnabled ? { kind: "close" } : raw;
     if (decision.kind === "close") return this.#finish(name, this.#shape(proposeEnv), null);
     if (decision.kind === "cancel") {
       await this.#run(["cancel", "--id", id], "");

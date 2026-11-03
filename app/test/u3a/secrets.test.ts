@@ -82,23 +82,23 @@ test("session: a missing secret ref opens the box in save mode and the value rea
   assert.equal(y.calls.length, 0, "核を呼ばない");
 });
 
-test("session: the business admin key of init-storage opens no-save, is never stored, and a stored one is dropped after init-storage ok and a passing bucket check", async () => {
+test("session: the business admin key of init-storage opens no-save, is never stored, and a same-named keychain item is neither read nor dropped", async () => {
   const x = rig((argv) => ok([argv[0]!]), { adm: "BIZ-KEY" });
   await x.s.onToolCall("sitate_init_storage", { admin_ref: "adm", secret_refs: ["adm"], endpoint: "e", bucket: "b" });
   assert.equal(x.shown[0]!.mode, "no-save");
   assert.ok(x.calls[0]!.stdin.includes("BIZ-KEY"));
   assert.ok(!dump(x.kc).includes("BIZ-KEY"));
-  const y = rig((argv) => ok([argv[0]!]));
+  const y = rig((argv) => ok([argv[0]!]), { adm: "TYPED-KEY" });
   await y.kc.set(serviceFor("repoX"), "adm", "BIZ-KEY");
   await y.s.onToolCall("sitate_init_storage", { admin_ref: "adm", secret_refs: ["adm"], endpoint: "e", bucket: "b" });
-  assert.ok(dump(y.kc).includes("BIZ-KEY"), "bucket check の前はまだ有る");
+  assert.equal(y.shown[0]?.mode, "no-save", "同名の項目がキーチェーンに有っても読まず、保存しないモードで開く(mp-app B6)");
+  assert.ok(y.calls[0]!.stdin.includes("TYPED-KEY") && !y.calls[0]!.stdin.includes("BIZ-KEY"));
   await y.s.onToolCall("sitate_bucket_check", { key_ref: "k" });
-  assert.ok(!dump(y.kc).includes("BIZ-KEY"), "init-storage の ok:true と bucket check の合格で消える");
-  const z = rig((argv) => ok([argv[0]!]));
+  assert.ok(dump(y.kc).includes("BIZ-KEY"), "同名の別の資格情報(元サーバーの鍵など)を消さない");
+  const z = rig((argv) => ok([argv[0]!]), { adm: "TYPED-KEY" });
   await z.kc.set(serviceFor("repoX"), "adm", "BIZ-KEY");
   await z.s.onToolCall("sitate_init_storage", { admin_ref: "adm", secret_refs: ["adm"], endpoint: "e", bucket: "b" });
   await z.s.dispose();
-  assert.ok(!dump(z.kc).includes("BIZ-KEY"), "アプリを閉じた時点で消える");
 });
 
 test("session: apply returning HUMAN_SECRET_REQUIRED opens the no-save box and re-calls once with the value on stdin only", async () => {

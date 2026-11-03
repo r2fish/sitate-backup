@@ -10,7 +10,7 @@ export NAME
 
 .PHONY: shell-linux test test-app test-contract contract-status test-adapters lint-install lint-size \
 	build build-test build-app build-app-test sign-test sign sign-installer sign-test-installer \
-	test-env-up test-env-down test-e2e test-mainpath _test _test-contract _test-adapters _build _contract-status
+	test-app-real test-env-up test-env-down test-e2e test-mainpath _test _test-contract _test-adapters _build _contract-status
 
 shell-linux:
 	@$(LINUX) '$(CMD)'
@@ -40,6 +40,11 @@ _test-contract:
 
 test-app:
 	npm --prefix app test
+
+# アプリの実物の部品と実物の核の結線の試験(mp-app)。受入試験の環境と試験用の保管先が要る(test/wiring/run.sh の冒頭)。
+test-app-real:
+	@test -n "$(NAME)" || { echo "NAME=<名前> が要ります"; exit 64; }
+	@bash test/wiring/run.sh "$(NAME)"
 
 # 主経路の通し(作業指示書 6 章)。make test に含めない。STAGE は 1〜3。
 # 第 1 段: make test-env-up NAME=x の後に SITATE_NESTED=1 make test-mainpath STAGE=1 NAME=x。

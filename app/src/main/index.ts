@@ -8,7 +8,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { AgentHost } from "./agent-host.ts";
 import { AppRecorder } from "./app-record.ts";
-import { SoftwareApprovalKey } from "./approval-sign.ts";
+import { SoftwareApprovalKey, signedAtOf } from "./approval-sign.ts";
+import { CardGate } from "./card-gate.ts";
 import { loadBundle } from "./bundle-load.ts";
 import type { LoadedBundle } from "./bundle-load.ts";
 import type { TrustedKey } from "./minisign.ts";
@@ -17,7 +18,7 @@ import { runBootstrap } from "./bootstrap/bootstrap.ts";
 import type { BootstrapInput, BundleReader } from "./bootstrap/bootstrap.ts";
 import { reportFailure } from "./failure-report.ts";
 import { CHANNEL } from "./ipc-channels.ts";
-import type { CardDecision, UiMessage } from "./ipc-channels.ts";
+import type { UiMessage } from "./ipc-channels.ts";
 import { ADMIN_KEY_ACCOUNT, APPROVAL_ACCOUNT, MacKeychain, SERVICE_PRE_ADMIN, SERVICE_PRE_LLM, serviceFor } from "./keychain.ts";
 import { PathRefTable } from "./path-ref.ts";
 import { LLM_ACCOUNT, SECRET_LABEL, SecretBox } from "./secret-box.ts";
@@ -56,7 +57,7 @@ interface Ctx {
   readonly registry: ToolRegistry;
   readonly bundle: Extract<LoadedBundle, { ok: true }>;
   readonly targets: TargetStore;
-  readonly cardResolver: { current: ((d: CardDecision) => void) | null };
+  readonly cardGate: CardGate;
   readonly typedFp: { current: string | null };
   readonly renderStatus: () => void;
 }
@@ -74,7 +75,10 @@ async function main(): Promise<void> {
     return;
   }
   const win = createMainWindow(res);
+  // 画面の読み込みの完了を待ってから最初の描画を送る(待たないと、レンダラが受け口を登録する前の送信が失われる)。
+  const loaded = new Promise<void>((resolve) => win.webContents.once("did-finish-load", () => resolve()));
   const ctx = await compose(res, locale, keys, bundle, win);
+  await loaded;
   registerIpc(ctx);
   app.on("before-quit", () => { ctx.phrase.dispose(); void ctx.session.dispose(); });
   // 試験用のアプリだけ(製品のビルドは __TEST_BUILD__ = false で、この枝と ../testing は束ねられない)。
@@ -94,14 +98,15 @@ async function approvalKeyOf(keychain: MacKeychain): Promise<SoftwareApprovalKey
 async function compose(res: string, locale: string, keys: TrustedKey[], b: Extract<LoadedBundle, { ok: true }>, win: BrowserWindow): Promise<Ctx> {
   const t = translator(JSON.parse(b.byPath(`i18n/${locale}/catalog.json`)) as Record<string, string>, locale);
   const registry = new ToolRegistry(b.paths("tools/").filter((p) => p.endsWith(".json")).map((p) => JSON.parse(b.byPath(p)) as ConstructorParameters<typeof ToolRegistry>[0][number]));
-  const keychain = new MacKeychain();
+  // 試験用のアプリだけ: SITATE_TEST_KEYCHAIN が指す使い捨ての keychain を使う(製品のビルドでは束ねられない)。
+  const keychain = new MacKeychain(__TEST_BUILD__ ? (await import("../testing/test-keychain.ts")).securityForTest() : undefined);
   const ui = (m: UiMessage): void => win.webContents.send(CHANNEL.render, m);
   const chat: ChatLine[] = [];
   const notices: string[] = [];
   const dataDir = app.getPath("userData");
   const targets = new TargetStore(join(dataDir, "ssh-target.json"));
   const recorder = new AppRecorder(join(dataDir, "app-record.json"));
-  const cardResolver: Ctx["cardResolver"] = { current: null };
+  const cardGate = new CardGate();
   const typedFp: Ctx["typedFp"] = { current: null };
   const osNotify = (text: string): void => { if (Notification.isSupported()) new Notification({ title: "Sitate-backup", body: text }).show(); };
   const survey: { current: SurveyView | null } = { current: null };
@@ -132,15 +137,15 @@ async function compose(res: string, locale: string, keys: TrustedKey[], b: Extra
   });
   const session: Session = new Session({
     registry, refs: new PathRefTable(), keychain, service: () => serviceFor("repo"), t, approvalKey: await approvalKeyOf(keychain), runner,
-    now: () => new Date().toISOString(), sendToAgent: (id, text) => { recorder.runStart(id); host.send(id, text); },
+    now: () => signedAtOf(new Date()), sendToAgent: (id, text) => { recorder.runStart(id); host.send(id, text); },
     onChat: (l) => { chat.push(l); renderChat(); },
-    onCard: (card) => new Promise<CardDecision>((resolve) => { cardResolver.current = resolve; ui({ surface: "approval-card", card }); }),
+    onCard: (card) => { const decision = cardGate.open(card.changeId); ui({ surface: "approval-card", card }); return decision; },
     onPanel: (panel) => phrase.setPanel(panel),
     onSurvey: (r) => { survey.current = buildSurveyView(r, t, locale); renderStatus(); },
     secretBox: box, bootstrap: bootstrapRunner(b, keys, targets, keychain, typedFp), status, onStatus: renderStatus,
-    judge: new StepJudge(b.byPath("install.md"), marksOf(b)),
+    judge: new StepJudge(b.byPath("install.md"), marksOf(b)), citedBodies: () => [b.byPath("install.md"), b.byPath("manual.md")],
   });
-  const ctx: Ctx = { res, locale, keychain, box, host, session, phrase, targetUi, runner, label: t, registry, bundle: b, targets, cardResolver, typedFp, renderStatus };
+  const ctx: Ctx = { res, locale, keychain, box, host, session, phrase, targetUi, runner, label: t, registry, bundle: b, targets, cardGate, typedFp, renderStatus };
   ctxRef.current = ctx;
   return ctx;
 }
@@ -165,7 +170,7 @@ function bootstrapRunner(b: Extract<LoadedBundle, { ok: true }>, keys: TrustedKe
 function registerIpc(ctx: Ctx): void {
   ipcMain.handle(CHANNEL.chatSend, (_e, text: unknown) => (typeof text === "string" ? ctx.session.submit(text) : undefined));
   ipcMain.handle(CHANNEL.chatAbort, () => ctx.host.abort());
-  ipcMain.handle(CHANNEL.cardDecision, (_e, _id: unknown, d: CardDecision) => { ctx.cardResolver.current?.(d); ctx.cardResolver.current = null; });
+  ipcMain.handle(CHANNEL.cardDecision, (_e, id: unknown, d: unknown) => { ctx.cardGate.decide(id, d); });
   ipcMain.handle(CHANNEL.secretSubmit, (_e, ref: unknown, value: unknown) => (typeof ref === "string" && typeof value === "string" ? ctx.box.submit(ref, value) : undefined));
   ipcMain.handle(CHANNEL.phraseAction, (_e, a: unknown) => (a === "print" || a === "verify" || a === "confirm" || a === "handwritten" || a === "cancel" ? ctx.phrase.handle(a) : undefined));
   ipcMain.handle(CHANNEL.statusAction, (_e, kind: unknown) => { if (typeof kind === "string") ctx.session.askAi(kind); });

@@ -1,6 +1,7 @@
 // 配布署名(minisign 互換。spec 3.2.1「配布署名の形」)の検証。方式は既定の `ED`(対象の BLAKE2b-512 に Ed25519)だけを受ける。
 // trusted comment(`version=<版> arch=<arch> path=<キー>`)も署名の対象で、得た位置と照らす。
-import { createHash, createPublicKey, verify } from "node:crypto";
+import { createPublicKey, verify } from "node:crypto";
+import { blake2b512 } from "./blake2b.ts";
 
 const SPKI_PREFIX = Buffer.from("302a300506032b6570032100", "hex");
 const edVerify = (rawKey: Buffer, msg: Buffer, sig: Buffer): boolean =>
@@ -30,7 +31,7 @@ export function verifyMinisign(file: Buffer, sigText: string, keys: readonly Tru
   const key = keys.find((k) => k.keyId.equals(raw.subarray(2, 10)));
   if (key === undefined) return { ok: false, reason: "no_matching_key" };
   const sig = raw.subarray(10, 74);
-  const digest = createHash("blake2b512").update(file).digest();
+  const digest = blake2b512(file);
   if (!edVerify(key.publicKey, digest, sig)) return { ok: false, reason: "bad_signature" };
   const trusted = trustedLine.slice("trusted comment: ".length);
   const global = Buffer.from(globalLine, "base64");

@@ -13,7 +13,7 @@ const gate = readJson(join(contractSchemaDir, "..", "gatedata", "allowlist.json"
 const toolFiles = listFiles(join(appRoot, "src/tools"), ".json");
 const toolName = (c: string[]) => "sitate_" + c.join("_").replace(/-/g, "_");
 const provided = subs.filter((s) => s.public === "tool" && !s.later);
-const NOT_OFFERED = ["secrets-stdin", "phrase-stdin", "snapshot-key-stdin", "notify-proof-stdin", "secret-fd", "file", "invoked-by"];
+const NOT_OFFERED = ["secrets-stdin", "phrase-stdin", "snapshot-key-stdin", "notify-proof-stdin", "secret-fd", "file", "invoked-by", "approval-pubkey"]; // approval-pubkey は init だけ(主プロセスが付ける。spec 3.7「道具に出さない選択肢」、D-0165)
 const snake = (s: string) => s.replace(/-/g, "_");
 
 function needTools() {

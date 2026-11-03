@@ -9,7 +9,10 @@ import type { SecretMode } from "./ipc-channels.ts";
 export const LLM_ACCOUNT = "app:llm-api-key";
 
 /** 入力ボックスのラベルのカタログのキー。参照名(モデルが決める)は画面に出さず、アプリが決めた文だけを出す。 */
-export const SECRET_LABEL = { generic: "chat.secret.label.generic", admin: "chat.secret.label.admin", llm: "chat.secret.label.llm" } as const;
+export const SECRET_LABEL = {
+  generic: "chat.secret.label.generic", admin: "chat.secret.label.admin", llm: "chat.secret.label.llm",
+  storageAdmin: "chat.secret.label.storage_admin", sourceAdmin: "chat.secret.label.source_admin", destAdmin: "chat.secret.label.dest_admin", webhook: "chat.secret.label.webhook",
+} as const;
 
 /** 一度だけ取り出せる値。取り出すとバッファを 0 で潰す(JS の文字列は潰せないため、保持の間は Buffer で持つ)。 */
 export class Transient {
@@ -76,10 +79,14 @@ export class SecretBox {
     if (p === null || p.req.ref !== ref) return;
     this.#current = null;
     let out: SecretOutcome;
-    if (value === "") out = { kind: "cancelled" };
-    else if (p.req.mode === "save") { await this.#keychain.set(p.req.service ?? this.#service(), ref, value); out = { kind: "stored", ref }; }
-    else if (p.req.mode === "app-open") { await this.#keychain.set(SERVICE_PRE_LLM, LLM_ACCOUNT, value); out = { kind: "stored", ref: null }; }
-    else out = { kind: "transient", value: new Transient(value) };
+    try {
+      if (value === "") out = { kind: "cancelled" };
+      else if (p.req.mode === "save") { await this.#keychain.set(p.req.service ?? this.#service(), ref, value); out = { kind: "stored", ref }; }
+      else if (p.req.mode === "app-open") { await this.#keychain.set(SERVICE_PRE_LLM, LLM_ACCOUNT, value); out = { kind: "stored", ref: null }; }
+      else out = { kind: "transient", value: new Transient(value) };
+    } catch {
+      out = { kind: "cancelled" }; // 保存に失敗しても待ちを必ず解く(道具の呼び出しが戻らなくなるのを防ぐ)
+    }
     p.resolve(out);
     this.#next();
   }

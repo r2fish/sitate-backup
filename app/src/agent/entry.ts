@@ -52,9 +52,12 @@ async function input(msg: Extract<MainToAgent, { type: "input" }>): Promise<void
   }
 }
 
+/** 入力は 1 つずつ実行する(実行中に次の入力が来ても、会話の履歴と中断の状態を同時に触らない)。 */
+let inputChain: Promise<void> = Promise.resolve();
+
 parentPort.on("message", ({ data }) => {
   if (data.type === "init") void init(data);
-  else if (data.type === "input") void input(data);
+  else if (data.type === "input") inputChain = inputChain.then(() => input(data));
   else if (data.type === "abort") runtime?.abort();
   else {
     if (data.stepPassed === true) runtime?.resetRoundtrips();

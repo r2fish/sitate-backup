@@ -6,7 +6,8 @@
 #     パスワードを環境変数と引数に置かない。署名に失敗したらそこで終了する(途中まで署名した状態を成功と見せない)。
 #   test: test/env/.run/keys/sitate-test.key(使い捨て)。無ければ作る。
 # 署名の対象(配布物と同じ形): dist/<mode>/bundle/<version>/ の核・adapter.json・価格表・ソースのアーカイブ・SBOM と、
-#   アプリの同梱物 dist/<mode>/app-assets/<version>/(手順書、道具の定義、規則ファイル、メッセージカタログ、モデルの候補の一覧、製品の説明書)。
+#   アプリの同梱物 dist/<mode>/app-assets/<version>/(手順書、手順書の印の値 marks.json、道具の定義、規則ファイル、メッセージカタログ、モデルの候補の一覧、製品の説明書)。
+#   make build-app[-test] は 2 つを 1 つの置き場に合わせて組む(app/scripts/build-app.mjs)。
 # 署名は minisign の既定の方式 ED(BLAKE2b-512 に Ed25519)。trusted comment: version=<版> arch=<arch> path=<版ディレクトリからの相対パス>。
 # 試験の流れで作られない成果物(ソースのアーカイブ・SBOM)は、無ければ飛ばす。
 set -euo pipefail
@@ -38,24 +39,31 @@ sign() { # <ファイル> <arch> <版ディレクトリ> <相対パス>
   fi
   signed=$((signed+1))
 }
-# アプリの同梱物を組む
-rm -rf "$assets"; mkdir -p "$assets/tools" "$assets/i18n/ja" "$assets/i18n/en" "$assets/manual" "$assets/rules" "$assets/models"
-cp assets/manual/manual.md "$assets/manual/"; cp assets/rules/*.md "$assets/rules/"; cp assets/models/models.json "$assets/models/"
+# アプリの同梱物を組む。置き場の形はアプリの読み込み(app/src/main/bundle-load.ts)に合わせる:
+# manual.md・install.md・models.json・marks.json は直下、tools/・rules/・i18n/<言語>/catalog.json は下。署名の path= はこの相対パスと一致する。
+rm -rf "$assets"; mkdir -p "$assets/tools" "$assets/i18n/ja" "$assets/i18n/en" "$assets/rules"
+cp assets/manual/manual.md "$assets/manual.md"; cp assets/rules/*.md "$assets/rules/"; cp assets/models/models.json "$assets/models.json"
 cp app/src/i18n/ja/catalog.json "$assets/i18n/ja/"; cp app/src/i18n/en/catalog.json "$assets/i18n/en/"
 for f in app/src/tools/*.json; do [ -e "$f" ] && cp "$f" "$assets/tools/"; done
+# models.json の候補が空だとエージェントが起動しない(LLM_MODEL_NOT_FOUND)。空の一覧は署名しない。
+jq -e '.models | length > 0' "$assets/models.json" >/dev/null || { echo "sign($mode): assets/models/models.json の候補が空。署名しない" >&2; exit 1; }
+# 手順書の印の値。TIMER_NAMES と WARNING_ALLOWLIST は手順書の文面にも marks.json にも同じ値を入れる(手順の合格の判定は marks.json、エージェントは文面を読む)。
+# TIMER_NAMES: 核の status.schedule は日次の時刻の文字列で、タイマーの単位の名前の一覧を返さない(仕様の穴として報告済み)ため、空の一覧にする。
+timer_names='[]'; warning_allowlist='[]'
 if [ "$mode" = test ]; then
-  # 手順書の指紋の印を使い捨ての鍵の指紋に置き換えた写し。元の正本の sha256 を写しの隣に出す(5.19 の完了条件で使う)。
   fp="$(bash tools/fingerprint.sh "$(sed -n 2p "$pub")")"
-  grep -q '{{DIST_KEY_FINGERPRINT}}' docs/install.md || { echo "sign(test): docs/install.md に {{DIST_KEY_FINGERPRINT}} の印が無い" >&2; exit 1; }
-  sed "s#{{DIST_KEY_FINGERPRINT}}#$fp#g" docs/install.md > "$assets/install.md"
-  sha256sum docs/install.md | cut -d' ' -f1 > "$assets/install.md.orig.sha256"
 else
   fp="$(bash tools/fingerprint.sh "$(sed -n 2p "${PUBLIC_KEY_FILE:?PUBLIC_KEY_FILE=<配布用の公開鍵のパス> が要ります}")")"
-  # 未完成の手順書と、指紋の印が無い手順書(置換が何も起きず、利用者が確かめる指紋が無い)には署名しない。
+  # 未完成の手順書には署名しない。
   if grep -q 'sitate:not-implemented' docs/install.md; then echo "sign(product): docs/install.md が未実装の印のまま。署名しない" >&2; exit 1; fi
-  grep -q '{{DIST_KEY_FINGERPRINT}}' docs/install.md || { echo "sign(product): docs/install.md に {{DIST_KEY_FINGERPRINT}} の印が無い。署名しない" >&2; exit 1; }
-  sed "s#{{DIST_KEY_FINGERPRINT}}#$fp#g" docs/install.md > "$assets/install.md"
 fi
+# 指紋の印が無い手順書(置換が何も起きず、利用者が確かめる指紋が無い)には署名しない。
+grep -q '{{DIST_KEY_FINGERPRINT}}' docs/install.md || { echo "sign($mode): docs/install.md に {{DIST_KEY_FINGERPRINT}} の印が無い。署名しない" >&2; exit 1; }
+sed -e "s#{{DIST_KEY_FINGERPRINT}}#$fp#g" -e "s#{{TIMER_NAMES}}#$timer_names#g" -e "s#{{WARNING_ALLOWLIST}}#$warning_allowlist#g" docs/install.md > "$assets/install.md"
+if grep -q '{{[A-Z_]*}}' "$assets/install.md"; then echo "sign($mode): 手順書に埋まっていない印が残っている: $(grep -o '{{[A-Z_]*}}' "$assets/install.md" | sort -u | tr '\n' ' ')" >&2; exit 1; fi
+jq -n --arg fp "$fp" --argjson t "$timer_names" --argjson w "$warning_allowlist" '{DIST_KEY_FINGERPRINT: $fp, TIMER_NAMES: $t, WARNING_ALLOWLIST: $w}' > "$assets/marks.json"
+# 元の手順書の sha256(5.19 の完了条件で使う)は署名の対象でないので、同梱物の置き場の外に出す。
+sha256sum docs/install.md | cut -d' ' -f1 > "dist/$mode/install.md.orig.sha256"
 # 署名の対象を集める(署名はまだしない)
 tf=(); ta=(); tb=(); tr=()
 while IFS= read -r f; do
@@ -65,7 +73,6 @@ while IFS= read -r f; do
 done < <(find "$bundle" -type f ! -name '*.sig' | sort)
 while IFS= read -r f; do
   rel="${f#$assets/}"
-  case "$rel" in *.sha256) continue;; esac
   tf+=("$f"); ta+=(any); tb+=("$assets"); tr+=("$rel")
 done < <(find "$assets" -type f ! -name '*.sig' | sort)
 if [ "$mode" = product ]; then

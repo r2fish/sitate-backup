@@ -67,7 +67,7 @@ test("キーチェーン: サービス名は固定で、保存・取り出し・
   for (const a of [LLM_ACCOUNT, APPROVAL_ACCOUNT, ADMIN_KEY_ACCOUNT]) assert.ok(!/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(a), a);
 });
 
-test("MacKeychain: 秘密の値は security の引数に載らず(標準入力の 16 進だけ)、列挙は dump の形から読む", async () => {
+test("MacKeychain: 秘密の値は security の引数に載らず(標準入力の base64 だけ)、列挙は dump の形から読む", async () => {
   const calls: { args: readonly string[]; stdin: string }[] = [];
   const kc = new MacKeychain(async (args, stdin) => {
     calls.push({ args, stdin });
@@ -76,7 +76,7 @@ test("MacKeychain: 秘密の値は security の引数に載らず(標準入力�
   });
   await kc.set(serviceFor("r1"), "storage", "TOP-SECRET-VALUE");
   assert.ok(calls.every((c) => c.args.every((a) => !a.includes("TOP-SECRET"))));
-  assert.ok(!calls[0]!.stdin.includes("TOP-SECRET-VALUE") && calls[0]!.stdin.includes(Buffer.from("TOP-SECRET-VALUE").toString("hex")));
+  assert.ok(!calls[0]!.stdin.includes("TOP-SECRET-VALUE") && calls.some((c) => c.stdin.includes(Buffer.from("TOP-SECRET-VALUE").toString("base64"))));
   assert.equal(await kc.get(serviceFor("r1"), "storage"), "value");
   assert.deepEqual(await kc.list(), [{ service: serviceFor("r1"), account: "storage" }]);
 });

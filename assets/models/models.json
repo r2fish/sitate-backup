@@ -1,4 +1,4 @@
 {
   "format": "sitate.models/v1",
-  "models": []
+  "models": ["claude-sonnet-5-5", "claude-sonnet-5", "claude-sonnet-4-6"]
 }

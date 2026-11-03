@@ -8,9 +8,6 @@
         "type": "string",
         "description": "実行の識別子(省略可。アプリが作る)。"
       },
-      "approval_pubkey": {
-        "type": "string"
-      },
       "adopt": {
         "type": "boolean"
       },

@@ -137,7 +137,7 @@ function panelRig(opts: { runnerThrows?: Error; initOut?: string } = {}) {
   });
   return { s, panels, calls, lines };
 }
-const initInput = { admin_ref: "adm", secret_refs: ["adm"], bucket: "b" };
+const initInput = { bucket: "b" }; // 管理用鍵の参照を付けない init(付けると保存しないモードの入力ボックスが開く。mp-app B7)
 const settled = async (p: Promise<unknown>): Promise<boolean> => Promise.race([p.then(() => true, () => true), new Promise<boolean>((r) => setImmediate(() => r(false)))]);
 
 test("H2: 秘密のレコードが来た道具の呼び出しは、パネルの完了まで戻らず、完了で通常の区画を返す", async () => {

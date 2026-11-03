@@ -22,7 +22,7 @@ export function scriptFor(c: DriverCommand): string {
   switch (c.op) {
     case "chat": return `(()=>{const i=document.getElementById("chat-input");i.value=${q(c.text)};document.getElementById("chat-form").requestSubmit();return true})()`;
     case "click": return `(()=>{const b=document.querySelector('[data-surface=${q(c.surface)}] [data-action=${q(c.action)}]');if(!b||b.disabled)return false;b.click();return true})()`;
-    case "fill": return `(()=>{const i=document.querySelector('[data-surface=${q(c.surface)}] [data-proof=${q(c.target)}], [data-surface=${q(c.surface)}] input');if(!i)return false;i.value=${q(c.value)};return true})()`;
+    case "fill": return `(()=>{const i=document.querySelector('[data-surface=${q(c.surface)}] [data-proof=${q(c.target)}], [data-surface=${q(c.surface)}] input, [data-surface=${q(c.surface)}] textarea');if(!i)return false;i.value=${q(c.value)};return true})()`;
     case "read": return `(()=>{const s=document.querySelector('[data-surface=${q(c.surface)}]');return s?s.innerText:null})()`;
     case "lang": return "true";
   }

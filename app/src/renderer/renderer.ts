@@ -79,7 +79,7 @@ sitate.onRender((m) => {
     case "secret-box": {
       $("secret-label").textContent = m.label;
       $("secret-submit").textContent = m.submitLabel;
-      const input = $("secret-input") as HTMLInputElement;
+      const input = $("secret-input") as HTMLTextAreaElement;
       const secretDialog = $("secret-box") as HTMLDialogElement;
       let done = false;
       const finish = (v: string): void => { if (done) return; done = true; input.value = ""; if (secretDialog.open) secretDialog.close(); void sitate.submitSecret(m.ref, v); };

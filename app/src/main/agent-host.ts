@@ -85,7 +85,8 @@ export type { AgentBundle };
 
 /**
  * エージェントのプロセスの実行の制限(完了条件 25): Node の権限モデルで、子プロセス・ファイルの書き込み・ワーカー・ネイティブアドオンを拒み、
- * ファイルの読み取りは自分のバンドルの置き場(読み取り専用の資源の場所)だけ。キーチェーンとアプリのデータの置き場は読めない。ネットワークは権限モデルでは許可か不許可の二択のため許可し、
+ * ファイルの読み取りは自分のバンドルの置き場(読み取り専用の資源の場所)だけ。キーチェーンとアプリのデータの置き場は読めない。
+ * ネットワークは権限モデルの対象でない: Electron 45 の同梱の Node 24 は `--allow-net` を知らず(`bad option`。mp-app B9 で実測)、付けると起動に失敗するので付けない。
  * LLM API 以外への送信は agent/guarded-fetch.ts が拒む。
  */
-export const agentExecArgv = (entry: string): string[] => ["--permission", `--allow-fs-read=${dirname(entry)}`, "--allow-net"];
+export const agentExecArgv = (entry: string): string[] => ["--permission", `--allow-fs-read=${dirname(entry)}`];

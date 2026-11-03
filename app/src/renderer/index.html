@@ -13,7 +13,7 @@
   <section data-surface="chat" aria-label="chat"><ol id="chat-lines"></ol><form id="chat-form"><input id="chat-input" autocomplete="off"><button type="submit" id="chat-send"></button></form></section>
 </main>
 <dialog data-surface="approval-card" id="approval-card"><div id="card-body"></div><div id="card-proofs"></div><div id="card-actions"></div></dialog>
-<dialog data-surface="secret-box" id="secret-box"><label id="secret-label"></label><input id="secret-input" type="password" autocomplete="off"><button id="secret-submit"></button></dialog>
+<dialog data-surface="secret-box" id="secret-box"><label id="secret-label"></label><textarea id="secret-input" rows="6" autocomplete="off" spellcheck="false" autocapitalize="off"></textarea><button id="secret-submit" data-action="secret-submit"></button></dialog>
 <dialog data-surface="phrase-panel" id="phrase-panel"><ol id="phrase-words"></ol><div id="phrase-cautions"></div><div id="phrase-actions"></div></dialog>
 <script src="renderer.js"></script>
 </body>

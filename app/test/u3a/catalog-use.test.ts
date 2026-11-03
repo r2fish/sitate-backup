@@ -63,6 +63,6 @@ test("renderer (static): the card closes on its own decision and reports Esc as 
   for (const id of ["chat-send", "secret-submit", "status-heading"]) assert.ok(r.includes(`$("${id}").textContent`), `${id} の文を主プロセスから受ける`);
   assert.match(r, /proofLabels/, "確認語の欄の横の文");
   const html = readFileSync(join(root, "src/renderer/index.html"), "utf8");
-  for (const id of ["chat-send", "secret-submit", "status-heading"]) assert.match(html, new RegExp(`id="${id}"></`), `${id} は空(文は主プロセスが送る)`);
+  for (const id of ["chat-send", "secret-submit", "status-heading"]) assert.match(html, new RegExp(`id="${id}"[^>]*></`), `${id} は空(文は主プロセスが送る)`);
   assert.ok(!/<(button|h1)[^>]*>[^<]+</.test(html), "固定の文を HTML に書かない");
 });

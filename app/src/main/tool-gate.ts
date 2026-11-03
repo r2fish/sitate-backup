@@ -5,6 +5,7 @@ import { REF_NAME_PATTERN } from "../constants.ts";
 import { appErrorEnvelope } from "./app-envelope.ts";
 import type { AppEnvelope } from "./app-envelope.ts";
 import { PathRefTable, PathRefUnknownError } from "./path-ref.ts";
+import { KEYCHAIN_REF_ARGS } from "./secret-labels.ts";
 import { checkKindArgs } from "./tool-kind-args.ts";
 import type { ToolRegistry } from "./tool-registry.ts";
 
@@ -38,7 +39,10 @@ const SPECIAL_ARGS = ["run_id", "dry_run", "secret_refs", "definition", "kind"];
 
 const deny = (code: "TOOL_DENIED" | "TOOL_ARG_INVALID" | "PATH_REF_UNKNOWN", command: readonly string[]): Authorization => ({ ok: false, envelope: appErrorEnvelope(code, command) });
 
-export function authorizeToolCall(registry: ToolRegistry, call: ToolCall, pathRefs: PathRefTable): Authorization {
+/** 主プロセスが道具の呼び出しに足す値(エージェントの入力にしない)。 */
+export interface MainProcessArgs { readonly approvalPubkey?: string }
+
+export function authorizeToolCall(registry: ToolRegistry, call: ToolCall, pathRefs: PathRefTable, main: MainProcessArgs = {}): Authorization {
   const subcommand = subcommandOf(call.name);
   const command = ["app", "tool"];
   if (typeof call.name !== "string" || !registry.has(call.name)) return deny("TOOL_DENIED", command);
@@ -53,7 +57,7 @@ export function authorizeToolCall(registry: ToolRegistry, call: ToolCall, pathRe
     if (e instanceof PathRefUnknownError) return deny("PATH_REF_UNKNOWN", subcommand);
     throw e;
   }
-  return { ok: true, plan: planOf(call.name, subcommand, restored) };
+  return { ok: true, plan: planOf(call.name, subcommand, restored, main) };
 }
 
 const REF_NAME_RE = new RegExp(REF_NAME_PATTERN);
@@ -90,10 +94,10 @@ const SUBCOMMANDS: Readonly<Record<string, readonly string[]>> = Object.fromEntr
   ].map((words) => ["sitate_" + words.join("_").replace(/-/g, "_"), words] as const),
 );
 
-function planOf(tool: string, subcommand: string[], input: Record<string, unknown>): ToolPlan {
+function planOf(tool: string, subcommand: string[], input: Record<string, unknown>, main: MainProcessArgs): ToolPlan {
   const argv: string[] = [...subcommand];
   if (typeof input.kind === "string") argv.push(input.kind);
-  const secretRefs = Array.isArray(input.secret_refs) ? (input.secret_refs as string[]) : [];
+  const secretRefs = secretRefsOf(tool, input);
   const runId = typeof input.run_id === "string" ? input.run_id : null;
   const dryRun = input.dry_run === true;
   const definition = isRecord(input.definition) ? input.definition : null;
@@ -102,12 +106,24 @@ function planOf(tool: string, subcommand: string[], input: Record<string, unknow
       if (SPECIAL_ARGS.includes(k) || v === undefined) continue;
       argv.push(...flagArgs(k, v));
     }
+    // init は承認鍵の公開鍵(端末の鍵。エージェントの入力にしない)と、フレーズの出力先(gate は標準出力の先頭レコードに読み替える)を主プロセスが付ける。
+    if (tool === "sitate_init") argv.push(...(main.approvalPubkey === undefined ? [] : ["--approval-pubkey", main.approvalPubkey]), "--secret-fd", "3");
     if (definition !== null) argv.push("--file", "-");
     if (secretRefs.length > 0) argv.push("--secrets-stdin");
     if (dryRun) argv.push("--dry-run");
     if (runId !== null) argv.push("--run-id", runId);
   }
   return { tool, subcommand, argv, secretRefs, definition, dryRun, runId, input };
+}
+
+/**
+ * 秘密の値を差し込む参照名: secret_refs と、キーチェーンの参照名を取る引数(admin_ref など)の値。引数だけで呼んでも入力ボックスが開く(spec 3.7)。
+ * apply の admin_ref は、核が HUMAN_SECRET_REQUIRED を返したときに開くので含めない。
+ */
+function secretRefsOf(tool: string, input: Record<string, unknown>): string[] {
+  const refs = Array.isArray(input.secret_refs) ? (input.secret_refs as string[]) : [];
+  const fromArgs = tool === "sitate_apply" ? [] : KEYCHAIN_REF_ARGS.map((k) => input[k]).filter((v): v is string => typeof v === "string");
+  return [...new Set([...refs, ...fromArgs])];
 }
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);

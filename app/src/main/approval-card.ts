@@ -30,6 +30,8 @@ export interface CardModel {
   readonly proofRecipients: readonly string[];
   /** 確認語の入力欄の横に出す文(受け取り手ごと。完了条件 5)。 */
   readonly proofLabels: Readonly<Record<string, string>>;
+  /** ボタンの文(カタログの固定文)。 */
+  readonly labels: { readonly approve: string; readonly cancel: string; readonly close: string };
   readonly approveEnabled: boolean;
   readonly disabledReason: DisabledReason | null;
   /** 未知の op・欄のときの、アプリの更新を促す固定文。 */
@@ -48,6 +50,10 @@ export interface CardContext {
 }
 
 const PROOF_OPS = ["seal", "notify-add", "notify-change"];
+
+/** seal の定義は plan でなく args.definition にある(核は plan に定義を載せない)。描く側には plan に定義を足した見え方で渡す。 */
+const withDefinition = (op: string, record: PendingRecord, plan: Record<string, unknown>): Record<string, unknown> =>
+  op === "seal" && isRec(record.args) && isRec(record.args.definition) ? { ...plan, definition: record.args.definition } : plan;
 
 const isRec = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 const show = (v: unknown): string => (typeof v === "string" ? v : typeof v === "number" || typeof v === "boolean" ? String(v) : JSON.stringify(v));
@@ -75,7 +81,7 @@ export function buildCard(record: PendingRecord, ctx: CardContext): CardModel {
   sections.push({ no: 2, title: t("card.section.target"), rows: [...target, ...labelledRows(op, plan, CARD_FIELDS[op]?.target ?? [], t)], lines: op === "restore-change" || plan.host_key_fp !== undefined ? [t("card.host_key_fp.verify_note")] : [] });
   const delta = plan.estimate_delta_jpy;
   const costShown = typeof delta === "number";
-  sections.push({ no: 3, title: t("card.section.change"), rows: [...changeFieldRows(op, plan, t, costShown), ...sourceRows(op, plan, ctx.surveySizes ?? null, ctx.undeclaredCandidates ?? 0, t)], lines: [] });
+  sections.push({ no: 3, title: t("card.section.change"), rows: [...changeFieldRows(op, plan, t, costShown), ...sourceRows(op, withDefinition(op, record, plan), ctx.surveySizes ?? null, ctx.undeclaredCandidates ?? 0, t)], lines: [] });
   sections.push({ no: 4, title: t("card.section.reversible"), rows: [], lines: plan.reversible === false ? [t("card.mark.irreversible")] : [] });
   if (costShown) {
     const lines = [t("card.cost.delta", { delta_jpy: delta })];
@@ -84,12 +90,13 @@ export function buildCard(record: PendingRecord, ctx: CardContext): CardModel {
     sections.push({ no: 5, title: t("card.section.cost"), rows: [], lines });
   }
   sections.push(timingSection(record, delay, plan, t));
-  const proofs = proofsOf(op, plan);
+  const proofs = proofsOf(op, withDefinition(op, record, plan));
   sections.push(opSection(op, record, plan, proofs, t));
   if (ctx.aiExplanation !== undefined && ctx.aiExplanation !== null) sections.push({ no: 9, title: t("card.ai_explanation.heading"), rows: [], lines: [ctx.aiExplanation] });
   else if (op === "attest" && isRec(record.args) && typeof record.args.note === "string") sections.push({ no: 9, title: t("card.ai_explanation.heading"), rows: [], lines: [record.args.note] });
   return {
     changeId: typeof record.change_id === "string" ? record.change_id : "", op, canonicalHash: hash, sections, proofRecipients: proofs, proofLabels: Object.fromEntries(proofs.map((r) => [r, t("card.confirm_word.label", { recipient: r })])),
+    labels: { approve: t("card.actions.approve"), cancel: t("card.actions.cancel"), close: t("card.actions.close") },
     approveEnabled: reason === null, disabledReason: reason, updatePrompt: reason === "unknown_op" || reason === "unknown_field" ? t("card.unknown.update_prompt") : null,
   };
 }

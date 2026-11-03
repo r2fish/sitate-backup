@@ -8,10 +8,16 @@ export const SIGN_DOMAIN = "sitate-approval/v1";
 
 export type PendingRecord = Readonly<Record<string, unknown>> & { readonly canonical_hash?: unknown };
 
-/** canonical_hash 自身を除いた記録の JCS の SHA-256(`sha256:` と 16 進の小文字)。 */
+/** 承認の時刻 signed_at: 秒までの UTC(`YYYY-MM-DDTHH:MM:SSZ`。核の timeRe はミリ秒付きを受けない)。 */
+export const signedAtOf = (d: Date): string => d.toISOString().replace(/\.\d+Z$/, "Z");
+
+const VIEW_ONLY = ["canonical_hash", "state", "not_before"] as const;
+
+/** canonical_hash 自身と表示用の欄(state・not_before)を除いた記録の JCS の SHA-256(`sha256:` と 16 進の小文字)。 */
 export function canonicalHash(record: PendingRecord): string {
   const rest: Record<string, unknown> = { ...record };
-  delete rest.canonical_hash;
+  // `pending` は記録に表示用の state と not_before を足して返す。ハッシュの入力は核が計算した本体だけ。
+  for (const k of VIEW_ONLY) delete rest[k];
   return "sha256:" + createHash("sha256").update(jcs(rest), "utf8").digest("hex");
 }
 
@@ -44,6 +50,14 @@ export class SoftwareApprovalKey {
   /** キーチェーンから取り出した PKCS#8 の DER から復元する(呼び出し側の主プロセスだけ)。 */
   static fromPkcs8(der: Buffer): SoftwareApprovalKey {
     return new SoftwareApprovalKey(createPrivateKey({ key: der, format: "der", type: "pkcs8" }));
+  }
+
+  /** `init --approval-pubkey` の値: ssh-ed25519 の公開鍵の wire 形式(種別の文字列と 32 バイトの鍵)の base64。種別の語は付けない(spec 3.1.2、字句規則 5)。 */
+  sshPublicKeyBase64(): string {
+    const type = Buffer.from("ssh-ed25519");
+    const len = (n: number): Buffer => { const b = Buffer.alloc(4); b.writeUInt32BE(n); return b; };
+    const raw = this.publicKeyDer.subarray(-32);
+    return Buffer.concat([len(type.length), type, len(raw.length), raw]).toString("base64");
   }
 
   /** キーチェーンへ保存する値(主プロセスだけが呼ぶ)。 */

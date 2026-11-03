@@ -73,6 +73,7 @@ export class SshConnection {
       this.#client.once("ready", () => resolve());
       this.#client.once("error", (e: Error & { level?: string }) => reject(new SshError(mismatch ? { code: "SSH_HOSTKEY_MISMATCH" } : classify(e))));
       this.#client.once("close", () => { this.#closed = true; });
+      try {
       this.#client.connect({
         host: o.host, port: o.port, username: o.username,
         ..."privateKey" in o.auth ? { privateKey: o.auth.privateKey } : { password: o.auth.password },
@@ -84,6 +85,10 @@ export class SshConnection {
         keepaliveCountMax: SSH_KEEPALIVE_MAX,
         tryKeyboard: false,
       });
+      } catch (e) {
+        // 読めない秘密鍵(改行を失った貼り付けなど)は ssh2 が同期で投げる。資格情報の拒否として扱い、呼び出し側が参照名の値を消す(spec 3.7 の key_unparsable)。
+        reject(new SshError(/privateKey/i.test(String((e as Error).message)) ? { code: "SSH_AUTH_DENIED" } : classify(e as Error)));
+      }
     });
     this.#connected = { hostKeyFp: seenFp, pinnedNow };
     return this.#connected;
@@ -108,6 +113,7 @@ export class SshConnection {
         const finish = (): void => {
           if (done) return;
           done = true;
+          this.#client.off("close", finish); // exec のたびに足した待ちを残さない(長い導入で listener が溜まる)
           resolve({ stdout: Buffer.concat(chunks), code, disconnected: code === null });
         };
         stream.on("close", finish);
