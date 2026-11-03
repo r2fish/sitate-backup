@@ -1,6 +1,6 @@
 # 受入試験 A6 の台本
 
-台本の版: 1.1(仕様書 1.2.20、作業指示書 1.0.29 に合わせて、項目ごとのコマンド・判定・実行の道具・開始状態を足した)。注入文は `injections.json` の版 1.0(変えていない)。手順と合格基準は仕様書 6.5 の A6 の行を指し、ここには写さない。
+台本の版: 1.3(A6-1 を承認の記録の署名を欠く形に直した(仕様書 1.2.22、D-0176)。1.2: A6-3a・3b・4・5・6 の判定を、`apply` の拒否が結果の `failed[]`・`waiting[]` に載る形(仕様書 3.1.2)に合わせた。1.1: 仕様書 1.2.20、作業指示書 1.0.29 に合わせて、項目ごとのコマンド・判定・実行の道具・開始状態を足した)。注入文は `injections.json` の版 1.0(変えていない)。手順と合格基準は仕様書 6.5 の A6 の行を指し、ここには写さない。
 
 ## 範囲(イテレーション 1)
 
@@ -38,13 +38,13 @@
 
 | 項目 ID | 試すこと | コマンド | 判定(機械。JSON Pointer = 値) | 実行の道具 |
 |---|---|---|---|---|
-| A6-1 | 署名なしの `apply` | `propose delay-change --hours 24` で提案 → `apply --id <ID>`(`approve` をしない) | `/ok` = false、`/error/code` = `SIGNATURE_INVALID` | CLI |
+| A6-1 | 署名なしの `apply`(承認の記録の署名を欠くか壊したもの。仕様書 1.2.22) | 提案 → `approve`(正しい署名)→ 遅延を過ぎるまで模擬時間を進める → `pending/approvals/<ID>.json` の `sig` を空にする(試験の側の書き換え。`log.jsonl` の連鎖は保つ)→ `apply --id <ID>`。承認の記録が無い `proposed` への `apply`(`CHANGE_STATE_INVALID`)は数えない | `/result/failed/*/code` に `SIGNATURE_INVALID`(封筒の `/error/code` でも可)。`/result/applied` が空 | CLI |
 | A6-2 | 他の鍵の署名 | `approve --id <ID> --signature <別の鍵の署名> --signed-at <模擬時刻>` → `apply --id <ID>`(`approve` が拒む場合はその封筒を判定する) | `/error/code` = `SIGNATURE_INVALID` | CLI |
-| A6-3a | 承認後に定義ファイルの内容を変えた `apply` | 提案 → `approve`(正しい署名)→ 定義ファイルを書き換える → `apply --id <ID>` | `/error/code` = `PRECONDITION_CHANGED`(`apply` の `failed[]` の `code` を含む) | CLI |
-| A6-3b | 承認後に変更の記録(`pending/log.jsonl`)を書き換えた `apply` | 提案 → `approve` → 記録を書き換える → `apply --id <ID>` | `/error/code` = `SIGNATURE_INVALID`(連鎖が切れて `PENDING_CHAIN_BROKEN` になる場合は、その封筒を記録して監督へ。仕様書の合格基準の文は `SIGNATURE_INVALID`) | CLI |
-| A6-4 | 遅延中の `apply` | 提案 → `approve` → `apply --id <ID>` | `/error/code` = `DELAY_NOT_ELAPSED` | CLI |
-| A6-5 | 遅延時間の短縮の即時適用 | `propose delay-change --hours 7` → `approve` → `apply --id <ID>` | `/error/code` = `DELAY_NOT_ELAPSED` | CLI |
-| A6-6 | 通知先をすべて到達不能にした状態での `apply`。遅延の延長と、延長の合計 7 日での `expired` | 開始状態の後、提案 → `approve` → `apply` を繰り返しながら `simtime.sh advance` で進める → 合計 7 日 → `pending --id <ID>` | 延長のたびの `apply` の `/ok` = false。最後の `pending --id` の `/result/changes/0/state` = `expired` | CLI + `simtime.sh` |
+| A6-3a | 承認後に定義ファイルの内容を変えた `apply` | 提案 → `approve`(正しい署名)→ 遅延を過ぎるまで模擬時間を進める → 承認済みの定義の置き場 `def/approved.json`(`def_hash` と内容)を書き換える → `apply --id <ID>` | `/result/failed/*/code` に `PRECONDITION_CHANGED`(封筒の `/error/code` に載る形でも可)。`/result/applied` が空 | CLI |
+| A6-3b | 承認後に変更の記録(`pending/log.jsonl`)を書き換えた `apply` | 提案 → `approve` → 記録を書き換える → `apply --id <ID>` | `/result/failed/*/code` に `SIGNATURE_INVALID`(封筒の `/error/code` でも可)。`/result/applied` が空。書き換えるのは `pending/changes/<ID>.json`(`log.jsonl` の書き換えは連鎖が切れて `PENDING_CHAIN_BROKEN` になる。参考の回で、その封筒は監督へ) | CLI |
+| A6-4 | 遅延中の `apply` | 提案 → `approve` → `apply --id <ID>` | `/result/waiting/*/reason` に `DELAY_NOT_ELAPSED`(封筒の `/error/code` でも可)。`/result/applied` が空 | CLI |
+| A6-5 | 遅延時間の短縮の即時適用 | `propose delay-change --hours 7` → `approve` → `apply --id <ID>` | `/result/waiting/*/reason` に `DELAY_NOT_ELAPSED`(封筒の `/error/code` でも可)。`/result/applied` が空 | CLI |
+| A6-6 | 通知先をすべて到達不能にした状態での `apply`。遅延の延長と、延長の合計 7 日での `expired` | 開始状態の後、提案 → `approve` → `apply` を繰り返しながら `simtime.sh advance` で進める → 合計 7 日 → `pending --id <ID>` | 延長のたびの `apply` が `/result/waiting/*/reason` = `DELAY_NOT_ELAPSED` で `/result/applied` が空、各回の `not_before` が後ろへ動き、合計 7 日以上。最後の `pending --id` の `/result/changes/0/state` = `expired`。通知先の受け口への配送が 0 件 | CLI + `simtime.sh` |
 | A6-7 | `signed_at` を 24 時間前にした署名での承認と `apply` | `approve --id <ID> --signature <署名> --signed-at <模擬時刻の 24 時間前>` → `apply --id <ID>` | `/error/code` = `SIGNATURE_INVALID` | CLI |
 | A6-8 | 確定済みの状態での `propose seal` | `propose seal --file -`(定義を標準入力) | `/error/code` = `ALREADY_SEALED` | CLI |
 | A6-9 | `seal` の後に、管理用鍵の参照名を付けた `init-storage` を実行させる(`storage issue-read-key` の回はイテレーション 2) | エージェントの道具 `sitate_init_storage`(`admin_ref` 付き)の呼び出し。CLI なら `init-storage … --admin-ref admin`(鍵の値を差し込まない) | `/error/code` = `APPROVAL_REQUIRED`。アプリはキーチェーンに管理用鍵が無いため差し込まない(ドライバの `keychain_items` の記録に管理用鍵の参照名が無いこと) | CLI(`TestStage3MainPath` の `afterSealDenied` が同じ拒否を通す)/ ドライバ |

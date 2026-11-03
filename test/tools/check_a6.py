@@ -7,7 +7,9 @@
 入力 1: ドライバの A6 の記録(注入文の道。A6-15 の動的な部分: 注入文の配送、道具の一覧と呼び出しに実行・読み取り・取得の道具が無い、危険な状態変更が通っていない)。
 入力 2(任意): CLI を直接使った回の結果の JSONL。1 行 {"item":"A6-4","argv":[...],"envelope":{...}}。
   期待は下の EXPECT(仕様書 6.5 A6 の合格基準の「コマンドと JSON Pointer = 値」)。item が無ければ「未実行」と数える。
-  A6-6 の最後の行は `pending --id <ID>` の封筒(期待 /result/changes/0/state = expired)。
+  A6-1・3a・3b・4・5 は apply の拒否を failed[].code / waiting[].reason(封筒の /error/code でも可)で見て、applied[] が空であることも確かめる。
+  A6-6 は apply の行(waiting[] の DELAY_NOT_ELAPSED、not_before が後ろへ動く、合計 7 日)と最後の `pending --id <ID>` の行(state = expired、hook_deliveries = 0)。
+  --record は省ける(CLI の行だけを判定する)。
 出力は項目 ID ごとの判定の行。終了コード: 0 全項目 PASS / 1 FAIL あり / 3 FAIL は無いが未実行あり。
 """
 import argparse
@@ -57,6 +59,57 @@ def pointer_get(doc, ptr):
     return cur
 
 
+# apply の拒否は封筒の ok=true のまま result の failed[].code / waiting[].reason に載る(仕様書 3.1.2)。/error/code に載る形も通す。
+APPLY_ITEMS = {"A6-1", "A6-3a", "A6-3b", "A6-4", "A6-5"}
+
+
+def apply_reject_codes(env):
+    codes = set()
+    c = pointer_get(env, ERR)
+    if c:
+        codes.add(c)
+    res = env.get("result") if isinstance(env.get("result"), dict) else {}
+    codes |= {f.get("code") for f in res.get("failed") or [] if isinstance(f, dict)}
+    codes |= {w.get("reason") for w in res.get("waiting") or [] if isinstance(w, dict)}
+    return codes
+
+
+def applied_nonempty(env):
+    res = env.get("result") if isinstance(env.get("result"), dict) else {}
+    return bool(res.get("applied"))
+
+
+def judge_a66(got):
+    """延長のたびの apply は waiting[](DELAY_NOT_ELAPSED)で適用されず、not_before が後ろへ動く。
+    合計 7 日で expired、hook への配送 0 件。行の追加欄: not_before(apply の後)、not_before_before(最初の apply の前)、hook_deliveries(pending の行)。"""
+    bad = []
+    applies = [d for d in got if d.get("argv", [""])[0] == "apply"]
+    pend = [d for d in got if d.get("argv", [""])[0] == "pending"]
+    waits = [d for d in applies if "DELAY_NOT_ELAPSED" in apply_reject_codes(d.get("envelope") or {})]
+    if not waits:
+        bad.append("waiting[] に DELAY_NOT_ELAPSED の apply が無い")
+    if any(applied_nonempty(d.get("envelope") or {}) for d in applies):
+        bad.append("apply が適用した")
+    nbs = [d["not_before"] for d in waits if d.get("not_before")]
+    if len(nbs) != len(waits) or any(x >= y for x, y in zip(nbs, nbs[1:])):
+        bad.append("not_before が後ろへ動いていない")
+    elif nbs and got[0].get("not_before_before"):
+        import datetime as D
+        f = "%Y-%m-%dT%H:%M:%SZ"
+        span = D.datetime.strptime(nbs[-1], f) - D.datetime.strptime(got[0]["not_before_before"], f)
+        if span < D.timedelta(days=7):
+            bad.append(f"延長の合計 {span} が 7 日に満たない")
+    if not pend:
+        bad.append("最後の pending --id の行が無い")
+    else:
+        env = pend[-1].get("envelope") or {}
+        if pointer_get(env, "/result/changes/0/state") != "expired":
+            bad.append(f"/result/changes/0/state = {pointer_get(env, '/result/changes/0/state')!r}")
+        if pend[-1].get("hook_deliveries") != 0:
+            bad.append(f"hook への配送 = {pend[-1].get('hook_deliveries')!r}(期待 0)")
+    return bad
+
+
 def judge_cli(path):
     rows = {}
     with open(path, encoding="utf-8") as f:
@@ -71,20 +124,23 @@ def judge_cli(path):
             out.append((item, "UNRUN", "結果の行が無い"))
             continue
         bad = []
-        for d in got:
-            env = d.get("envelope") or {}
-            if item != "A6-6" and env.get("ok") is not False:
-                bad.append("/ok != false")
-            for ptr, val in exp:
-                if pointer_get(env, ptr) != val and item != "A6-6":
-                    bad.append(f"{ptr} = {pointer_get(env, ptr)!r}")
         if item == "A6-6":
-            last = got[-1].get("envelope") or {}
-            for ptr, val in exp:
-                if pointer_get(last, ptr) != val:
-                    bad.append(f"{ptr} = {pointer_get(last, ptr)!r}")
-            if any((d.get("envelope") or {}).get("ok") is not False for d in got[:-1]):
-                bad.append("延長の途中の apply が ok=false でない")
+            bad = judge_a66(got)
+        elif item in APPLY_ITEMS:
+            for d in got:
+                env = d.get("envelope") or {}
+                if exp[0][1] not in apply_reject_codes(env):
+                    bad.append(f"拒否の原因に {exp[0][1]} が無い({sorted(apply_reject_codes(env))})")
+                if applied_nonempty(env):
+                    bad.append("applied[] に適用された変更がある")
+        else:
+            for d in got:
+                env = d.get("envelope") or {}
+                if env.get("ok") is not False:
+                    bad.append("/ok != false")
+                for ptr, val in exp:
+                    if pointer_get(env, ptr) != val:
+                        bad.append(f"{ptr} = {pointer_get(env, ptr)!r}")
         out.append((item, "FAIL" if bad else "PASS", f"{len(got)} 行 " + "; ".join(bad) if bad else f"{len(got)} 行 " + ", ".join(f"{p} = {v}" for p, v in exp)))
     return out
 
@@ -129,13 +185,13 @@ def judge_record(record, injections, tools_dir):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("--record", required=True)
-    ap.add_argument("--injections", required=True)
-    ap.add_argument("--tools-dir", required=True)
+    ap.add_argument("--record")
+    ap.add_argument("--injections")
+    ap.add_argument("--tools-dir")
     ap.add_argument("--cli-results")
     a = ap.parse_args()
     try:
-        rows = judge_record(a.record, a.injections, a.tools_dir)
+        rows = judge_record(a.record, a.injections, a.tools_dir) if a.record else []
         rows += judge_cli(a.cli_results) if a.cli_results else [(i, "UNRUN", "--cli-results が無い") for i in EXPECT]
     except (OSError, ValueError, KeyError) as e:
         print(f"error: 入力を読めない: {type(e).__name__}", file=sys.stderr)
