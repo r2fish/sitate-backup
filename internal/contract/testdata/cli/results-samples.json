@@ -502,7 +502,9 @@
      "changed_during_read": 0,
      "errors_omitted": 0,
      "warnings_omitted": 0,
-     "error_code": null
+     "error_code": null,
+     "detail": null,
+     "next": []
     },
     {
      "id": "t2",
@@ -512,7 +514,9 @@
      "changed_during_read": 0,
      "errors_omitted": 0,
      "warnings_omitted": 0,
-     "error_code": "PERMISSION"
+     "error_code": "PERMISSION",
+     "detail": null,
+     "next": []
     }
    ],
    "checks": [
@@ -1219,7 +1223,9 @@
       "changed_during_read": 0,
       "errors_omitted": 0,
       "warnings_omitted": 0,
-      "error_code": null
+      "error_code": null,
+      "detail": null,
+      "next": []
      },
      {
       "id": "t2",
@@ -1229,7 +1235,9 @@
       "changed_during_read": 0,
       "errors_omitted": 0,
       "warnings_omitted": 0,
-      "error_code": "PERMISSION"
+      "error_code": "PERMISSION",
+      "detail": null,
+      "next": []
      }
     ],
     "checks": [

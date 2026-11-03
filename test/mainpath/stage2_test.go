@@ -43,11 +43,16 @@ type s2 struct {
 	notifyTo          string             // 空なら電子メールの宛先(第 2 段)。第 3 段は Webhook の参照名
 	lastMarker        string             // 第 3 段: 直近の世代の元データに入れた平文の目印(復元先に平文が残らないことの確認に使う)
 	backupIP          string             // 元サーバー・復元先から見たバックアップサーバーのアドレス(SSH の送信元)
+	dbTargets         []string           // 空でなければ、定義に DB の対象(t2 から。ポート 5432)を足す(TestStage3DB)
 }
 
 func (w *s2) definition() string {
+	targets := []any{map[string]any{"id": "t1", "files": "/srv/shopapp"}}
+	for i, db := range w.dbTargets {
+		targets = append(targets, map[string]any{"id": fmt.Sprintf("t%d", i+2), "postgresql": db, "port": 5432})
+	}
 	d := map[string]any{"version": 1,
-		"source": map[string]any{"host": accEnv(w.t, "SITATE_ACCEPT_SOURCE_HOST"), "targets": []any{map[string]any{"id": "t1", "files": "/srv/shopapp"}},
+		"source": map[string]any{"host": accEnv(w.t, "SITATE_ACCEPT_SOURCE_HOST"), "targets": targets,
 			// 元サーバーの PostgreSQL のクラスタは DB の対象を持たないので対象にしない(A2 の変種 (c)。source check の actionable を空にする)。
 			"declined": []any{map[string]any{"id": "d1", "postgresql_cluster": 5432}}},
 		"storage": []any{map[string]any{"endpoint": w.s3.endpoint, "bucket": w.s3.bucket, "key_ref": "storage", "prefix": "sitate/"}},

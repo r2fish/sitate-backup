@@ -217,7 +217,7 @@ func normalizeTarget(m map[string]any) (map[string]any, bool) {
 	errs, nErr := ackItems(m["errors"])
 	warns, nWarn := ackItems(m["warnings"])
 	code := m["error_code"]
-	je := map[string]any{"id": m["id"], "error_code": code, "errors": errs, "warnings": warns}
+	je := map[string]any{"id": m["id"], "error_code": code, "detail": m["detail"], "next": m["next"], "errors": errs, "warnings": warns}
 	delete(m, "errors")
 	delete(m, "warnings")
 	m["errors_omitted"] = intOf(m["errors_omitted"]) + max(0, nErr-len(errs))

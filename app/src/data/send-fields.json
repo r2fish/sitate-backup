@@ -1141,6 +1141,15 @@
      "pointer": "/result/targets/*/error_code"
     },
     {
+     "pointer": "/result/targets/*/detail/component"
+    },
+    {
+     "pointer": "/result/targets/*/detail/reason"
+    },
+    {
+     "pointer": "/result/targets/*/next/*/op"
+    },
+    {
      "pointer": "/result/checks/*/name"
     },
     {

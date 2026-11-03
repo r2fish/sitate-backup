@@ -37,7 +37,7 @@ type AcquireTarget struct {
 	ID   string `json:"id"`
 	Kind string `json:"kind"`
 	Spec struct {
-		Path string `json:"path"`
+		Path string `json:"path,omitempty"` // files だけ(postgresql は置かない。spec 3.2.2)
 		Port int    `json:"port,omitempty"`
 	} `json:"spec"`
 }
