@@ -10,6 +10,8 @@ import { createAgentRuntime } from "./runtime.ts";
 import type { AgentRuntime } from "./runtime.ts";
 import { buildSystemBlocks } from "./system-prompt.ts";
 
+declare const __TEST_BUILD__: boolean;
+
 interface ParentPort {
   postMessage(m: AgentToMain): void;
   on(event: "message", cb: (e: { data: MainToAgent }) => void): void;
@@ -22,7 +24,9 @@ const pendingCalls = new Map<string, (content: string) => void>();
 let nextCall = 0;
 
 async function init(msg: Extract<MainToAgent, { type: "init" }>): Promise<void> {
-  const client = new Anthropic({ apiKey: msg.apiKey, baseURL: LLM_API_BASE_URL, fetch: withUsageReport(makeGuardedFetch(fetch), (usage) => send({ type: "usage", usage })) });
+  let client = new Anthropic({ apiKey: msg.apiKey, baseURL: LLM_API_BASE_URL, fetch: withUsageReport(makeGuardedFetch(fetch), (usage) => send({ type: "usage", usage })) });
+  // 試験用のビルドだけ: 試験用ドライバの偽の(または記録する)LLM の口へ向ける。製品のビルドは __TEST_BUILD__ = false で、この枝が畳まれる。
+  if (__TEST_BUILD__ && msg.baseUrl !== undefined) client = new Anthropic({ apiKey: msg.apiKey, baseURL: msg.baseUrl, fetch: withUsageReport(makeGuardedFetch(fetch, msg.baseUrl), (usage) => send({ type: "usage", usage })) });
   try {
     const picked = await selectModel(client, msg.bundle.models);
     if (picked === null) return send({ type: "failure", id: null, code: "LLM_MODEL_NOT_FOUND" });

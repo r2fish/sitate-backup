@@ -2,10 +2,15 @@
 // 受入試験の A2・A6・A7 の画面の操作はここから駆動する。製品のアプリには含めない。
 import { connect } from "node:net";
 import type { Socket } from "node:net";
-import type { DriverCommand } from "../../src/testing/driver-server.ts";
+import type { DriverCommand, TestEvent } from "../../src/testing/driver-server.ts";
 
 export const SURFACES = ["chat", "approval-card", "secret-box", "phrase-panel", "status"] as const;
 export type SurfaceName = (typeof SURFACES)[number];
+export interface PendingView {
+  readonly secret: string | null;
+  readonly card: { readonly proofs: string[]; readonly actions: { action: string; disabled: boolean }[]; readonly text: string } | null;
+  readonly phrase: { readonly words: string[]; readonly actions: string[]; readonly notice: string | null } | null;
+}
 type Reply = { result?: unknown; error?: string };
 
 export class Driver {
@@ -50,5 +55,11 @@ export class Driver {
   async fill(surface: SurfaceName, target: string, value: string): Promise<boolean> { return (await this.#send({ op: "fill", surface, target, value })) === true; }
   /** 面の表示文字列。 */
   async read(surface: SurfaceName): Promise<string | null> { return (await this.#send({ op: "read", surface })) as string | null; }
+  /** チャット欄の行(役割: human / agent / tool / notice)。 */
+  async lines(): Promise<{ role: string; text: string }[]> { return (await this.#send({ op: "lines" })) as { role: string; text: string }[]; }
+  /** 開いている人の操作の面の今の状態。 */
+  async pending(): Promise<PendingView> { return (await this.#send({ op: "pending" })) as PendingView; }
+  /** 主プロセスの出来事(前回の取り出しの後の分)。 */
+  async events(): Promise<TestEvent[]> { return (await this.#send({ op: "events" })) as TestEvent[]; }
   close(): void { this.#sock.end(); }
 }

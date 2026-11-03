@@ -39,7 +39,7 @@ export class AgentHost {
   }
 
   /** 起動し、init で鍵と同梱物を渡す。鍵はこの呼び出しの引数としてだけ存在し、保持しない。 */
-  start(apiKey: string, bundle: AgentBundle, locale: string, date: string): void {
+  start(apiKey: string, bundle: AgentBundle, locale: string, date: string, baseUrl?: string): void {
     this.stop();
     const proc = this.#fork(this.#entry, { args: [], env: {}, serviceName: "sitate-agent", execArgv: agentExecArgv(this.#entry) });
     this.#proc = proc;
@@ -47,7 +47,7 @@ export class AgentHost {
     proc.on("exit", () => {
       if (this.#proc === proc) { this.#proc = null; this.events.onFailure(null, "AGENT_EXITED"); }
     });
-    proc.postMessage({ type: "init", apiKey, bundle, locale, date });
+    proc.postMessage({ type: "init", apiKey, bundle, locale, date, ...(baseUrl === undefined ? {} : { baseUrl }) });
   }
 
   send(id: string, text: string): void {

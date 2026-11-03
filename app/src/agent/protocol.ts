@@ -26,7 +26,7 @@ export interface VolatileContext {
 }
 
 export type MainToAgent =
-  | { readonly type: "init"; readonly apiKey: string; readonly bundle: AgentBundle; readonly locale: string; readonly date: string }
+  | { readonly type: "init"; readonly apiKey: string; readonly bundle: AgentBundle; readonly locale: string; readonly date: string; readonly baseUrl?: string }
   | { readonly type: "input"; readonly id: string; readonly text: string }
   | { readonly type: "tool_result"; readonly callId: string; readonly content: string; readonly stepPassed?: boolean }
   | { readonly type: "abort" };

@@ -10,7 +10,7 @@ export NAME
 
 .PHONY: shell-linux test test-app test-contract contract-status test-adapters lint-install lint-size \
 	build build-test build-app build-app-test sign-test sign sign-installer sign-test-installer \
-	test-app-real test-env-up test-env-down test-e2e test-mainpath _test _test-contract _test-adapters _build _contract-status
+	test-app-real test-app-e2e test-env-up test-env-down test-e2e test-mainpath _test _test-contract _test-adapters _build _contract-status
 
 shell-linux:
 	@$(LINUX) '$(CMD)'
@@ -45,6 +45,11 @@ test-app:
 test-app-real:
 	@test -n "$(NAME)" || { echo "NAME=<名前> が要ります"; exit 64; }
 	@bash test/wiring/run.sh "$(NAME)"
+
+# 試験用ドライバの通しの試験(偽の LLM の口。実物の Electron の試験ビルド × 核 × 受入試験の環境。LLM API キーも B2 も使わない)。test/wiring/e2e.sh の冒頭。
+test-app-e2e:
+	@test -n "$(NAME)" || { echo "NAME=<名前> が要ります"; exit 64; }
+	@bash test/wiring/e2e.sh "$(NAME)"
 
 # 主経路の通し(作業指示書 6 章)。make test に含めない。STAGE は 1〜3。
 # 第 1 段: make test-env-up NAME=x の後に SITATE_NESTED=1 make test-mainpath STAGE=1 NAME=x。

@@ -9,10 +9,12 @@
     "node": ">=22.18"
   },
   "scripts": {
-    "test": "node --test \"test/contract/*.test.ts\" \"test/u3a/*.test.ts\" \"src/kit/*.test.ts\"",
+    "test": "node --test \"test/contract/*.test.ts\" \"test/u3a/*.test.ts\" \"test/e2e/*.test.ts\" \"src/kit/*.test.ts\"",
+    "test:e2e": "node --test \"test/e2e/*.test.ts\"",
     "test:contract": "node --test \"test/contract/*.test.ts\"",
     "test:u3a": "node --test --test-skip-pattern=\"\\\\[u3b\\\\]\" \"test/contract/*.test.ts\" \"test/u3a/*.test.ts\"",
     "test:u3b": "r=0; node --test \"src/kit/*.test.ts\" || r=1; node --test --test-name-pattern=\"\\\\[u3b\\\\]\" \"test/contract/*.test.ts\" || r=1; exit $r",
+    "driver": "node test/e2e/cli.ts",
     "test:smoke": "node --test --test-timeout=120000 \"test/smoke/*.test.ts\"",
     "contract-status": "node scripts/contract-status.mjs",
     "typecheck": "tsc --noEmit",
