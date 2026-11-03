@@ -93,6 +93,11 @@ export class Session {
     this.#deliver(text);
   }
 
+  /** 最初の一歩の「始める」(spec 3.7。D-0169): カタログの固定の指示を、人の発話として描いてエージェントへ送る(秘密の検出は通さない固定文)。 */
+  start(): void {
+    this.#deliver(this.#d.t("chat.start.instruction"));
+  }
+
   #deliver(text: string): void {
     this.#humanTexts.push(text);
     this.#d.onChat({ role: "human", text });

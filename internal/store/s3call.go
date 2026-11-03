@@ -164,7 +164,7 @@ func (s *ObjectStore) classify(err error) (mapped error, retry bool, wait time.D
 	case status == http.StatusForbidden || code == "AccessDenied" || code == "InvalidRequest" || code == "InvalidAccessKeyId" || code == "SignatureDoesNotMatch":
 		return newErr(contract.CodeStorageDenied, map[string]any{"reason": "unknown", "http_status": status}), false, 0
 	case status != 0:
-		return internalErr("contract"), false, 0
+		return internalStatus(status), false, 0 // 状態コードを残す: bucket check の試しは 4xx を拒否として扱う(probe.go の triedDenied)
 	}
 	return unreachable(netReason(err), 0), true, 0
 }

@@ -7,6 +7,18 @@ export const KEYCHAIN_REF_ARGS = ["admin_ref", "source_admin_ref", "host_ref", "
 /** 事業者の管理用鍵を取る道具(保存しないモード。spec 3.7 の写像)。 */
 export const BUSINESS_KEY_TOOLS: ReadonlySet<string> = new Set(["sitate_init_storage", "sitate_init", "sitate_apply"]);
 
+/**
+ * 参照名を `secret_refs` だけで渡されたとき(全道具の説明が勧める形)、その道具で秘密を取る引数の名前を道具から決める。
+ * 道具が 1 種類の秘密しか取らないものだけ決め、決められなければ null(一般の文)。
+ */
+export function defaultArgFor(tool: string): string | null {
+  if (tool === "sitate_notify_set") return "secret_ref";
+  if (BUSINESS_KEY_TOOLS.has(tool) || tool === "sitate_bootstrap") return "admin_ref";
+  if (tool.startsWith("sitate_source_")) return "source_admin_ref";
+  if (tool.startsWith("sitate_restore_dest_")) return "host_ref";
+  return null;
+}
+
 /** 入力ボックスのラベルのカタログのキー。 */
 export function labelFor(tool: string, arg: string): string {
   if (arg === "secret_ref" && tool === "sitate_notify_set") return SECRET_LABEL.webhook;

@@ -46,13 +46,19 @@ test("偽の口: Models API に答え、メッセージの要求に台本の道�
   try {
     const m = await fetch(`${ep.url}/v1/models/claude-sonnet-5-5`, { headers: { authorization: `Bearer ${KEY}` } });
     assert.equal(((await m.json()) as { id: string }).id, "claude-sonnet-5-5");
-    const first = await fetch(`${ep.url}/v1/messages`, { method: "POST", headers: { authorization: `Bearer ${KEY}` }, body: JSON.stringify({ messages: [{ role: "user", content: "始めて" }] }) });
+    // 「始める」の固定の指示 → 所在と管理アカウントを聞く(道具の呼び出しは無い)。続く所在の入力 → bootstrap。
+    const ask = await fetch(`${ep.url}/v1/messages`, { method: "POST", headers: { authorization: `Bearer ${KEY}` }, body: JSON.stringify({ messages: [{ role: "user", content: "導入手順書に従って、バックアップを導入してください。" }] }) });
+    const jq = (await ask.json()) as { stop_reason: string; content: { type: string; text?: string }[] };
+    assert.equal(jq.stop_reason, "end_turn");
+    assert.match(jq.content[0]?.text ?? "", /所在/);
+    const m1 = [{ role: "user", content: "導入手順書に従って、バックアップを導入してください。" }, { role: "assistant", content: jq.content }, { role: "user", content: "所在" }];
+    const first = await fetch(`${ep.url}/v1/messages`, { method: "POST", headers: { authorization: `Bearer ${KEY}` }, body: JSON.stringify({ messages: m1 }) });
     const j1 = (await first.json()) as { stop_reason: string; content: { type: string; name?: string }[] };
     assert.equal(j1.stop_reason, "tool_use");
     assert.equal(j1.content[0]?.name, "sitate_bootstrap");
-    const history = [{ role: "user", content: "始めて" }, { role: "assistant", content: j1.content }, { role: "user", content: [{ type: "tool_result", tool_use_id: "x", content: "ok" }] }];
+    const history = [...m1, { role: "assistant", content: j1.content }, { role: "user", content: [{ type: "tool_result", tool_use_id: "x", content: "ok" }] }];
     const second = await fetch(`${ep.url}/v1/messages`, { method: "POST", headers: { authorization: `Bearer ${KEY}` }, body: JSON.stringify({ messages: history }) });
     assert.equal(((await second.json()) as { content: { name?: string }[] }).content[0]?.name, "sitate_version");
-    assert.equal(planOf(a, async () => undefined).length, 6, "人の入力 6 回分の台本(Q1・Q3・Q4・Q4 の案・Q2 の問いを挟む)");
+    assert.equal(planOf(a, async () => undefined).length, 7, "人の入力 7 回分の台本(「始める」の指示、所在、Q1・Q3・Q4・Q4 の案・Q2 の問いを挟む)");
   } finally { await ep.close(); rmSync(dir, { recursive: true, force: true }); }
 });

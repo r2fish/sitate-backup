@@ -10,7 +10,7 @@ export NAME
 
 .PHONY: shell-linux test test-app test-contract contract-status test-adapters lint-install lint-size \
 	build build-test build-app build-app-test sign-test sign sign-installer sign-test-installer \
-	test-app-real test-app-e2e test-env-up test-env-down test-e2e test-mainpath _test _test-contract _test-adapters _build _contract-status
+	test-app-real test-app-e2e test-b2-preflight test-env-up test-env-down test-e2e test-mainpath _test _test-contract _test-adapters _build _contract-status
 
 shell-linux:
 	@$(LINUX) '$(CMD)'
@@ -50,6 +50,12 @@ test-app-real:
 test-app-e2e:
 	@test -n "$(NAME)" || { echo "NAME=<名前> が要ります"; exit 64; }
 	@bash test/wiring/e2e.sh "$(NAME)"
+
+# 予行: LLM を使わず、保管先の管理用鍵(環境変数 SITATE_ROLE_B2_*)だけで init-storage・bucket check・backup・extend・restore-test を実物の B2 に通す。
+# 偽の口の確かめは FAKE=1(試験用の MinIO)。手順は test/acceptance/launch.md の先頭。test/wiring/b2-preflight.sh の冒頭。
+test-b2-preflight:
+	@test -n "$(NAME)" || { echo "NAME=<名前> が要ります"; exit 64; }
+	@bash test/wiring/b2-preflight.sh "$(NAME)" $(if $(FAKE),fake)
 
 # 主経路の通し(作業指示書 6 章)。make test に含めない。STAGE は 1〜3。
 # 第 1 段: make test-env-up NAME=x の後に SITATE_NESTED=1 make test-mainpath STAGE=1 NAME=x。

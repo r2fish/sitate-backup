@@ -18,17 +18,21 @@ import (
 
 type stubRet struct {
 	*fake.Retention
-	verify  contract.VerifyResult
-	extend  map[string]contract.ExtendResult
-	extErr  error
-	prune   contract.PruneResult
-	pruneEr error
-	calls   []string
-	refs    []contract.VersionRef
+	verify   contract.VerifyResult
+	extend   map[string]contract.ExtendResult
+	extErr   error
+	prune    contract.PruneResult
+	pruneEr  error
+	calls    []string
+	refs     []contract.VersionRef
+	onVerify func() // 一覧を取った後、結果を返す前に起きること(並行する backup の模擬)
 }
 
 func (s *stubRet) Verify(_ context.Context, r []contract.VersionRef) (contract.VerifyResult, error) {
 	s.calls, s.refs = append(s.calls, "verify"), r
+	if s.onVerify != nil {
+		s.onVerify()
+	}
 	return s.verify, nil
 }
 
@@ -323,7 +327,7 @@ func TestVerifyMarksRefsVerifiedOnlyWhenClean(t *testing.T) {
 	f := newFlow(t)
 	d.Recorder, d.State = f.d.Recorder, f.d.State
 	h, _ := d.State.Lock(bg)
-	_ = d.State.Update(bg, h, "snapshots", json.RawMessage(`[{"ref":"m-`+strings.Repeat("a", 32)+`","refs_verified":null,"health":"pass"}]`))
+	_ = d.State.Update(bg, h, "snapshots", json.RawMessage(`[{"ref":"m-`+strings.Repeat("a", 32)+`","version_id":"v1","refs_verified":null,"health":"pass"}]`))
 	h.Release()
 	s.verify = contract.VerifyResult{Missing: []contract.VersionRef{{Key: "k", VersionID: "v"}}}
 	if _, err := verifyEntry(d, bg, callOf2("verify")); err != nil {
@@ -347,5 +351,42 @@ func TestVerifyMarksRefsVerifiedOnlyWhenClean(t *testing.T) {
 	}
 	if !got {
 		t.Errorf("journal/ に refs_verified が無い")
+	}
+}
+
+// verify が一覧を取った後に並行する backup が足した世代は、記録を失わず、確認済みにもしない。
+func TestVerifyMarkKeepsConcurrentSnapshot(t *testing.T) {
+	s := &stubRet{}
+	d, _ := retEnv(t, s)
+	f := newFlow(t)
+	d.Recorder, d.State = f.d.Recorder, f.d.State
+	refA, refB := "m-"+strings.Repeat("a", 32), "m-"+strings.Repeat("b", 32)
+	h, _ := d.State.Lock(bg)
+	_ = d.State.Update(bg, h, "snapshots", json.RawMessage(`[{"ref":"`+refA+`","version_id":"v1","stored_at":"2026-11-01T00:00:00Z","refs_verified":null}]`))
+	h.Release()
+	s.onVerify = func() {
+		h, _ := d.State.Lock(bg)
+		raw, _ := d.State.Get(bg, "snapshots")
+		var l []json.RawMessage
+		_ = json.Unmarshal(raw, &l)
+		l = append(l, json.RawMessage(`{"ref":"`+refB+`","version_id":"v2","stored_at":"2026-11-01T01:00:00Z","refs_verified":null}`))
+		nb, _ := json.Marshal(l)
+		_ = d.State.Update(bg, h, "snapshots", nb)
+		h.Release()
+	}
+	if _, err := verifyEntry(d, bg, callOf2("verify")); err != nil {
+		t.Fatal(err)
+	}
+	raw, _ := d.State.Get(bg, "snapshots")
+	var got []struct {
+		Ref string `json:"ref"`
+		RV  *bool  `json:"refs_verified"`
+	}
+	_ = json.Unmarshal(raw, &got)
+	if len(got) != 2 || got[0].Ref != refA || got[0].RV == nil || !*got[0].RV {
+		t.Fatalf("先の世代は確認済み、後の世代の記録は残る: %s", raw)
+	}
+	if got[1].Ref != refB || got[1].RV != nil {
+		t.Errorf("一覧の後の世代を確認済みにした: %s", raw)
 	}
 }

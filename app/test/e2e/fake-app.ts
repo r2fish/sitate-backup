@@ -19,6 +19,7 @@ export const toolCall = (name: string, body: Record<string, unknown> = {}, stepP
 
 export class FakeApp implements Port {
   readonly chats: string[] = [];
+  starts = 0;
   readonly clicks: string[] = [];
   readonly fills: { surface: string; target: string }[] = [];
   readonly #turns: AgentTurn[];
@@ -32,6 +33,13 @@ export class FakeApp implements Port {
 
   async chat(text: string): Promise<void> {
     this.chats.push(text);
+    this.#turnFor(text);
+  }
+
+  /** 「始める」のボタン: 固定の指示が人の発話として送られる(chats には入れない。開始時の入力の 1 つ目)。 */
+  async #start(): Promise<void> { this.starts += 1; this.#turnFor("始める"); }
+
+  #turnFor(text: string): void {
     this.#lines.push({ role: "human", text });
     const t = this.#turns[this.#turn++];
     if (t === undefined) throw new Error("偽のアプリ: 台本の番が尽きた");
@@ -54,6 +62,7 @@ export class FakeApp implements Port {
 
   async click(surface: string, action: string): Promise<boolean> {
     this.clicks.push(`${surface}:${action}`);
+    if (surface === "chat" && action === "chat-start") { await this.#start(); return true; }
     const open = this.#pending;
     const closes = (surface === "secret-box" && open.secret !== null) || (surface === "approval-card" && open.card !== null) || (surface === "phrase-panel" && action === "confirm");
     if (closes) {

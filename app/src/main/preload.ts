@@ -5,6 +5,7 @@ import type { CardDecision, PhraseAction, UiMessage } from "./ipc-channels.ts";
 
 contextBridge.exposeInMainWorld("sitate", {
   sendChat: (text: string): Promise<void> => ipcRenderer.invoke(CHANNEL.chatSend, text),
+  startChat: (): Promise<void> => ipcRenderer.invoke(CHANNEL.chatStart),
   abortChat: (): Promise<void> => ipcRenderer.invoke(CHANNEL.chatAbort),
   decideCard: (changeId: string, d: CardDecision): Promise<void> => ipcRenderer.invoke(CHANNEL.cardDecision, changeId, d),
   submitSecret: (ref: string, value: string): Promise<void> => ipcRenderer.invoke(CHANNEL.secretSubmit, ref, value),

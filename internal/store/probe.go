@@ -3,6 +3,7 @@ package store
 import (
 	"bytes"
 	"context"
+	"errors"
 	"strings"
 	"sync"
 	"time"
@@ -118,23 +119,36 @@ func (p *StoreProbe) onVersion(ctx context.Context, s contract.ObjectStore, op, 
 		if err != nil {
 			return allowed(err)
 		}
-		return allowed(s.Extend(ctx, key, ver, cur.Add(-time.Hour)))
+		return triedDenied(s.Extend(ctx, key, ver, cur.Add(-time.Hour)))
 	}
 	o, ok := s.(*ObjectStore) // 版指定なしの削除・リーガルホールドは probe/ 限定の実物の操作
 	if !ok {
 		return false, internalErr("contract")
 	}
 	if op == "unversioned_delete" {
-		return allowed(o.UnversionedDelete(ctx, key))
+		return triedDenied(o.UnversionedDelete(ctx, key))
 	}
 	err := o.SetLegalHold(ctx, key, ver, true)
 	if err != nil {
-		return allowed(err)
+		return triedDenied(err)
 	}
 	return true, o.SetLegalHold(ctx, key, ver, false) // 通ったら外して終える
 }
 
 func result[T any](_ T, err error) (bool, error) { return allowed(err) }
+
+// triedDenied は「試す」操作(保持の短縮・版指定なしの削除・リーガルホールド)の結果を許可の真偽にする。
+// 拒否されれば理由を問わず合格(spec 3.2.6)なので、権限・ロックの拒否に加え、保管先が返した 4xx(事業者ごとに InvalidArgument などで拒む)も拒否とする。
+// 到達不能・取り消し・時計のずれ・5xx は誤りのまま。正当な操作(延長など)の 4xx はここを通らず誤りのまま。
+func triedDenied(err error) (bool, error) {
+	var ce *contract.Error
+	if errors.As(err, &ce) && ce.Code == contract.CodeInternal {
+		if st := httpStatusOf(ce); st >= 400 && st < 500 {
+			return false, nil
+		}
+	}
+	return allowed(err)
+}
 
 // allowed は操作の結果を許可の真偽にする。拒否は false(誤りにしない)。それ以外の誤り(到達不能・取り消し・時計のずれ)は誤りのまま返す。
 func allowed(err error) (bool, error) {

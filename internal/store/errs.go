@@ -30,6 +30,20 @@ func internalErr(reason string) *contract.Error {
 	return newErr(contract.CodeInternal, map[string]any{"component": "store", "http_status": nil, "kind": nil, "name": nil, "reason": nilReason(r)})
 }
 
+// internalStatus は保管先の想定外の 4xx(INTERNAL。detail.http_status に状態コードを残す)。bucket check の試しは 4xx を拒否として扱う。
+func internalStatus(status int) *contract.Error {
+	return newErr(contract.CodeInternal, map[string]any{"component": "store", "http_status": status, "kind": nil, "name": nil, "reason": "contract"})
+}
+
+// httpStatusOf は internalStatus が残した状態コード(無ければ 0)。
+func httpStatusOf(ce *contract.Error) int {
+	var d struct {
+		S int `json:"http_status"`
+	}
+	_ = json.Unmarshal(ce.Detail, &d)
+	return d.S
+}
+
 // nilReason は INTERNAL の detail.reason の列挙(exit_code / output / contract)に合わない値を contract に寄せる。
 func nilReason(r *string) any {
 	if r == nil {

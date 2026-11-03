@@ -74,3 +74,26 @@ test("runtime: a reply cut by max_tokens is not used and not resent", async () =
   await assert.rejects(rt.run("go"), (e: unknown) => e instanceof AgentFailure && e.code === "AGENT_OUTPUT_TRUNCATED");
   assert.equal(llm.requests.length, 1);
 });
+
+test("[mp-a2] runtime: a reply with no content is not kept in the history, so the next request is valid", async () => {
+  const llm = fakeLlm([{}, { text: "二つ目" }]);
+  const rt = createAgentRuntime({ client: llm.client, model: "m", system, tools: bundle.tools, onToolCall: async () => "x" });
+  assert.equal(await rt.run("first-input"), "");
+  assert.equal(await rt.run("second-input"), "二つ目");
+  const second = JSON.parse(llm.requests[1]!);
+  assert.ok(!second.messages.some((m: any) => m.role === "assistant" && m.content.length === 0));
+  assert.match(JSON.stringify(second.messages), /first-input/);
+});
+
+test("[mp-a2] runtime: after AGENT_TURN_LIMIT the earlier round trips stay in the history and the next request is valid", async () => {
+  let phase = 0;
+  const llm = fakeLlm(() => (phase === 0 ? { toolUses: [{ name: "sitate_status", input: {} }] } : { text: "続き" }));
+  const rt = createAgentRuntime({ client: llm.client, model: "m", system, tools: bundle.tools, roundtripMax: 2, onToolCall: async () => "RESULT-KEPT" });
+  await assert.rejects(rt.run("loop-input"), (e: unknown) => e instanceof AgentFailure && e.code === "AGENT_TURN_LIMIT");
+  phase = 1;
+  assert.equal(await rt.run("next-input"), "続き");
+  const last = JSON.parse(llm.requests[llm.requests.length - 1]!);
+  const text = JSON.stringify(last.messages);
+  assert.match(text, /loop-input/);
+  assert.match(text, /RESULT-KEPT/);
+});

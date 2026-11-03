@@ -625,6 +625,15 @@
  "chat.send.label": {
   "args": {}
  },
+ "chat.start.guide": {
+  "args": {}
+ },
+ "chat.start.instruction": {
+  "args": {}
+ },
+ "chat.start.label": {
+  "args": {}
+ },
  "chat.tool.display.call_format": {
   "args": {
    "result": "string",

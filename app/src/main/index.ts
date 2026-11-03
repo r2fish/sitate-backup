@@ -60,6 +60,7 @@ interface Ctx {
   readonly cardGate: CardGate;
   readonly typedFp: { current: string | null };
   readonly renderStatus: () => void;
+  readonly renderChat: () => void;
 }
 
 async function main(): Promise<void> {
@@ -85,6 +86,7 @@ async function main(): Promise<void> {
   if (__TEST_BUILD__) (await import("../testing/attach.ts")).attachDriver((script) => win.webContents.executeJavaScript(script));
   ctx.renderStatus();
   await startAgent(ctx, false);
+  ctx.renderChat();
   if (ctx.targets.read() !== null) await ctx.session.refreshStatus();
 }
 
@@ -110,14 +112,17 @@ async function compose(res: string, locale: string, keys: TrustedKey[], b: Extra
   const typedFp: Ctx["typedFp"] = { current: null };
   const osNotify = (text: string): void => { if (Notification.isSupported()) new Notification({ title: "Sitate-backup", body: text }).show(); };
   const survey: { current: SurveyView | null } = { current: null };
-  const targetUi = new TargetActions({ targets, typedFp, label: t, onChange: () => renderStatus() });
+  const targetUi = new TargetActions({ targets, typedFp, label: t, onChange: () => { renderStatus(); renderChat(); } });
   const status = new StatusView({ t, now: () => new Date(), agentRunning: () => host.running, notify: osNotify });
   status.setLocale(locale);
   const renderStatus = (): void => {
     const v = status.view();
     ui({ surface: "status", heading: t("status.panel.heading"), rows: [...notices.map((n) => ({ label: n, value: "" })), ...v.rows, ...v.appInfo], askAi: v.askAi, target: targetUi.view(), survey: survey.current });
   };
-  const renderChat = (): void => ui({ surface: "chat", lines: chat, sendLabel: t("chat.send.label") });
+  // 最初の一歩(D-0169): 接続先の記録(ssh-target.json)も人の発話も無いときだけ、固定の案内と「始める」を出す。案内は LLM を呼ばない。
+  const startOffer = (): { guide: string; label: string } | null =>
+    targets.read() === null && !chat.some((l) => l.role === "human") ? { guide: t("chat.start.guide"), label: t("chat.start.label") } : null;
+  const renderChat = (): void => ui({ surface: "chat", lines: chat, sendLabel: t("chat.send.label"), start: startOffer() });
   const box = new SecretBox({ keychain, service: () => serviceFor("repo"), show: (r) => { if (r !== null) ui({ surface: "secret-box", mode: r.mode, ref: r.ref, label: t(r.label), submitLabel: t("chat.secret.submit.label") }); } });
   const failure = (code: string): void => reportFailure(code, {
     t, showNotice: (x) => { notices.push(x); renderStatus(); }, chat: (x) => { chat.push({ role: "notice", text: x }); renderChat(); }, osNotify,
@@ -145,7 +150,7 @@ async function compose(res: string, locale: string, keys: TrustedKey[], b: Extra
     secretBox: box, bootstrap: bootstrapRunner(b, keys, targets, keychain, typedFp), status, onStatus: renderStatus,
     judge: new StepJudge(b.byPath("install.md"), marksOf(b)), citedBodies: () => [b.byPath("install.md"), b.byPath("manual.md")],
   });
-  const ctx: Ctx = { res, locale, keychain, box, host, session, phrase, targetUi, runner, label: t, registry, bundle: b, targets, cardGate, typedFp, renderStatus };
+  const ctx: Ctx = { res, locale, keychain, box, host, session, phrase, targetUi, runner, label: t, registry, bundle: b, targets, cardGate, typedFp, renderStatus, renderChat };
   ctxRef.current = ctx;
   return ctx;
 }
@@ -169,6 +174,7 @@ function bootstrapRunner(b: Extract<LoadedBundle, { ok: true }>, keys: TrustedKe
 
 function registerIpc(ctx: Ctx): void {
   ipcMain.handle(CHANNEL.chatSend, (_e, text: unknown) => (typeof text === "string" ? ctx.session.submit(text) : undefined));
+  ipcMain.handle(CHANNEL.chatStart, () => { ctx.session.start(); });
   ipcMain.handle(CHANNEL.chatAbort, () => ctx.host.abort());
   ipcMain.handle(CHANNEL.cardDecision, (_e, id: unknown, d: unknown) => { ctx.cardGate.decide(id, d); });
   ipcMain.handle(CHANNEL.secretSubmit, (_e, ref: unknown, value: unknown) => (typeof ref === "string" && typeof value === "string" ? ctx.box.submit(ref, value) : undefined));

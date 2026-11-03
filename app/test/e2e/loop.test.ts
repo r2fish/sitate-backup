@@ -9,7 +9,7 @@ import { A2Loop } from "./a2-loop.ts";
 import { FakeApp, envelope, toolCall } from "./fake-app.ts";
 import type { AgentTurn } from "./fake-app.ts";
 import { Recorder } from "./record.ts";
-import { isQuestion, matchQuestion, readJson } from "./script.ts";
+import { B2_ENDPOINT_RE, isQuestion, matchQuestion, readJson } from "./script.ts";
 import type { A2Script, Answers } from "./script.ts";
 
 const repo = join(import.meta.dirname, "..", "..", "..");
@@ -26,7 +26,8 @@ interface Run { out: { exit: number; reason: string }; loop: A2Loop; app: FakeAp
 async function drive(turns: AgentTurn[], variant = "base"): Promise<Run> {
   const dir = mkdtempSync(join(tmpdir(), "e2e-loop-"));
   const rec = new Recorder(dir, [KEY, answers.storageAdmin]);
-  const app = new FakeApp(turns);
+  // 先頭の番: 「始める」の後のエージェントの最初の応答(所在と管理アカウントを聞く)。開始時の入力の 2 つ目(chats[0])がその次の番を始める。
+  const app = new FakeApp([{ lines: agent("バックアップサーバーと元サーバーの所在と管理アカウントを教えてください。") }, ...turns]);
   let t = 0;
   const loop = new A2Loop({ port: app, script, answers, rec, variant, endings: ENDINGS, catalog, hookWord: () => "word", envOp: async () => undefined, sleep: async (ms) => { t += ms; }, now: () => t, deadlineMs: 600000 });
   const out = await loop.run();
@@ -80,6 +81,31 @@ test("AGENT_TURN_LIMIT の後は台本の続けるための入力を入れて続
   assert.equal(r.loop.counts.turnLimit, 1);
   assert.equal(r.loop.counts.continues, 0);
   cleanup(r);
+});
+
+test("[mp-a2] 隠した応答の後は古い問いに答え直さず、続行の介入になる。記録に本文を残さない", async () => {
+  const r = await drive([{ lines: agent("ご希望の保管期間はありますか?") }, { lines: [{ role: "notice", text: L("chat.quote.rejected_guide") }] }, END_FAIL]);
+  assert.equal(r.app.chats[1], script.unscripted_question_answer);
+  assert.equal(r.app.chats[2], script.continue_input, "隠した応答の後は続行の入力");
+  assert.equal(r.loop.counts.withheld, 1);
+  const rec = readFileSync(r.file, "utf8");
+  assert.match(rec, /"kind":"withheld_reply"[^\n]*"count":1/);
+  assert.ok(!/"kind":"withheld_reply"[^\n]*"text"/.test(rec), "本文を残さない");
+  cleanup(r);
+});
+
+test("[mp-a2] LLM_RATE_LIMITED: 待って続行の入力で再試行し、記録に残す。上限を超えたら失敗で終える", async () => {
+  const r = await drive([{ end: { outcome: "failure", code: "LLM_RATE_LIMITED" } }, { lines: agent("次へ進みます。") }, END_FAIL]);
+  assert.equal(r.app.chats[1], script.continue_input);
+  assert.equal(r.loop.counts.rateRetries, 1);
+  assert.match(readFileSync(r.file, "utf8"), /"kind":"rate_limit_wait"/);
+  cleanup(r);
+  const lim = (): AgentTurn => ({ end: { outcome: "failure", code: "LLM_RATE_LIMITED" } });
+  const r2 = await drive(Array.from({ length: 8 }, lim));
+  assert.equal(r2.out.exit, 1);
+  assert.match(r2.out.reason, /LLM_RATE_LIMITED/);
+  assert.equal(r2.loop.counts.rateRetries, 5);
+  cleanup(r2);
 });
 
 test("台本に無いカード(seal 以外)で終了コード 2", async () => {
@@ -141,4 +167,22 @@ test("コマンドラインの入口: 引数が足りなければ終了コード
   const r = spawnSync(process.execPath, [join(import.meta.dirname, "cli.ts")], { encoding: "utf8" });
   assert.equal(r.status, 64);
   assert.match(r.stderr, /--script と --out/);
+});
+
+test("[mp-a2] B2 の端点の形: https://s3.<リージョン>.backblazeb2.com だけ(https:// 無し・末尾の / ・経路は不可)", () => {
+  assert.ok(B2_ENDPOINT_RE.test("https://s3.us-west-004.backblazeb2.com"));
+  for (const bad of ["s3.us-west-004.backblazeb2.com", "https://s3.us-west-004.backblazeb2.com/", "http://s3.us-west-004.backblazeb2.com", "https://s3.us-west-004.backblazeb2.com/bucket"]) assert.ok(!B2_ENDPOINT_RE.test(bad), bad);
+});
+
+test("[mp-a2 D-0169] 開始: 固定の文を打たず「始める」を押し、最初の応答の後に所在と管理アカウントを渡す。どちらも問いに数えない", async () => {
+  const r = await drive([END_FAIL]);
+  assert.equal(r.app.starts, 1);
+  assert.deepEqual(r.app.clicks[0], "chat:chat-start");
+  assert.match(r.app.chats[0]!, /バックアップサーバー: backup.*管理アカウント: adm/);
+  assert.ok(!r.app.chats[0]!.includes(script.continue_input));
+  assert.equal(r.loop.counts.questions, 0);
+  assert.equal(r.loop.counts.continues, 0);
+  const rec = readFileSync(r.file, "utf8");
+  assert.match(rec, /"kind":"start_click"/);
+  cleanup(r);
 });

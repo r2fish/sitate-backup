@@ -9,6 +9,7 @@ interface PlanStep { readonly hold?: () => Promise<void>; readonly make: (prevRe
 const call = (name: string, input: Record<string, unknown> = {}): PlanStep => ({ make: () => ({ toolUses: [{ name, input }] }) });
 const say = (text: string): PlanStep => ({ make: () => ({ text }) });
 
+const LOCATION_Q_TEXT = "導入を始めます。まず、バックアップサーバーと元サーバーの所在と、それぞれの管理アカウントを教えてください。管理アカウントの秘密鍵は、秘密の入力ボックスから入れていただきます。";
 const Q1_TEXT = "次に保管先を決めます。保管先のエンドポイントとバケット名、通知先を教えてください。何のために聞くか: バックアップの送り先と、失敗したときの知らせ先を決めるためです。推奨の案: 契約した事業者の値をそのまま使い、通知先は普段見る場所の受信 Webhook を 1 つにします。分からなければ推奨の案でよいです。教えていただけますか?";
 const Q3_TEXT = "次に復元先を決めます。復元先のホストを教えてください。何のために聞くか: 毎月の復元テストを別のサーバーで本当に試すためです。推奨の案: 本番と別のネットワークの小さなサーバーを 1 台使います。分からなければ推奨の案でよいです。教えていただけますか?";
 const Q4_TEXT = "元サーバーを調べました。何を守りたいですか? 何のために聞くか: 取れていない場所は被災のときに戻せないためです。推奨の案: 調査で見つけた取れる候補をすべて含めます。分からなければ推奨の案でよいです。教えていただけますか?";
@@ -26,12 +27,20 @@ function definitionOf(a: Answers): Record<string, unknown> {
 }
 
 /** 台本(人の入力ごとの道具の呼び出しの列)。`hold` は、その呼び出しの前に待つ処理(保管先準備アダプタの代役を置く)。 */
-export function planOf(a: Answers, afterBootstrap: () => Promise<void>): PlanStep[][] {
-  const s3 = { endpoint: a.storageEndpoint, bucket: a.bucket, prefix: "sitate/", adapter: "minio", admin_ref: "admin" };
+export interface PlanOptions {
+  /** 保管先準備アダプタ(既定 minio。実物の B2 の予行は b2)。 */
+  readonly adapter?: string;
+  /** 予行: backup の後に extend と bucket check を足す(保持の延長と、保持の短縮の試しの結果 permissions[] を記録に出す)。 */
+  readonly extras?: boolean;
+}
+
+export function planOf(a: Answers, afterBootstrap: () => Promise<void>, o: PlanOptions = {}): PlanStep[][] {
+  const s3 = { endpoint: a.storageEndpoint, bucket: a.bucket, prefix: "sitate/", adapter: o.adapter ?? "minio", admin_ref: "admin" };
   const sourceHost = `ssh://${a.adminUser}@${a.sourceHost}`;
   const destAt = `ssh://${a.adminUser}@${a.destHost}:${a.destPort}`;
   const definition = definitionOf(a);
   return [
+    [say(LOCATION_Q_TEXT)], // 「始める」の固定の指示への応答。所在と管理アカウントは開始時の入力で、問いに数えない(spec 6.5 の A2)
     [call("sitate_bootstrap", { host: a.backupHost, admin_user: a.adminUser, admin_ref: "bak-admin" }), { hold: afterBootstrap, make: () => ({ toolUses: [{ name: "sitate_version", input: {} }] }) },
       call("sitate_doctor"), say(Q1_TEXT)],
     [call("sitate_init_storage", { ...s3, dry_run: true }), say(Q3_TEXT)],
@@ -42,7 +51,7 @@ export function planOf(a: Answers, afterBootstrap: () => Promise<void>): PlanSte
       call("sitate_restore_dest_enroll", { dest: destAt, adapter: "ssh-host", admin_ref: "dest-admin" }), call("sitate_restore_dest_check"),
       call("sitate_notify_test"), call("sitate_propose", { kind: "seal", definition }),
       call("sitate_apply"), // 承認の結果の封筒に変更の識別子は載らない(propose の中で承認まで済む)ので、id を渡さず最後に承認した変更を適用する。
-      call("sitate_def_show"), call("sitate_status"), call("sitate_backup"), call("sitate_restore_test"), call("sitate_status"), call("sitate_doctor"),
+      call("sitate_def_show"), call("sitate_status"), call("sitate_backup"), call("sitate_restore_test"), ...(o.extras ? [call("sitate_extend"), call("sitate_bucket_check")] : []), call("sitate_status"), call("sitate_doctor"),
       say("導入が完了しました。")],
   ];
 }
@@ -52,8 +61,8 @@ const isToolResult = (m: unknown): boolean => {
   return Array.isArray(c) && c.some((b) => (b as { type?: string }).type === "tool_result");
 };
 
-export function makeFakeAgent(a: Answers, afterBootstrap: () => Promise<void>, fixedText?: string): FakeResponder {
-  const plan = planOf(a, afterBootstrap);
+export function makeFakeAgent(a: Answers, afterBootstrap: () => Promise<void>, fixedText?: string, o: PlanOptions = {}): FakeResponder {
+  const plan = planOf(a, afterBootstrap, o);
   return async (body) => {
     const msgs = body.messages as { role: string }[];
     if (fixedText !== undefined) return { text: fixedText };

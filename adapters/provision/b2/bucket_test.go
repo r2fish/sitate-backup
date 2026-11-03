@@ -21,9 +21,35 @@ func TestCreateBucketNew(t *testing.T) {
 		t.Errorf("結果: %s", o.stdout)
 	}
 	body := f.bodies["b2_create_bucket"][0]
-	dr := body["defaultRetention"].(map[string]any)
-	if body["fileLockEnabled"] != true || body["bucketType"] != "allPrivate" || dr["mode"] != "compliance" || dr["period"].(map[string]any)["duration"] != float64(90) {
-		t.Errorf("作成の本文: %v", body)
+	if _, has := body["defaultRetention"]; has || body["fileLockEnabled"] != true || body["bucketType"] != "allPrivate" {
+		t.Errorf("作成の本文(defaultRetention は update で付ける): %v", body)
+	}
+	upd := f.bodies["b2_update_bucket"][0]
+	dr := upd["defaultRetention"].(map[string]any)
+	if upd["bucketId"] != "bid-b1" || dr["mode"] != "compliance" || dr["period"].(map[string]any)["duration"] != float64(90) {
+		t.Errorf("update の本文: %v", upd)
+	}
+	if b := f.buckets["b1"]; b.state().mode == nil || *b.state().mode != "COMPLIANCE" {
+		t.Errorf("既定保持が付いていない")
+	}
+}
+
+// 作成は通ったが update が失敗した後の再実行は、既存の補完の枝で続く。
+func TestCreateBucketUpdateFailsThenResumes(t *testing.T) {
+	f := newFake(t)
+	f.inject["b2_update_bucket"] = []fakeFail{{status: 400, code: "bad_request", message: "x"}}
+	o := f.run(t, createReq(nil))
+	o.mustErr(t, "adapter:b2:UNEXPECTED_RESPONSE")
+	if f.buckets["b1"] == nil || f.buckets["b1"].state().mode != nil {
+		t.Fatalf("作成だけ済み、既定保持は無いはず")
+	}
+	o = f.run(t, createReq(nil))
+	o.mustOK(t)
+	if o.res["created"] != false || f.count("b2_create_bucket") != 2 || f.count("b2_update_bucket") != 2 {
+		t.Errorf("補完の枝で続くはず: %s %v", o.stdout, f.calls)
+	}
+	if m := f.buckets["b1"].state().mode; m == nil || *m != "COMPLIANCE" {
+		t.Errorf("補完されていない")
 	}
 }
 

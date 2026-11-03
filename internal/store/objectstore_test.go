@@ -308,3 +308,36 @@ func withCancel() (context.Context, context.CancelFunc) { return context.WithCan
 type clockFn func() time.Time
 
 func (c clockFn) Now(context.Context) (time.Time, error) { return c(), nil }
+
+// spec 3.2.6: 「試す」操作は拒否されれば理由を問わず合格。保管先が InvalidArgument などの 4xx で拒んでも拒否として扱い、
+// 正当な操作(延長)の同じ 4xx は誤りのまま。5xx は拒否にしない。
+func TestProbeTriedOps4xxIsDenied(t *testing.T) {
+	px := newProxied(t)
+	p := &StoreProbe{Keys: map[string]contract.ObjectStore{"write": px.S}}
+	if _, err := p.PutProbe(ctx, "probe/x", []byte("p")); err != nil {
+		t.Fatal(err)
+	}
+	status := 400
+	px.P.hook = func(n int, r *http.Request, w http.ResponseWriter) int {
+		q := r.URL.Query()
+		_, ret := q["retention"]
+		_, lh := q["legal-hold"]
+		if r.Method == http.MethodPut && (ret || lh) || r.Method == http.MethodDelete && q.Get("versionId") == "" {
+			return status
+		}
+		return 0
+	}
+	for _, op := range []string{"retention_shorten", "legal_hold", "unversioned_delete"} {
+		if ok, err := p.Try(ctx, "write", op); err != nil || ok {
+			t.Errorf("%s: 4xx は拒否(false, nil)のはず: %v %v", op, ok, err)
+		}
+	}
+	ver, _ := p.last()
+	if err := px.S.Extend(ctx, "probe/x", ver, px.Clock.T.Add(48*time.Hour)); err == nil || isDenied(err) {
+		t.Errorf("正当な延長の 4xx は誤りのまま: %v", err)
+	}
+	status = 503
+	if ok, err := p.Try(ctx, "write", "retention_shorten"); err == nil || ok {
+		t.Errorf("5xx は拒否にしない: %v %v", ok, err)
+	}
+}

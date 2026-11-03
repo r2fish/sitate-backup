@@ -4,7 +4,9 @@
 const HEADER = "| 手順 | 目的 | 実行するもの | 完了確認コマンド | 期待する値 | 失敗時 |";
 
 type Op = "=" | "⊇" | "⊆";
-interface Expect { readonly pointer: string; readonly op: Op; readonly rhs: string }
+/** skipWriteUnversionedDelete: 期待の後ろの注記「書き込み鍵の版指定なしの削除の要素を除く」(spec 4.2。B2 の書き込み鍵ではこの削除が常に通る)。 */
+interface Expect { readonly pointer: string; readonly op: Op; readonly rhs: string; readonly skipWriteUnversionedDelete?: boolean }
+const SKIP_NOTE = "書き込み鍵の版指定なしの削除の要素を除く";
 interface Check { readonly words: readonly string[]; readonly dryRun: boolean; readonly expects: readonly Expect[] }
 export interface Step { readonly id: string; readonly checks: readonly Check[] }
 
@@ -45,7 +47,7 @@ function parseExpects(text: string): Expect[] {
   const out: Expect[] = [];
   for (const part of text.split("、")) {
     const m = /^\s*`?(\/[^\s`]*?)`?\s*(=|⊇|⊆)\s*(?:`([^`]*)`|([^\s(（]+))/.exec(part);
-    if (m) out.push({ pointer: m[1]!, op: m[2] as Op, rhs: (m[3] ?? m[4])! });
+    if (m) out.push({ pointer: m[1]!, op: m[2] as Op, rhs: (m[3] ?? m[4])!, ...(part.includes(SKIP_NOTE) ? { skipWriteUnversionedDelete: true } : {}) });
   }
   return out;
 }
@@ -85,6 +87,15 @@ function literal(rhs: string, marks: Marks): { ok: true; value: unknown } | { ok
 const DEF_SCHEDULE_REF = "<定義の schedule>";
 const DEFAULT_SCHEDULE = "02:30";
 
+/** `/…/<i>/…` の `<i>` の要素のうち、op=unversioned_delete かつ key_role=write のものの番号。 */
+function skippedElements(env: unknown, pointer: string, n: number): Set<number> {
+  const out = new Set<number>();
+  const elems = resolve(env, pointer.replace(/(\/<i>)\/.*$/, "$1"));
+  if (elems === undefined || elems.length !== n) return out;
+  elems.forEach((el, i) => { const o = el as { op?: unknown; key_role?: unknown } | null; if (o?.op === "unversioned_delete" && o.key_role === "write") out.add(i); });
+  return out;
+}
+
 function holds(env: unknown, e: Expect, marks: Marks, defSchedule: string): boolean {
   if (e.rhs === DEF_SCHEDULE_REF) {
     const vals = resolve(env, e.pointer);
@@ -94,7 +105,9 @@ function holds(env: unknown, e: Expect, marks: Marks, defSchedule: string): bool
     // 別の欄への参照: 同じ要素番号の対で等しい。
     const left = resolve(env, e.pointer);
     const right = resolve(env, e.rhs);
-    return left !== undefined && right !== undefined && left.length === right.length && left.every((v, i) => same(v, right[i]));
+    if (left === undefined || right === undefined || left.length !== right.length) return false;
+    const skip = e.skipWriteUnversionedDelete ? skippedElements(env, e.pointer, left.length) : new Set<number>();
+    return left.every((v, i) => skip.has(i) || same(v, right[i]));
   }
   const rhs = literal(e.rhs, marks);
   if (!rhs.ok) return false;

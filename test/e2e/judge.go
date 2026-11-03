@@ -82,6 +82,28 @@ func rhs(root any, val string, marks Marks, elem int, count int) (any, error) {
 	return val, nil
 }
 
+// skippedElements は Skip の期待で比べない要素の番号(op=unversioned_delete かつ key_role=write)。
+func skippedElements(root any, e Expect) map[int]bool {
+	out := map[int]bool{}
+	if !e.Skip {
+		return out
+	}
+	i := strings.Index(e.Pointer, "/<i>")
+	if i < 0 {
+		return out
+	}
+	elems, err := pointerValues(root, e.Pointer[:i+len("/<i>")])
+	if err != nil {
+		return out
+	}
+	for n, el := range elems {
+		if m, ok := el.(map[string]any); ok && m["op"] == "unversioned_delete" && m["key_role"] == "write" {
+			out[n] = true
+		}
+	}
+	return out
+}
+
 func contains(set []any, x any) bool {
 	for _, s := range set {
 		if canon(s) == canon(x) {
@@ -103,7 +125,11 @@ func Judge(envelope []byte, e Expect, marks Marks) error {
 	}
 	switch e.Op {
 	case "=":
+		skip := skippedElements(root, e)
 		for i, v := range vals {
+			if skip[i] {
+				continue
+			}
 			want, err := rhs(root, e.Value, marks, i, len(vals))
 			if err != nil {
 				return err

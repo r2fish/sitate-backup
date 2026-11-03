@@ -101,18 +101,12 @@ func (d *Deps) pendingChainWarnings(ctx context.Context) []contract.Warning {
 // markRefsVerified は欠け・保持不足・記録外の版が無かった verify の終わりに、世代の参照の存在を確かめた記録を残す(spec 4.2「記録から作る値」):
 // journal/ に refs_verified の項目(refs[]、listed_at)を書き、snapshots[] の refs_verified を true にする。どれかの参照に欠けがあったときは何も変えない
 // (確かめられた世代を特定できないので、確認済みにしない)。記録の失敗は verify の結果を変えない。
-func (d *Deps) markRefsVerified(ctx context.Context, runID string) {
-	raw, err := d.State.Get(ctx, "snapshots")
-	var snaps []map[string]json.RawMessage
-	if err != nil || json.Unmarshal(raw, &snaps) != nil || len(snaps) == 0 {
-		return
-	}
-	var refs []string
-	for _, s := range snaps {
-		var ref string
-		_ = json.Unmarshal(s["ref"], &ref)
-		refs = append(refs, ref)
-		s["refs_verified"] = json.RawMessage("true")
+// 確かめたのは verify の始めに読んだ記録(recorded)の版だけ: 並行する backup が一覧の後に足した世代は確認済みにしない。
+// snapshots[] は state.lock の下で読んで書く(ロックの外で読むと、並行する backup が足した世代の記録を上書きで失う)。
+func (d *Deps) markRefsVerified(ctx context.Context, runID string, recorded []contract.VersionRef) {
+	verified := map[string]bool{}
+	for _, r := range recorded {
+		verified[r.Key+"\x00"+r.VersionID] = true
 	}
 	var lv struct {
 		ListedAt string `json:"listed_at"`
@@ -120,12 +114,41 @@ func (d *Deps) markRefsVerified(ctx context.Context, runID string) {
 	if lraw, e := d.State.Get(ctx, "last_verify"); e == nil {
 		_ = json.Unmarshal(lraw, &lv)
 	}
-	nb, _ := json.Marshal(snaps)
 	h, err := d.State.Lock(ctx)
 	if err != nil {
 		return
 	}
-	_ = d.State.Update(ctx, h, "snapshots", nb)
+	refs := d.markSnapshotsLocked(ctx, h, verified)
 	h.Release()
-	_ = d.recordItem(ctx, "refs_verified", runID, map[string]any{"refs": refs, "listed_at": lv.ListedAt})
+	if len(refs) > 0 {
+		_ = d.recordItem(ctx, "refs_verified", runID, map[string]any{"refs": refs, "listed_at": lv.ListedAt})
+	}
+}
+
+// markSnapshotsLocked は state.lock を持った状態で、確かめた版の世代の refs_verified を true にして、その ref の一覧を返す。
+func (d *Deps) markSnapshotsLocked(ctx context.Context, h contract.StateLockHandle, verified map[string]bool) []string {
+	raw, err := d.State.Get(ctx, "snapshots")
+	var snaps []map[string]json.RawMessage
+	if err != nil || json.Unmarshal(raw, &snaps) != nil {
+		return nil
+	}
+	var refs []string
+	for _, s := range snaps {
+		var ref, ver string
+		_ = json.Unmarshal(s["ref"], &ref)
+		_ = json.Unmarshal(s["version_id"], &ver)
+		if !verified["manifests/"+ref+"\x00"+ver] {
+			continue
+		}
+		refs = append(refs, ref)
+		s["refs_verified"] = json.RawMessage("true")
+	}
+	if len(refs) == 0 {
+		return nil
+	}
+	nb, _ := json.Marshal(snaps)
+	if d.State.Update(ctx, h, "snapshots", nb) != nil {
+		return nil
+	}
+	return refs
 }

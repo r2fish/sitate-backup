@@ -144,14 +144,7 @@ func (f *fakeB2) api(w http.ResponseWriter, name string, body map[string]any) {
 	enc := json.NewEncoder(w)
 	switch name {
 	case "b2_create_bucket":
-		bn := body["bucketName"].(string)
-		if f.buckets[bn] != nil || f.others[bn] {
-			f.writeErr(w, fakeFail{status: 400, code: "duplicate_bucket_name", message: "Bucket name is already in use."})
-			return
-		}
-		dr := body["defaultRetention"].(map[string]any)
-		f.buckets[bn] = lockedBucket(bn, true, "compliance", dr["period"].(map[string]any)["duration"].(float64), "days")
-		_ = enc.Encode(map[string]any{"bucketId": f.buckets[bn].ID})
+		f.createBucket(w, enc, body)
 	case "b2_list_buckets":
 		out := []*bucketInfo{}
 		if b := f.buckets[body["bucketName"].(string)]; b != nil {
@@ -159,14 +152,7 @@ func (f *fakeB2) api(w http.ResponseWriter, name string, body map[string]any) {
 		}
 		_ = enc.Encode(map[string]any{"buckets": out})
 	case "b2_update_bucket":
-		dr := body["defaultRetention"].(map[string]any)
-		for _, b := range f.buckets {
-			if b.ID == body["bucketId"] {
-				m := dr["mode"].(string)
-				b.Lock.Value.Retention = &retention{Mode: &m}
-			}
-		}
-		_ = enc.Encode(map[string]any{})
+		f.updateBucket(w, enc, body)
 	case "b2_create_key":
 		f.nextKey++
 		id := fmt.Sprintf("004key%04d", f.nextKey)
@@ -217,6 +203,48 @@ func (f *fakeB2) listKeys(w http.ResponseWriter, body map[string]any) {
 		out = append(out, k.listedKey)
 	}
 	_ = json.NewEncoder(w).Encode(map[string]any{"keys": out, "nextApplicationKeyId": next})
+}
+
+func (f *fakeB2) createBucket(w http.ResponseWriter, enc *json.Encoder, body map[string]any) {
+	bn := body["bucketName"].(string)
+	if f.buckets[bn] != nil || f.others[bn] {
+		f.writeErr(w, fakeFail{status: 400, code: "duplicate_bucket_name", message: "Bucket name is already in use."})
+		return
+	}
+	if !f.onlyFields(w, body, "accountId", "bucketName", "bucketType", "fileLockEnabled") {
+		return
+	}
+	f.buckets[bn] = lockedBucket(bn, body["fileLockEnabled"] == true, "", 0, "") // 実 API: 作成では既定保持を付けられない
+	_ = enc.Encode(map[string]any{"bucketId": f.buckets[bn].ID})
+}
+
+func (f *fakeB2) updateBucket(w http.ResponseWriter, enc *json.Encoder, body map[string]any) {
+	if !f.onlyFields(w, body, "accountId", "bucketId", "defaultRetention") {
+		return
+	}
+	dr := body["defaultRetention"].(map[string]any)
+	for _, b := range f.buckets {
+		if b.ID == body["bucketId"] {
+			m := dr["mode"].(string)
+			per := dr["period"].(map[string]any)
+			b.Lock.Value.Retention = &retention{Mode: &m, Period: &struct {
+				Duration int64  `json:"duration"`
+				Unit     string `json:"unit"`
+			}{int64(per["duration"].(float64)), per["unit"].(string)}}
+		}
+	}
+	_ = enc.Encode(map[string]any{})
+}
+
+// onlyFields は実 API と同じく未知の項目を 400 bad_request で拒む。
+func (f *fakeB2) onlyFields(w http.ResponseWriter, body map[string]any, allowed ...string) bool {
+	for k := range body {
+		if !slices.Contains(allowed, k) {
+			f.writeErr(w, fakeFail{status: 400, code: "bad_request", message: "unknown field in request: " + k})
+			return false
+		}
+	}
+	return true
 }
 
 func lockedBucket(name string, enabled bool, mode string, dur float64, unit string) *bucketInfo {

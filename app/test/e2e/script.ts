@@ -13,7 +13,6 @@ export interface A2Script {
   readonly unscripted_question_answer: string;
   readonly continue_input: string;
   readonly turn_limit_input: string;
-  readonly initial_instruction: string;
   readonly questions: Readonly<Record<"Q1" | "Q2" | "Q3" | "Q4", QuestionScript>>;
 }
 export interface InjectionScript {
@@ -69,11 +68,14 @@ const need = (e: Readonly<Record<string, string | undefined>>, k: string): strin
   return v;
 };
 
+/** B2 の保管先準備アダプタが受ける端点の形(adapters/provision/b2/request.go と同じ)。 */
+export const B2_ENDPOINT_RE = /^https:\/\/s3\.[a-z0-9-]+\.backblazeb2\.com$/;
+
 /**
  * real: 人の役の値は SITATE_ROLE_*(launch.md)。fake: LLM の代役の通しなので、鍵は使い捨ての偽の値、保管先は試験用の MinIO(`test/env/.run/<NAME>/env`)。
  * 接続先は受入試験の環境の接続情報(`test/env/.run/accept-<NAME>/env`)から読む。
  */
-export function answersFor(mode: "real" | "fake", name: string, repo: string, env: Readonly<Record<string, string | undefined>>, needStorage = true): Answers {
+export function answersFor(mode: "real" | "fake", name: string, repo: string, env: Readonly<Record<string, string | undefined>>, needStorage = true, b2 = false): Answers {
   const acc = parseEnvFile(readFileSync(`${repo}/test/env/.run/accept-${name}/env`, "utf8"));
   const base = {
     adminKeyPem: readFileSync(need(acc, "SITATE_ACCEPT_ADMIN_KEY_FILE"), "utf8"),
@@ -84,10 +86,13 @@ export function answersFor(mode: "real" | "fake", name: string, repo: string, en
     hookRecordsFile: need(acc, "SITATE_ACCEPT_HOOK_RECORDS_FILE"),
     containers: { backup: `sitate-acc-${name}-backup`, source: `sitate-acc-${name}-source`, dest: `sitate-acc-${name}-dest` },
   };
-  if (mode === "real") {
+  if (mode === "real" || b2) {
+    // b2(予行 make test-b2-preflight): LLM は偽の口、保管先だけ実物の B2(SITATE_ROLE_B2_*)。
     // A6 の起動は LLM API キーと環境の名前だけを受ける(launch.md)。保管先の値は A2 だけが要る。
     const st = (k: string): string => (needStorage ? need(env, k) : (env[k] ?? ""));
-    return { ...base, llmKey: need(env, "SITATE_ROLE_LLM_KEY"), storageEndpoint: st("SITATE_ROLE_B2_ENDPOINT"), bucket: st("SITATE_ROLE_B2_BUCKET"),
+    if (needStorage && !B2_ENDPOINT_RE.test(st("SITATE_ROLE_B2_ENDPOINT"))) throw new Error("SITATE_ROLE_B2_ENDPOINT は https://s3.<リージョン>.backblazeb2.com の形(https:// から。末尾の / や経路は付けない)");
+    const llmKey = b2 && mode === "fake" ? `sk-ant-fake-${Math.random().toString(36).slice(2, 12)}${Math.random().toString(36).slice(2, 12)}` : need(env, "SITATE_ROLE_LLM_KEY");
+    return { ...base, llmKey, storageEndpoint: st("SITATE_ROLE_B2_ENDPOINT"), bucket: st("SITATE_ROLE_B2_BUCKET"),
       storageAdmin: `${st("SITATE_ROLE_B2_ADMIN_KEY_ID")}\n${st("SITATE_ROLE_B2_ADMIN_KEY")}` };
   }
   const s3 = parseEnvFile(readFileSync(`${repo}/test/env/.run/${name}/env`, "utf8"));
@@ -96,9 +101,12 @@ export function answersFor(mode: "real" | "fake", name: string, repo: string, en
     storageAdmin: `fakeid${rnd()}\nfakesecret${rnd()}${rnd()}` };
 }
 
-/** 開始時の入力(手順書の「開始前に用意するもの」。問いにも人の作業にも数えない)。 */
-export function initialMessage(s: A2Script, a: Answers): string {
-  return `${s.initial_instruction}\nバックアップサーバー: ${a.backupHost}(SSH 22 番)、管理アカウント: ${a.adminUser}。\n元サーバー: ${a.sourceHost}(SSH 22 番)、管理アカウント: ${a.adminUser}。管理アカウントの秘密鍵は、秘密の入力ボックスに入れます。`;
+/**
+ * 開始時の入力の 2 つ目(手順書の「開始前に用意するもの」の所在と管理アカウント。問いにも人の作業にも数えない)。
+ * 1 つ目の指示は「始める」のボタン(spec 3.7 の最初の一歩。D-0169)が送るので、ドライバは固定の文を打たない。
+ */
+export function locationMessage(a: Answers): string {
+  return `バックアップサーバー: ${a.backupHost}(SSH 22 番)、管理アカウント: ${a.adminUser}。\n元サーバー: ${a.sourceHost}(SSH 22 番)、管理アカウント: ${a.adminUser}。管理アカウントの秘密鍵は、秘密の入力ボックスに入れます。`;
 }
 
 /** 問いの見分け方(spec 3.8): 応答の最後の文が疑問符で終わるか、規則ファイルの「問いの終わり方」で終わる。 */

@@ -4,6 +4,7 @@ import type { CardDecision, PhraseAction, UiMessage } from "../main/ipc-channels
 
 interface Api {
   sendChat(text: string): Promise<void>;
+  startChat(): Promise<void>;
   decideCard(changeId: string, d: CardDecision): Promise<void>;
   submitSecret(ref: string, value: string): Promise<void>;
   phraseAction(a: PhraseAction): Promise<void>;
@@ -74,7 +75,12 @@ function renderTarget(v: TargetView): void {
 
 sitate.onRender((m) => {
   switch (m.surface) {
-    case "chat": $("chat-send").textContent = m.sendLabel; $("chat-lines").replaceChildren(...m.lines.map((l) => el("li", l.text, { "data-role": l.role }))); return;
+    case "chat":
+      $("chat-send").textContent = m.sendLabel;
+      $("chat-lines").replaceChildren(...m.lines.map((l) => el("li", l.text, { "data-role": l.role })));
+      // 最初の一歩(D-0169): 固定の案内と「始める」。文は主プロセスが送る(ここに固定文を持たない)。
+      $("chat-start").replaceChildren(...(m.start === null ? [] : [el("p", m.start.guide, { "data-start-guide": "1" }), button(m.start.label, "chat-start", () => void sitate.startChat())]));
+      return;
     case "approval-card": renderCard(m.card as CardView); return;
     case "secret-box": {
       $("secret-label").textContent = m.label;

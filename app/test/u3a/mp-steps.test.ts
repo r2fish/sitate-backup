@@ -51,3 +51,12 @@ test("[D-0168] 手順 13: 定義に schedule を書いたときは、その値�
   assert.ok(passedBy(withDef("03:15")).includes("13"));
   assert.ok(!passedBy(withDef("02:30")).includes("13"), "既定の値は、定義が別の値のとき合格しない");
 });
+
+test("[mp-a2] 手順 5: 書き込み鍵の版指定なしの削除の要素は actual が allow でも合格し、他の要素の不一致では不合格", () => {
+  const perm = (op: string, key_role: string, expected: string, actual: string) => ({ op, key_role, expected, actual });
+  const run = (perms: unknown[]): string[] => passedBy(good().map((e) => (e.command.join(" ") === "bucket check" ? { ...e, result: { lock_mode: "COMPLIANCE", versioning: true, permissions: perms } } : e)));
+  const base = [perm("put", "write", "allow", "allow"), perm("unversioned_delete", "read", "deny", "deny")];
+  assert.ok(run([...base, perm("unversioned_delete", "write", "deny", "allow")]).includes("5"), "B2 の書き込み鍵の削除は除く");
+  assert.ok(!run([...base, perm("unversioned_delete", "read", "deny", "allow")]).includes("5"), "読み取り鍵の同じ削除は除かない");
+  assert.ok(!run([perm("put", "write", "allow", "deny"), perm("unversioned_delete", "write", "deny", "allow")]).includes("5"), "他の要素の不一致");
+});

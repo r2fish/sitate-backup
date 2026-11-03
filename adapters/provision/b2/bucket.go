@@ -86,9 +86,17 @@ func createBucket(ctx context.Context, c *client, req *request) (map[string]any,
 		return nil, perr
 	}
 	days := *req.DefaultRetention
-	body := map[string]any{"accountId": s.accountID, "bucketName": req.Bucket, "bucketType": "allPrivate", "fileLockEnabled": true, "defaultRetention": retentionBody(days)}
-	err := s.callRaw(ctx, "b2_create_bucket", body, nil)
+	body := map[string]any{"accountId": s.accountID, "bucketName": req.Bucket, "bucketType": "allPrivate", "fileLockEnabled": true}
+	var made struct {
+		BucketID string `json:"bucketId"`
+	}
+	err := s.callRaw(ctx, "b2_create_bucket", body, &made)
 	if err == nil {
+		// 既定保持は作成の項目ではない(実 API は bad_request)。続けて update で付ける。失敗しても再実行は existingBucket の補完で続く。
+		upd := map[string]any{"accountId": s.accountID, "bucketId": made.BucketID, "defaultRetention": retentionBody(days)}
+		if e := s.call(ctx, "b2_update_bucket", upd, nil); e != nil {
+			return nil, e
+		}
 		return bucketResult(true, days), nil
 	}
 	var ae *apiError

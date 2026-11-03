@@ -75,7 +75,7 @@ func verifyEntry(d *Deps, ctx context.Context, c contract.Call) (contract.Reply,
 		return contract.Reply{}, newErr(contract.CodeUnexpectedVersion, map[string]any{"objects": objverList(res.UnexpectedVersions)})
 	}
 	if len(res.Missing) == 0 && len(res.RetentionShort) == 0 {
-		d.markRefsVerified(ctx, runID)
+		d.markRefsVerified(ctx, runID, recorded)
 	}
 	b, _ := json.Marshal(map[string]any{
 		"missing": objverList(res.Missing), "retention_short": diffList(res.RetentionShort), "retention_long": diffList(res.RetentionLong),

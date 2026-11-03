@@ -23,31 +23,36 @@ const DEFAULT_MAX_MINUTES = 60;
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
 function usage(msg: string): never {
-  console.error(`driver: ${msg}\n使い方: node app/test/e2e/cli.ts --script <JSON> --out <dir> [--variant add|lo|nocluster|base] [--mode real|fake] [--lang ja] [--name <NAME>] [--state-dir <dir> [--reset]] [--doubles <dir>] [--upstream <url。試験用: 中継先を実物の LLM API から変える>] [--max-minutes N]`);
+  console.error(`driver: ${msg}\n使い方: node app/test/e2e/cli.ts --script <JSON> --out <dir> [--variant add|lo|nocluster|base] [--mode real|fake] [--lang ja] [--name <NAME>] [--state-dir <dir> [--reset]] [--doubles <dir>] [--b2 --preflight(予行: 偽の LLM × 実物の B2。test/wiring/b2-preflight.sh)] [--upstream <url。試験用: 中継先を実物の LLM API から変える>] [--max-minutes N]`);
   process.exit(64);
 }
 
 async function main(): Promise<number> {
   const { values: v } = parseArgs({ options: { script: { type: "string" }, variant: { type: "string", default: "base" }, out: { type: "string" }, mode: { type: "string", default: "real" }, lang: { type: "string", default: "ja" },
-    name: { type: "string" }, upstream: { type: "string" }, "state-dir": { type: "string" }, reset: { type: "boolean", default: false }, doubles: { type: "string" }, "max-minutes": { type: "string", default: String(DEFAULT_MAX_MINUTES) } } });
+    name: { type: "string" }, upstream: { type: "string" }, "state-dir": { type: "string" }, reset: { type: "boolean", default: false }, doubles: { type: "string" }, b2: { type: "boolean", default: false }, preflight: { type: "boolean", default: false }, "max-minutes": { type: "string", default: String(DEFAULT_MAX_MINUTES) } } });
   if (v.script === undefined || v.out === undefined) usage("--script と --out が要る");
   if (v.mode !== "real" && v.mode !== "fake") usage("--mode は real か fake");
   if (v.lang !== "ja" && v.lang !== "en") usage("--lang は ja か en");
   if (!["base", "add", "lo", "nocluster"].includes(v.variant!)) usage("--variant は base|add|lo|nocluster");
+  if (v.b2 && v.mode !== "fake") usage("--b2 は --mode fake だけ(LLM は偽の口、保管先だけ実物の B2)");
   const name = v.name ?? process.env.SITATE_ROLE_NAME;
   if (name === undefined || name === "") usage("環境の名前が要る(--name か SITATE_ROLE_NAME)");
   const script = readJson<A2Script & InjectionScript>(resolve(v.script));
   const kind = "questions" in script ? "A2" : "A6";
-  const answers = answersFor(v.mode, name, repo, process.env, kind === "A2");
+  const answers = answersFor(v.mode, name, repo, process.env, kind === "A2", v.b2);
   const rec = new Recorder(resolve(v.out), secretsOf(answers));
   const catalog = loadCatalog(repo, v.lang);
   rec.write("header", { driver: kind, mode: v.mode, variant: v.variant, lang: v.lang, script_version: script.version, ...headerFields(repo) });
   const doubles = v.doubles === undefined ? async () => undefined : () => placeDoubles(resolve(v.doubles!));
   const llm = await startLlmEndpoint(v.mode === "fake"
-    ? { mode: "fake", rec, expectKey: answers.llmKey, fake: makeFakeAgent(answers, doubles, kind === "A6" ? "ご依頼の操作に使える道具はありません。" : undefined) }
+    ? { mode: "fake", rec, expectKey: answers.llmKey, fake: makeFakeAgent(answers, doubles, kind === "A6" ? "ご依頼の操作に使える道具はありません。" : undefined, { adapter: v.b2 ? "b2" : "minio", extras: v.preflight }) }
     : { mode: "proxy", rec, expectKey: answers.llmKey, ...(v.upstream === undefined ? {} : { upstream: v.upstream }) });
   const bridge = await startBridge(answers.containers);
   const state = prepareState(v["state-dir"] === undefined ? undefined : resolve(v["state-dir"]), v.reset);
+  // Ctrl-C・終了の合図でも、LLM キー入りの使い捨ての keychain とユーザーデータの置き場を消してから終わる(終了コード 130)。
+  const onSignal = (): void => { try { disposeState(state); } finally { bridge.close(); process.exit(130); } };
+  process.once("SIGINT", onSignal);
+  process.once("SIGTERM", onSignal);
   const app = await launchApp({ state, llmBaseUrl: llm.url, hostMap: bridge.hostMap, lang: v.lang }).catch(async (e: unknown) => { bridge.close(); await llm.close(); disposeState(state); throw e; });
   const t0 = Date.now();
   let out: Outcome;
@@ -63,6 +68,7 @@ async function main(): Promise<number> {
     rec.write("keychain_items", { prefix: "jp.sitate-backup.app", items: keychainItems(state) });
     appLog = app.log();
     await app.stop(); bridge.close(); await llm.close(); disposeState(state);
+    process.off("SIGINT", onSignal); process.off("SIGTERM", onSignal);
   }
   out = leakCheck(out, rec, secretsOf(answers), appLog, llm.keyMismatches());
   rec.write("summary", { exit: out.exit, reason: out.reason, elapsed_ms: Date.now() - t0, llm_requests: llm.requests(), secret_redactions: rec.redactions, counts: Object.fromEntries(rec.counts) });

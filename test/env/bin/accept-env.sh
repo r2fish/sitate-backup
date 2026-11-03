@@ -11,11 +11,12 @@
 #   accept-env.sh measure-du <NAME>           SURVEY_DU_TIMEOUT_S の確かめ(元サーバーの /home・/srv の直下を調査と同じ数え方(du -x)で測り、定数と並べる。データ量は up --scale で変える)
 #   accept-env.sh exec <NAME> <source|backup|dest|hook> <コマンド…>   コンテナの中で実行(root)
 #   accept-env.sh fake-up|fake-down <NAME>    偽の保管先のサーバーを同じ共有の値で起動・停止(完了条件 9 の前半。イテレーション 1 の受入試験は使わない)
+#   accept-env.sh prepare-a2 <NAME>          試験ビルドの核の信頼の起点(trust.pub と /etc/environment)と sudoers の env_file を backup・dest に置く(up の後、A2 の前に 1 回。試験の環境の準備で、アプリの bootstrap の仕事ではない)
 #   accept-env.sh probe-timers <NAME>         systemd の TimeoutStartSec と cron の @reboot の実測(申し送り)
 # 生成物はすべて test/env/.run/accept-<NAME>/(git 管理外)。資格情報・鍵は起動のたびに生成し、リポジトリには置かない。
 # 接続情報の env ファイル: test/env/.run/accept-<NAME>/env(make shell-linux ACCEPT=<NAME> で開発用コンテナに渡る)。
 set -eu
-op="${1:?up|down|status|check|add-extra|measure-du|exec|fake-up|fake-down|probe-timers}"; name="${2:?NAME}"; shift 2
+op="${1:?up|down|status|check|add-extra|measure-du|exec|fake-up|fake-down|prepare-a2|probe-timers}"; name="${2:?NAME}"; shift 2
 case "$name" in *[!a-z0-9-]*|"") echo "NAME は小文字・数字・ハイフンだけ" >&2; exit 64;; esac
 root="$(cd "$(dirname "$0")/../../.." && pwd)"
 acc="$root/test/env/accept"
@@ -265,6 +266,22 @@ do_fake_up() {
   echo "起動: 偽の保管先 http://fakes3:9000(資格情報: $d/env)"
 }
 
+do_prepare_a2() {
+  # 試験ビルドの核は信頼の起点を /etc/sitate-test/trust.pub(環境変数 SITATE_TEST_TRUST_PUBKEY_FILE)から読む。make sign-test が作る公開鍵が要る。
+  local pub="$root/test/env/.run/keys/sitate-test.pub" r c
+  [ -f "$pub" ] || { echo "$pub が無い: 先に make sign-test" >&2; exit 1; }
+  [ -f "$run/env" ] || { echo "起動していません: accept-env.sh up $name" >&2; exit 64; }
+  for r in backup dest; do
+    c="$(cname "$r")"
+    docker exec "$c" mkdir -p /etc/sitate-test
+    docker exec -i "$c" sh -c 'cat > /etc/sitate-test/trust.pub && chmod 0644 /etc/sitate-test/trust.pub' < "$pub"
+    docker exec "$c" sh -c "grep -q '^SITATE_TEST_TRUST_PUBKEY_FILE=' /etc/environment || echo 'SITATE_TEST_TRUST_PUBKEY_FILE=/etc/sitate-test/trust.pub' >> /etc/environment"
+  done
+  # 試験ビルドの核の時計と信頼の起点は /etc/environment から読む。sudo は環境を落とすので、bootstrap の段 (8) の `sudo -u sitate sitate attest` に渡るよう env_file を置く。
+  docker exec "$(cname backup)" sh -c 'printf "Defaults env_file=\"/etc/environment\"\n" > /etc/sudoers.d/91-sitate-test-env && chmod 0440 /etc/sudoers.d/91-sitate-test-env && visudo -c -q'
+  echo "準備: $name(trust.pub・SITATE_TEST_TRUST_PUBKEY_FILE・sudoers env_file を backup・dest に置いた)"
+}
+
 do_measure_du() {
   # 元サーバーの調査が数えるディレクトリ(/home・/srv の直下)を、調査と同じ数え方(ファイルシステムをまたがずに du)で測る。
   local lim; lim="$(grep -E '^[[:space:]]*SurveyDuTimeoutS[[:space:]]*=' "$root/internal/contract/constants.go" | grep -Eo '[0-9]+' | head -1 || true)"
@@ -287,6 +304,7 @@ case "$op" in
   exec) r="${1:?role}"; shift; docker exec "$(cname "$r")" "$@";;
   fake-up) do_fake_up;;
   fake-down) docker rm -f "$(cname fakes3)" >/dev/null 2>&1 || true; echo "停止: 偽の保管先";;
+  prepare-a2) do_prepare_a2;;
   probe-timers) bash "$root/test/env/bin/accept-probe-timers.sh" "$name";;
   *) echo "op が不明" >&2; exit 64;;
 esac

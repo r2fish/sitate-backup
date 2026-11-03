@@ -10,29 +10,11 @@ cd "$(dirname "$0")/../.."
 root="$PWD"
 out="${OUT:-test/records/driver}"
 NAME="$name" ACCEPT="$name" bash test/env/bin/in-linux.sh 'bash test/wiring/prep.sh'
-# 試験ビルドの核の信頼の起点と sudo の環境(test/wiring/run.sh と同じ。試験の環境の準備で、アプリの bootstrap の仕事ではない)。
-for r in backup dest; do
-  c="sitate-acc-$name-$r"
-  docker exec "$c" mkdir -p /etc/sitate-test
-  docker exec -i "$c" sh -c 'cat > /etc/sitate-test/trust.pub && chmod 0644 /etc/sitate-test/trust.pub' < test/env/.run/keys/sitate-test.pub
-  docker exec "$c" sh -c "grep -q '^SITATE_TEST_TRUST_PUBKEY_FILE=' /etc/environment || echo 'SITATE_TEST_TRUST_PUBKEY_FILE=/etc/sitate-test/trust.pub' >> /etc/environment"
-done
-docker exec "sitate-acc-$name-backup" sh -c 'printf "Defaults env_file=\"/etc/environment\"\n" > /etc/sudoers.d/91-sitate-test-env && chmod 0440 /etc/sudoers.d/91-sitate-test-env && visudo -c -q'
+# 試験ビルドの核の信頼の起点と sudo の環境(試験の環境の準備。A2 の実行前にも同じ 1 コマンド)。
+bash test/env/bin/accept-env.sh prepare-a2 "$name"
 # bootstrap の後に、保管先準備アダプタの代役を root で置く(ドライバが dist/test/wiring/need-doubles を作ったら置いて doubles-done を作る)。
 rm -f dist/test/wiring/need-doubles dist/test/wiring/doubles-done
-(
-  until [ -f dist/test/wiring/need-doubles ]; do sleep 1; done
-  c="sitate-acc-$name-backup"
-  for n in minio b2; do
-    d="/usr/libexec/sitate/adapters/provision/$n"
-    docker exec "$c" mkdir -p "$d"
-    for f in "minio:$d/minio:755" "keys.json:$d/keys.json:644" "adapter-$n/adapter.json:$d/adapter.json:644" "adapter-$n/adapter.json.sig:$d/adapter.json.sig:644"; do
-      src="dist/test/wiring/${f%%:*}"; rest="${f#*:}"; dest="${rest%%:*}"; mode="${rest##*:}"
-      docker exec -i "$c" sh -c "cat > $dest && chmod $mode $dest && chown root:root $dest" < "$src"
-    done
-  done
-  touch dist/test/wiring/doubles-done
-) &
+bash test/wiring/doubles-watch.sh "$name" &
 watcher=$!
 trap 'kill $watcher 2>/dev/null || true' EXIT
 rc=0

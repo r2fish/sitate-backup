@@ -1,5 +1,6 @@
 // mp-app B2・B3・B6・B7: 道具の呼び出しの直列、入力ボックスのラベル、保存しないモード、`*_ref` の自動の差し込み。
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { canonicalHash } from "../../src/main/approval-sign.ts";
 import type { CardDecision } from "../../src/main/ipc-channels.ts";
@@ -72,4 +73,17 @@ test("[mp-app B3] 元サーバーの管理用鍵と復元先の資格情報は�
   await h.s.onToolCall("sitate_source_survey", { host: "ssh://u@h", admin_ref: "source-admin" });
   await h.s.onToolCall("sitate_restore_dest_enroll", { dest: "d", adapter: "ssh-host", admin_ref: "dest-admin", dry_run: true });
   assert.deepEqual(h.boxes.map((b) => b.label), ["chat.secret.label.source_admin", "chat.secret.label.dest_admin"]);
+});
+
+test("[mp-a2 D-0169] 「始める」: カタログの固定の指示を人の発話として描いてエージェントへ送る。押すまで何も送らない", () => {
+  const sent: string[] = [];
+  const h = harness(() => env(["status"], {}), { kind: "close" }, "x", { sendToAgent: (_id, text) => { sent.push(text); } });
+  assert.deepEqual(sent, [], "押すまで送らない");
+  h.s.start();
+  assert.deepEqual(sent, ["chat.start.instruction"], "文はカタログのキーから引く(ここに固定文を持たない)");
+  assert.deepEqual(h.lines, [{ role: "human", text: "chat.start.instruction" }]);
+  const ja = JSON.parse(readFileSync(new URL("../../src/i18n/ja/catalog.json", import.meta.url), "utf8")) as Record<string, string>;
+  assert.equal(ja["chat.start.instruction"], "導入手順書に従って、バックアップを導入してください。");
+  assert.equal(ja["chat.start.label"], "始める");
+  assert.match(ja["chat.start.guide"]!, /^バックアップの準備をお手伝いします。始めてよければ、下のボタンを押してください。分からないことは、そのまま聞いてください$/);
 });

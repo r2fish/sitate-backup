@@ -90,18 +90,45 @@ export function createAgentRuntime(opts: AgentRuntimeOptions): AgentRuntime {
         thread: false,
         messages: [...history, { role: "user", content: text }],
       }, { signal: stop.signal });
+      const keep = (): void => { history.splice(0, history.length, ...settled([...runner.params.messages] as Msg[])); };
       const final = await runner.runUntilDone().catch((e: unknown) => {
+        keep();
         throw failure ?? e;
       });
-      if (failure !== null) throw failure;
+      if (failure !== null) { keep(); throw failure; }
       if (final.stop_reason === "max_tokens") throw new AgentFailure("AGENT_OUTPUT_TRUNCATED");
-      const kept: { role: string }[] = [...runner.params.messages];
-      if (kept[kept.length - 1]?.role !== "assistant") kept.push({ role: final.role, content: final.content } as { role: string });
-      history.splice(0, history.length, ...kept);
+      const kept = [...runner.params.messages] as Msg[];
+      if (kept[kept.length - 1]?.role !== "assistant") kept.push({ role: final.role, content: final.content } as Msg);
+      history.splice(0, history.length, ...settled(kept));
       opts.onUsage?.(usageOf(final, opts.model, Date.now() - started));
       return textOf(final.content);
     },
   };
+}
+
+type Msg = { role: string; content?: unknown };
+const blocksOf = (m: Msg): { type?: string; id?: string; tool_use_id?: string }[] => (Array.isArray(m.content) ? (m.content as { type?: string }[]) : []);
+
+/**
+ * 次の要求に使える履歴にする(実 API の規則): 中身の無い assistant(本文も道具の呼び出しも無い応答)は残さない。
+ * 道具の結果が付いていない道具の呼び出しの assistant(中断・上限で打ち切った回)は、その後ろごと捨てる。
+ * ここまでの呼び出しの記憶(途中の道具の往復)は残す。
+ */
+function settled(messages: Msg[]): Msg[] {
+  const out: Msg[] = [];
+  for (let i = 0; i < messages.length; i++) {
+    const m = messages[i]!;
+    if (m.role !== "assistant") { out.push(m); continue; }
+    const blocks = blocksOf(m);
+    if (typeof m.content === "string" ? m.content === "" : blocks.length === 0) continue;
+    const uses = blocks.filter((b) => b.type === "tool_use").map((b) => b.id);
+    if (uses.length > 0) {
+      const have = new Set(blocksOf(messages[i + 1] ?? { role: "" }).filter((b) => b.type === "tool_result").map((b) => b.tool_use_id));
+      if (messages[i + 1]?.role !== "user" || !uses.every((id) => have.has(id))) break;
+    }
+    out.push(m);
+  }
+  return out;
 }
 
 function textOf(content: readonly { type: string; text?: string }[]): string {

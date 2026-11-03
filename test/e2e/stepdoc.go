@@ -16,7 +16,10 @@ type Expect struct {
 	Pointer string // 例 /result/last_backup/ok。<i> は配列の全要素
 	Op      string // = ⊇ ⊆
 	Value   string // コード片の中身。{{印}} は解決前のまま
+	Skip    bool   // 注記「書き込み鍵の版指定なしの削除の要素を除く」(spec 4.2)。op=unversioned_delete かつ key_role=write の要素を比べない
 }
+
+const skipNote = "書き込み鍵の版指定なしの削除の要素を除く"
 
 // Check は 1 つの完了確認コマンドと、その結果に対する期待する値。
 type Check struct {
@@ -87,7 +90,7 @@ func parseExpects(seg string) ([]Expect, error) {
 		if m == nil {
 			return fmt.Errorf("期待する値の要素が読めない: %q", it)
 		}
-		out = append(out, Expect{Pointer: m[1], Op: m[2], Value: m[3]})
+		out = append(out, Expect{Pointer: m[1], Op: m[2], Value: m[3], Skip: strings.Contains(seg, skipNote) && strings.Contains(m[1], "/<i>/")})
 		return nil
 	}
 	for _, r := range stripNotes(seg) {

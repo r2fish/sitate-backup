@@ -10,7 +10,7 @@ import { Human } from "./human.ts";
 import type { HumanDeps, Outcome } from "./human.ts";
 import type { Port } from "./port.ts";
 import type { Recorder } from "./record.ts";
-import { initialMessage, isQuestion, matchQuestion } from "./script.ts";
+import { isQuestion, locationMessage, matchQuestion } from "./script.ts";
 import type { A2Script, Answers, QId } from "./script.ts";
 import type { TestEvent } from "../../src/testing/driver-server.ts";
 
@@ -18,6 +18,9 @@ const POLL_MS = 250;
 const SETTLE_MS = 600;
 const START_WAIT_MS = 15000;
 const MAX_INTERVENTIONS = 40;
+/** LLM_RATE_LIMITED: 待ってから続行の入力で再試行する。待つ長さと回数の上限(超えたら失敗で終える)。値は測って決めたものでなく、実行の様子を見て直す。 */
+const RATE_WAIT_MS = 60000;
+const RATE_RETRY_MAX = 5;
 const LAST_STEP = 13;
 
 export interface LoopDeps {
@@ -43,7 +46,7 @@ export class A2Loop {
   readonly #human: Human;
   readonly stepsPassed = new Set<number>();
   readonly marks: Mark[] = [];
-  readonly counts = { questions: 0, unscripted: 0, continues: 0, turnLimit: 0, toolCalls: 0, withheld: 0 };
+  readonly counts = { questions: 0, unscripted: 0, continues: 0, turnLimit: 0, toolCalls: 0, withheld: 0, rateRetries: 0 };
   status: ReturnType<typeof judgeStatus> | null = null;
   #lines = 0;
   #active = false;
@@ -57,6 +60,8 @@ export class A2Loop {
   #q4: "none" | "wished" | "accepted" = "none";
   #surveyed = false;
   #lastAgent = "";
+  /** 「始める」を押した後、エージェントの最初の応答(所在と管理アカウントの問い)を待っている。 */
+  #awaitLocation = false;
 
   constructor(d: LoopDeps) {
     this.#d = d;
@@ -96,7 +101,7 @@ export class A2Loop {
   async #onEvent(ev: TestEvent): Promise<Outcome | null> {
     switch (ev.kind) {
       case "agent_ready": this.#ready = true; this.#d.rec.write("agent_ready", { model: ev.model }); return null;
-      case "run_start": this.#active = true; this.#idleAt = null; this.#started = true; this.#d.rec.write("run_start", { id: ev.id }); return null;
+      case "run_start": this.#active = true; this.#idleAt = null; this.#started = true; this.#lastAgent = ""; this.#d.rec.write("run_start", { id: ev.id }); return null;
       case "run_end": return this.#onRunEnd(ev);
       case "tool_call": return this.#onToolCall(ev);
       default: return null;
@@ -109,6 +114,7 @@ export class A2Loop {
     this.#idleAt = this.#d.now();
     if (ev.outcome === "reply") { this.#d.rec.write("run_end", { id: ev.id, outcome: "reply" }); return null; }
     this.#d.rec.write("run_end", { id: ev.id, outcome: "failure", code: ev.code });
+    if (ev.code === "LLM_RATE_LIMITED" && this.counts.rateRetries < RATE_RETRY_MAX) return null; // #afterRun が待って再試行する
     return ev.code === "AGENT_TURN_LIMIT" ? null : { exit: 1, reason: `エージェントの失敗: ${String(ev.code)}` };
   }
 
@@ -146,7 +152,8 @@ export class A2Loop {
   #onNotice(text: string): void {
     if (text === this.#d.catalog["chat.quote.rejected_guide"]) {
       this.counts.withheld += 1;
-      this.#d.rec.write("withheld_reply", { text: String((this.#lastRun?.text as string | undefined) ?? "") });
+      this.#lastAgent = ""; // 隠した応答の前の応答に答え直さない(続行の介入になる)
+      this.#d.rec.write("withheld_reply", { count: this.counts.withheld }); // 本文は残さない(8 章 A7)
     } else this.#d.rec.write("notice", { text });
   }
 
@@ -168,21 +175,35 @@ export class A2Loop {
     if (!this.#ready) return null;
     if (this.#startedAt !== 0) return this.#d.now() > this.#expectUntil ? { exit: 1, reason: "開始時の入力で実行が始まらなかった" } : null;
     this.#startedAt = this.#d.now();
-    const text = initialMessage(this.#d.script, this.#d.answers);
-    this.#d.rec.write("start_input", { text });
-    await this.#d.port.chat(text);
+    // 開始時の入力 1 つ目: 固定の文を打たず「始める」を押す(spec 3.7 の最初の一歩。D-0169)。2 つ目(所在と管理アカウント)は最初の応答の後。
+    const clicked = await this.#d.port.click("chat", "chat-start");
+    this.#d.rec.write("start_click", { text: this.#d.catalog["chat.start.instruction"] ?? "", clicked });
+    if (!clicked) return { exit: 1, reason: "「始める」のボタンが無い(接続先の記録と会話が無い状態から始まっていない)" };
+    this.#awaitLocation = true;
     this.#expectUntil = this.#d.now() + START_WAIT_MS;
     return null;
   }
 
   async #afterRun(): Promise<Outcome | null> {
     await this.#drainLines();
+    if (this.#awaitLocation) { // エージェントが所在と管理アカウントを聞いた(または進めた)。開始時の入力の 2 つ目を渡す。問いに数えない。
+      this.#awaitLocation = false;
+      return this.#say("start_input", locationMessage(this.#d.answers));
+    }
     if (this.stepsPassed.has(LAST_STEP)) return this.#finish();
     if (this.counts.continues + this.counts.turnLimit + this.counts.unscripted > MAX_INTERVENTIONS) return { exit: 1, reason: "進まない(入力の回数が上限を超えた)" };
+    if (this.#lastRun?.outcome === "failure" && this.#lastRun.code === "LLM_RATE_LIMITED") return this.#rateRetry();
     if (this.#lastRun?.outcome === "failure") return this.#say("turn_limit_input", this.#d.script.turn_limit_input, () => { this.counts.turnLimit += 1; });
     const reply = this.#lastAgent;
     if (!isQuestion(reply, this.#d.endings)) return this.#say("continue_intervention", this.#d.script.continue_input, () => { this.counts.continues += 1; this.marks.push("intervene"); });
     return this.#answer(reply);
+  }
+
+  async #rateRetry(): Promise<Outcome | null> {
+    this.counts.rateRetries += 1;
+    this.#d.rec.write("rate_limit_wait", { attempt: this.counts.rateRetries, max: RATE_RETRY_MAX, wait_ms: RATE_WAIT_MS });
+    await this.#d.sleep(RATE_WAIT_MS);
+    return this.#say("continue_intervention", this.#d.script.continue_input, undefined, { reason: "rate_limited" });
   }
 
   async #answer(reply: string): Promise<Outcome | null> {

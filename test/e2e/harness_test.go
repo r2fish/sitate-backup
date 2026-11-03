@@ -37,11 +37,11 @@ func TestJudge(t *testing.T) {
 	env := []byte(`{"ok":true,"result":{"schedule":["a","b"],"permissions":[{"actual":"x","expected":"x"}],"signing_key_fp":"FP"},"warnings":[{"code":"W1"}]}`)
 	marks := Marks{"DIST_KEY_FINGERPRINT": []byte(`"FP"`), "TIMER_NAMES": []byte(`["a"]`), "WARNING_ALLOWLIST": []byte(`["W1"]`)}
 	ok := []Expect{
-		{"/ok", "=", "true"},
-		{"/result/signing_key_fp", "=", "{{DIST_KEY_FINGERPRINT}}"},
-		{"/result/schedule", "⊇", "{{TIMER_NAMES}}"},
-		{"/warnings/<i>/code", "⊆", "{{WARNING_ALLOWLIST}}"},
-		{"/result/permissions/<i>/actual", "=", "/result/permissions/<i>/expected"},
+		{"/ok", "=", "true", false},
+		{"/result/signing_key_fp", "=", "{{DIST_KEY_FINGERPRINT}}", false},
+		{"/result/schedule", "⊇", "{{TIMER_NAMES}}", false},
+		{"/warnings/<i>/code", "⊆", "{{WARNING_ALLOWLIST}}", false},
+		{"/result/permissions/<i>/actual", "=", "/result/permissions/<i>/expected", false},
 	}
 	for _, e := range ok {
 		if err := Judge(env, e, marks); err != nil {
@@ -49,11 +49,11 @@ func TestJudge(t *testing.T) {
 		}
 	}
 	bad := []Expect{
-		{"/ok", "=", "false"},
-		{"/result/signing_key_fp", "=", "{{TIMER_NAMES}}"},
-		{"/result/schedule", "⊇", "{{WARNING_ALLOWLIST}}"},
-		{"/warnings/<i>/code", "⊆", "{{TIMER_NAMES}}"},
-		{"/result/nothing", "=", "1"},
+		{"/ok", "=", "false", false},
+		{"/result/signing_key_fp", "=", "{{TIMER_NAMES}}", false},
+		{"/result/schedule", "⊇", "{{WARNING_ALLOWLIST}}", false},
+		{"/warnings/<i>/code", "⊆", "{{TIMER_NAMES}}", false},
+		{"/result/nothing", "=", "1", false},
 	}
 	for _, e := range bad {
 		if err := Judge(env, e, marks); err == nil {
@@ -106,7 +106,7 @@ func TestInstallCompletionChecks(t *testing.T) {
 // 手順 13 の右辺 <定義の schedule>: marks の DEF_SCHEDULE(直近に合格した def validate の normalized.schedule)、無ければ既定 02:30(D-0168)。
 func TestJudgeDefScheduleRef(t *testing.T) {
 	env := []byte(`{"ok":true,"result":{"schedule":"03:15"}}`)
-	e := Expect{"/result/schedule", "=", DefScheduleRef}
+	e := Expect{"/result/schedule", "=", DefScheduleRef, false}
 	if err := Judge(env, e, Marks{"DEF_SCHEDULE": []byte(`"03:15"`)}); err != nil {
 		t.Errorf("定義の schedule と一致するのに落ちた: %v", err)
 	}
@@ -118,5 +118,27 @@ func TestJudgeDefScheduleRef(t *testing.T) {
 	}
 	if err := Judge(env, e, Marks{"DEF_SCHEDULE": []byte(`"04:00"`)}); err == nil {
 		t.Errorf("違う schedule が通った")
+	}
+}
+
+// 手順 5: 注記「書き込み鍵の版指定なしの削除の要素を除く」(spec 4.2)。その要素は actual が allow でも通り、他の要素の不一致は落ちる。
+func TestJudgeSkipWriteUnversionedDelete(t *testing.T) {
+	perms := func(last string) []byte {
+		return []byte(`{"result":{"permissions":[{"op":"put","key_role":"write","expected":"allow","actual":"allow"},{"op":"unversioned_delete","key_role":"` + last + `","expected":"deny","actual":"allow"}]}}`)
+	}
+	e := Expect{"/result/permissions/<i>/actual", "=", "/result/permissions/<i>/expected", true}
+	if err := Judge(perms("write"), e, Marks{}); err != nil {
+		t.Errorf("書き込み鍵の版指定なしの削除は除くのに落ちた: %v", err)
+	}
+	if err := Judge(perms("read"), e, Marks{}); err == nil {
+		t.Errorf("読み取り鍵の同じ削除は除かないのに通った")
+	}
+	e.Skip = false
+	if err := Judge(perms("write"), e, Marks{}); err == nil {
+		t.Errorf("注記が無いのに通った")
+	}
+	exps, err := parseExpects("`/result/permissions/<i>/actual` = `/result/permissions/<i>/expected`(書き込み鍵の版指定なしの削除の要素を除く)")
+	if err != nil || len(exps) != 1 || !exps[0].Skip {
+		t.Errorf("注記を読めていない: %+v %v", exps, err)
 	}
 }

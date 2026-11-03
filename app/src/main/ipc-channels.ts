@@ -11,6 +11,8 @@ export type Surface = (typeof SURFACES)[number];
 export const CHANNEL = {
   chatSend: "chat:send",
   chatAbort: "chat:abort",
+  /** 最初の一歩の「始める」(spec 3.7。D-0169)。固定の指示を人の発話として送る。 */
+  chatStart: "chat:start",
   cardDecision: "card:decision",
   secretSubmit: "secret:submit",
   phraseAction: "phrase:action",
@@ -28,7 +30,7 @@ export type SecretMode = "save" | "app-open" | "no-save";
 export type PhraseAction = "verify" | "print" | "confirm" | "handwritten" | "cancel";
 
 export type UiMessage =
-  | { readonly surface: "chat"; readonly lines: readonly { readonly role: "human" | "agent" | "tool" | "notice"; readonly text: string }[]; readonly sendLabel: string }
+  | { readonly surface: "chat"; readonly lines: readonly { readonly role: "human" | "agent" | "tool" | "notice"; readonly text: string }[]; readonly sendLabel: string; readonly start: { readonly guide: string; readonly label: string } | null }
   | { readonly surface: "approval-card"; readonly card: unknown }
   | { readonly surface: "secret-box"; readonly mode: SecretMode; readonly ref: string; readonly label: string; readonly submitLabel: string }
   | { readonly surface: "phrase-panel"; readonly open: boolean; readonly words: readonly { readonly n: number; readonly word: string }[] | null; readonly canProceed: boolean; readonly actions: readonly { readonly action: PhraseAction; readonly label: string }[]; readonly notice: string | null; readonly cautions: readonly string[] }
