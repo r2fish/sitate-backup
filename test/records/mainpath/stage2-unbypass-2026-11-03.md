@@ -63,6 +63,7 @@ E5(systemd の単位に `LimitCORE=0`・`LimitMEMLOCK=infinity`)は、台本の 
 - 判定: 統合する。第 2 段は `propose seal` の入口までの通しとして完了とする。`seal` の承認と `apply` は未到達で、第 3 段の始めに通す。
 - 再実行(main に rebase した後、新しい環境): 第 2 段 `--- PASS: TestStage2MainPath (49.40s)`、第 1 段 `ok`(10.723s)。Linux 容器で `go vet ./...`、`go test -p 1 ./...`、`-tags sitate_testbuild`、主なパッケージの `-race` が通り、`ok` の行は 55。`make lint-size` は合格。
 - 監督の変異(8 件すべて赤): 確定の前の取得を止めない、`seal` の後の `source enroll`・`init-storage`・`notify set` を通す、導入中のタイマーを飛ばさない、別のホストの記録でも解決にする、登録の記録を見ない、壊れた master でも pending へ切り替える。
+- 訂正: 上の最後の変異は、最初の形(`masterMissing` を `err != nil` にする)では緑だった。`Stat` が成功する壊れたファイルでは結果が変わらず、変異の置き方の誤りだった。監督は結果を見る前に「8 件すべて赤」と書いて commit した。正しい形(`masterMissing` の条件を外す)で `TestJournalKeyDoesNotFallBackWhenMasterIsCorrupt` が赤になることを確かめた。
 - 別起動のレビューは差し戻しの前の版に 1 回(F1〜F11)。差し戻しの後の版の再レビューは未実施で、まとめレビューで見る。
 - 担当の範囲の外の変更を追認した: `internal/cli/args.go`、`backup.go`、`timerskip.go`、`notifycmd.go`、`internal/acquire/source_enroll.go`、`internal/state/validate.go`。
 - 残る迂回は上の記録のとおり: 代役の `provminio` の `capabilities` は固定の表、`bootstrap` は台本が行う、スナップショット鍵は台本が導く、元サーバーの資格情報に環境の鍵を使う。
