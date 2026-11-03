@@ -1,5 +1,6 @@
 // 試験用ドライバのクライアント(完了条件 12)。試験用のアプリ(SITATE_TEST_DRIVER_SOCKET の UNIX ソケットを開く)に接続し、5 面を操作する。
 // 受入試験の A2・A6・A7 の画面の操作はここから駆動する。製品のアプリには含めない。
+import { StringDecoder } from "node:string_decoder";
 import { connect } from "node:net";
 import type { Socket } from "node:net";
 import type { DriverCommand, TestEvent } from "../../src/testing/driver-server.ts";
@@ -20,8 +21,10 @@ export class Driver {
 
   constructor(sock: Socket) {
     this.#sock = sock;
-    sock.on("data", (d) => {
-      this.#buf += d.toString("utf8");
+    // 受信のチャンクの境目が UTF-8 の文字の途中に当たっても壊さない(d.toString だとその文字が U+FFFD になる)。
+    const decoder = new StringDecoder("utf8");
+    sock.on("data", (d: Buffer) => {
+      this.#buf += decoder.write(d);
       for (let nl = this.#buf.indexOf("\n"); nl >= 0; nl = this.#buf.indexOf("\n")) {
         const line = this.#buf.slice(0, nl);
         this.#buf = this.#buf.slice(nl + 1);

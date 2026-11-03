@@ -5,7 +5,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 import { spawnSync } from "node:child_process";
+import { Duplex } from "node:stream";
+import type { Socket } from "node:net";
 import { A2Loop } from "./a2-loop.ts";
+import { Driver } from "./driver.ts";
 import { FakeApp, envelope, toolCall } from "./fake-app.ts";
 import type { AgentTurn } from "./fake-app.ts";
 import { Recorder } from "./record.ts";
@@ -186,5 +189,72 @@ test("[mp-a2 D-0169] 開始: 固定の文を打たず「始める」を押し、
   assert.equal(r.loop.counts.continues, 0);
   const rec = readFileSync(r.file, "utf8");
   assert.match(rec, /"kind":"start_click"/);
+  cleanup(r);
+});
+
+// ---- 試験の道具の直し(A2 測定 1 の 1 回目の記録から) ----
+
+test("[fix-drv] ドライバの受信: チャンクの境目が UTF-8 の文字の途中でも壊れない(手順の合格の行を落とさない)", async () => {
+  const sock = new Duplex({ read() {}, write(_c, _e, cb) { cb(); } });
+  const d = new Driver(sock as unknown as Socket);
+  const reply = Buffer.from(JSON.stringify({ result: [{ role: "tool", text: "手順 10 が合格しました。" }] }) + "\n", "utf8");
+  const p = d.lines();
+  const cut = reply.indexOf(Buffer.from("手順")) + 1; // 「手」の途中
+  sock.push(reply.subarray(0, cut));
+  sock.push(reply.subarray(cut));
+  assert.deepEqual(await p, [{ role: "tool", text: "手順 10 が合格しました。" }]);
+});
+
+test("[fix-drv] 手順の合格の行は先頭の語に頼らず番号で数える", async () => {
+  const r = await drive([{ lines: [{ role: "tool", text: "���� 10 が合格しました。" }, ...agent("次へ進みます。")] }, END_FAIL]);
+  assert.ok(r.loop.stepsPassed.has(10));
+  cleanup(r);
+});
+
+test("[fix-drv] 問いの照合は最後の文だけ: 説明の文中の「保管先」で Q1 と取り違えず、台本に無い問いにする", async () => {
+  assert.equal(matchQuestion("保管先のバケットは作成済みです。この案で進めてよろしいですか?", script), null);
+  assert.equal(matchQuestion("説明です。保管先のエンドポイントとバケット名を教えていただけますか?", script), "Q1");
+  const r = await drive([{ lines: agent("保管先の設定確認は通っています。もう一度バックアップを試してよろしいですか?") }, END_FAIL]);
+  assert.equal(r.app.chats[1], script.unscripted_question_answer);
+  assert.equal(r.loop.counts.unscripted, 1);
+  cleanup(r);
+});
+
+const STALL = "元サーバーの管理者の確認が済んだら、「確認した」と書いてください。";
+const stall = (n: number): AgentTurn[] => Array.from({ length: n }, (_, i) => ({ lines: agent(`状況 ${i} は変わっていません。${STALL}`) }));
+
+test("[fix-drv] 同じ依頼の繰り返しが 3 回で、その間に道具を呼ばなければ、40 回待たず終了コード 1(人の作業で止まった)", async () => {
+  const r = await drive(stall(50));
+  assert.equal(r.out.exit, 1);
+  assert.match(r.out.reason, /人の作業で止まった/);
+  assert.equal(r.loop.counts.continues, 3, "3 回目の応答の後は入力を送らずに終える(2 回だけ送る)");
+  assert.equal(r.app.chats.length, 3, "所在の入力 + 続行 2 回");
+  assert.match(readFileSync(r.file, "utf8"), /"kind":"repeated_request"[^\n]*"toolless":true/);
+  cleanup(r);
+});
+
+test("[fix-drv] 繰り返しの間に道具を呼んでいれば止めない", async () => {
+  const call = toolCall("sitate_doctor");
+  const turns: AgentTurn[] = [0, 1, 2].map((i) => ({ events: [call], lines: agent(`状況 ${i}。${STALL}`) }));
+  const r = await drive([...turns, END_FAIL]);
+  assert.doesNotMatch(r.out.reason, /人の作業で止まった/);
+  assert.equal(r.loop.counts.continues, 3);
+  cleanup(r);
+});
+
+test("[fix-drv] 再生: 記録 1 回目の末尾の型(説明に保管先の語がある確認の問い + 人の確認待ちの繰り返し)で、取り違えず早く終わる", async () => {
+  const stuck = "導入は手順 11 で止まったままです。\n\n- 原因コードは `INTERNAL` です。\n\n元サーバーの管理者の確認か、開発元か販売元への問い合わせが済んだら、「確認した」と書いてください。そこから手順 11 を再開します。";
+  const turns: AgentTurn[] = [
+    { lines: agent("保管先のエンドポイントとバケット名は受け取り済みです。この案で進めてよろしいですか?") },
+    { lines: agent("保管先は作成され、バージョン管理が有効です。次の確認を進めてよろしいですか?") },
+    { lines: agent("保管先の状態は変わりません。元サーバーの PostgreSQL の確認は、済んでいますか?") },
+    ...Array.from({ length: 45 }, () => ({ lines: agent(stuck) })),
+  ];
+  const r = await drive(turns);
+  assert.equal(r.app.chats.slice(1, 4).filter((c) => c.includes("バケット名は")).length, 0, "Q1 の答えを返さない");
+  assert.equal(r.loop.counts.unscripted, 3);
+  assert.equal(r.out.exit, 1);
+  assert.match(r.out.reason, /人の作業で止まった/);
+  assert.ok(r.app.chats.length < 10, `早く終わる(入力 ${r.app.chats.length} 回)`);
   cleanup(r);
 });

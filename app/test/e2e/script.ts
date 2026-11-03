@@ -131,13 +131,17 @@ export function questionForm(reply: string, endings: readonly string[]): { notLa
 /** 続行の介入の直前の応答の最後の文(同じ依頼の繰り返しの検出の鍵)。 */
 export const lastSentence = (reply: string): string => (sentencesOf(reply).at(-1) ?? "").replace(/\s+/g, "");
 
-/** 台本の Q の語に当たる数が最も多い Q(同数は番号の早い方)。どれにも当たらなければ null(台本に無い問い)。 */
+/**
+ * 台本の Q の語に当たる数が最も多い Q(同数は番号の早い方)。照合するのは応答の最後の文(問いの文)だけで、説明の文中の語は見ない。
+ * どれにも当たらなければ null(台本に無い問い)。
+ */
 export function matchQuestion(reply: string, s: A2Script): QId | null {
+  const q = sentencesOf(reply).at(-1) ?? "";
   let best: QId | null = null;
   let bestN = 0;
-  for (const q of Q_ORDER) {
-    const n = s.questions[q].match.filter((w) => reply.includes(w)).length;
-    if (n > bestN) { best = q; bestN = n; }
+  for (const id of Q_ORDER) {
+    const n = s.questions[id].match.filter((w) => q.includes(w)).length;
+    if (n > bestN) { best = id; bestN = n; }
   }
   return best;
 }

@@ -24,6 +24,8 @@ const RATE_RETRY_MAX = 5;
 const LAST_STEP = 13;
 /** 続行の介入の直前の応答の最後の文が同じなら、この回数目で「同じ依頼の繰り返し」の印を付ける(D-0171)。 */
 const REPEAT_MARK = 3;
+/** 手順の合格の行の見分け。先頭の語(「手順」)に頼らず、番号と「が合格しました」で見る。 */
+const STEP_PASSED_LINE = /(\d+) が合格しました/;
 
 export interface LoopDeps {
   readonly port: Port;
@@ -49,7 +51,8 @@ export class A2Loop {
   readonly stepsPassed = new Set<number>();
   readonly marks: Mark[] = [];
   readonly counts = { questions: 0, unscripted: 0, continues: 0, turnLimit: 0, toolCalls: 0, withheld: 0, rateRetries: 0, questionNotLast: 0, multiQuestion: 0, repeatedRequests: 0 };
-  readonly #repeats = new Map<string, number>();
+  readonly #repeats = new Map<string, number[]>();
+  #stall: Outcome | null = null;
   status: ReturnType<typeof judgeStatus> | null = null;
   #lines = 0;
   #active = false;
@@ -153,19 +156,26 @@ export class A2Loop {
     if (f.multi) { this.counts.multiQuestion += 1; this.#d.rec.write("multi_question", { count: this.counts.multiQuestion }); }
   }
 
-  /** 続行の介入が同じ依頼(直前の応答の最後の文が同じ)への返しになっていないか。3 回目で印を付ける。 */
+  /**
+   * 続行の介入が同じ依頼(直前の応答の最後の文が同じ)への返しになっていないか。3 回目で印を付ける。
+   * その 3 回の間に道具の呼び出しが 1 つも無ければ、エージェントは人の作業を待っている。続けても進まないので、終了コード 1 で終える(LLM の費用)。
+   */
   #noteContinue(): void {
     this.counts.continues += 1; this.marks.push("intervene");
     const key = lastSentence(this.#lastAgent);
     if (key === "") return;
-    const n = (this.#repeats.get(key) ?? 0) + 1;
-    this.#repeats.set(key, n);
-    if (n === REPEAT_MARK) { this.counts.repeatedRequests += 1; this.#d.rec.write("repeated_request", { sentence: key.slice(0, 120), times: n }); }
+    const seen = [...(this.#repeats.get(key) ?? []), this.counts.toolCalls];
+    this.#repeats.set(key, seen);
+    if (seen.length !== REPEAT_MARK) return;
+    this.counts.repeatedRequests += 1;
+    const toolless = seen[0] === seen[REPEAT_MARK - 1];
+    this.#d.rec.write("repeated_request", { sentence: key.slice(0, 120), times: seen.length, toolless });
+    if (toolless) this.#stall = { exit: 1, reason: "台本に無い人の作業で止まった(同じ依頼の繰り返しで、道具を呼ばない)" };
   }
 
   #onToolLine(text: string): void {
     this.#d.rec.write("tool_display", { text });
-    const m = /手順 (\d+) が合格しました/.exec(text);
+    const m = STEP_PASSED_LINE.exec(text);
     if (m !== null) { this.stepsPassed.add(Number(m[1])); this.marks.push("pass"); this.#d.rec.write("step_passed", { step: Number(m[1]) }); }
   }
 
@@ -215,7 +225,11 @@ export class A2Loop {
     if (this.#lastRun?.outcome === "failure" && this.#lastRun.code === "LLM_RATE_LIMITED") return this.#rateRetry();
     if (this.#lastRun?.outcome === "failure") return this.#say("turn_limit_input", this.#d.script.turn_limit_input, () => { this.counts.turnLimit += 1; });
     const reply = this.#lastAgent;
-    if (!isQuestion(reply, this.#d.endings)) return this.#say("continue_intervention", this.#d.script.continue_input, () => this.#noteContinue());
+    if (!isQuestion(reply, this.#d.endings)) {
+      this.#noteContinue();
+      if (this.#stall !== null) return this.#stall; // 入力を送らずに終える
+      return this.#say("continue_intervention", this.#d.script.continue_input);
+    }
     return this.#answer(reply);
   }
 
