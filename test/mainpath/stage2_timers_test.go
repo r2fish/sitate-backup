@@ -68,5 +68,13 @@ func (w *s2) verifyTimers() {
 	if len(runs) <= before || runs[len(runs)-1].Command[0] != "apply" || !runs[len(runs)-1].OK {
 		t.Fatalf("単位 %s を起動しても apply の実行が last_runs[] に残らない: %+v", svc, runs)
 	}
+	// E5: 単位に書いた Limit が実効値として効いているか(systemd --user では非特権で hard limit を上げられない場合がある)。効かなければ事実を記録に書く。
+	show := w.userSystemctl("show -p LimitCORE -p LimitMEMLOCK " + svc)
+	t.Logf("LimitCORE・LimitMEMLOCK の実効値(systemctl --user show):\n%s", show)
+	for _, want := range []string{"LimitCORE=0", "LimitMEMLOCK=infinity"} {
+		if !strings.Contains(show, want) {
+			t.Logf("事実: %s が実効値に出ていない(単位には書いてある)", want)
+		}
+	}
 	t.Logf("単位 %s を systemd が起動し、核の apply が実行された(last_runs[] %d 件目 %s)", svc, len(runs), runs[len(runs)-1].RunID)
 }

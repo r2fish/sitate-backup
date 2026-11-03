@@ -10,6 +10,8 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -48,7 +50,12 @@ func parseKeyID(id string) (uint32, bool) {
 
 // loadMasters は keys/master.json を読み、現行の鍵と全部の鍵(現行が先頭)を返す。
 func loadMasters(dir string) (cur masterKey, all []masterKey, err error) {
-	raw, err := os.ReadFile(filepath.Join(dir, contract.KeysMasterFile))
+	return loadMastersAt(filepath.Join(dir, contract.KeysMasterFile))
+}
+
+// loadMastersAt は path の master.json の形のファイルを読む。
+func loadMastersAt(path string) (cur masterKey, all []masterKey, err error) {
+	raw, err := os.ReadFile(path)
 	if err != nil {
 		return cur, nil, errInternal()
 	}
@@ -111,11 +118,34 @@ func (s *KeyService) DerivedKey(purpose string) ([]byte, error) {
 		return nil, errInternal()
 	}
 	mk, err := s.cur()
+	if err != nil && purpose == "journal" && s.masterMissing() {
+		mk, err = s.pendingMaster()
+	}
 	if err != nil {
 		return nil, err
 	}
 	defer mk.wipe()
 	return s.derive(mk, purpose)
+}
+
+// masterMissing は keys/master.json が無い(壊れているのではなく)か。保留の鍵への切り替えはこのときだけ。
+func (s *KeyService) masterMissing() bool {
+	_, err := os.Stat(filepath.Join(s.Dir, contract.KeysMasterFile))
+	return errors.Is(err, fs.ErrNotExist)
+}
+
+// pendingMaster は確定の前の init が keys/pending/master.json に置いたマスター鍵を返す(keys/master.json が無いときだけ呼ぶ)。
+// 記録(journal/)は確定の前の phrase verify と init-storage・bucket check の write_intent を書くため、確定する鍵そのもので封じる
+// (確定は同じ中身を rename で master.json に置く。spec 4.5「keys/pending/」)。ほかの用途の鍵は確定までは導かない。
+func (s *KeyService) pendingMaster() (masterKey, error) {
+	if s.Dir == "" {
+		return masterKey{}, errInternal()
+	}
+	c, all, err := loadMastersAt(filepath.Join(s.Dir, contract.KeysPendingDir, contract.KeysPendingMaster))
+	if err == nil {
+		wipeMasters(all[1:])
+	}
+	return c, err
 }
 
 // keyedHex は ID 鍵による BLAKE3 の鍵付きハッシュ(出力 32 バイト)の小文字 16 進。

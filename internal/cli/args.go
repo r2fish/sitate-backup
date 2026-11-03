@@ -151,6 +151,7 @@ func (p *parsed) set(name, val, kind string) *contract.Error {
 			return argErr(flag, "format")
 		}
 		p.byTimer = true
+		p.args[argInvokedBy] = []string{val} // 入口が導入中の飛ばしを判定できるよう Call.Args にも載せる
 	case "secret-fd":
 		n, err := strconv.Atoi(val)
 		if err != nil || n < 0 {

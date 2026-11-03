@@ -4,6 +4,6 @@
   "version": "0.0.0",
   "contract": "sitate.provision/v1",
   "exe": "b2",
-  "secrets": [],
+  "secrets": ["admin", "key"],
   "network": true
 }

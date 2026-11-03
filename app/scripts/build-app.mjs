@@ -4,8 +4,9 @@
 // - 同梱物はすべて `<名前>.sig` を伴うこと(署名は `make sign` / `make sign-test` が先に付ける)。無ければ失敗する。署名の鍵は扱わない。
 // - 試験用ドライバは test のときだけ束ねる。product の成果物にドライバのモジュールが無いことを検査して、あれば失敗する。
 import { build } from "esbuild";
+import { createHash } from "node:crypto";
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
-import { join, relative, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import { parseArgs } from "node:util";
 
 const { values } = parseArgs({ options: { mode: { type: "string" }, "pubkey-file": { type: "string" }, "bundle-dir": { type: "string" }, out: { type: "string", default: "dist" } } });
@@ -21,7 +22,18 @@ if (keys.length < 1 || keys.length > 2 || keys.some((k) => Buffer.from(k, "base6
 const walk = (dir) => readdirSync(dir).flatMap((f) => (statSync(join(dir, f)).isDirectory() ? walk(join(dir, f)) : [join(dir, f)]));
 const bundleDir = resolve(values["bundle-dir"]);
 const files = walk(bundleDir).filter((f) => !f.endsWith(".sig")).map((f) => relative(bundleDir, f));
-const unsigned = files.filter((f) => !existsSync(join(bundleDir, f + ".sig")));
+// アダプタの実行ファイルは署名せず、署名付きの adapter.json の sha256 で照らす(spec 3.2.1、tools/sign.sh)。それ以外は署名を要る。
+const declaredExe = (f) => {
+  const dir = dirname(f);
+  if (!/^.+\/adapters\/[^/]+\/[^/]+$/.test(dir)) return false;
+  const decl = join(bundleDir, dir, "adapter.json");
+  if (!existsSync(decl) || !existsSync(decl + ".sig")) return false;
+  try {
+    const d = JSON.parse(readFileSync(decl, "utf8"));
+    return typeof d.exe === "string" && join(dir, d.exe) === f && d.sha256 === createHash("sha256").update(readFileSync(join(bundleDir, f))).digest("hex");
+  } catch { return false; }
+};
+const unsigned = files.filter((f) => !existsSync(join(bundleDir, f + ".sig")) && !declaredExe(f));
 if (unsigned.length > 0) fail("署名の無い同梱物: " + unsigned.join(", "));
 
 rmSync(out, { recursive: true, force: true });

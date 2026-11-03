@@ -4,6 +4,6 @@
   "version": "0.0.0",
   "contract": "sitate.notify/v1",
   "exe": "webhook",
-  "secrets": [],
+  "secrets": ["url"],
   "network": true
 }

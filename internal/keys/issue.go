@@ -13,6 +13,28 @@ import (
 
 const provisionContract = "sitate.provision/v1"
 
+type provisionCtxKey struct{}
+
+// withProvision は、この呼び出しで使う保管先準備アダプタの名前(--adapter)を文脈に載せる。契約の IssueRequest・RevokeRequest にはアダプタ名が無いため、
+// KeyService は文脈から読む(無ければ結線で渡された名前)。
+func withProvision(ctx context.Context, name string) context.Context {
+	return context.WithValue(ctx, provisionCtxKey{}, name)
+}
+
+// provisionNameFrom は文脈のアダプタ名。無ければ空。
+func provisionNameFrom(ctx context.Context) string {
+	n, _ := ctx.Value(provisionCtxKey{}).(string)
+	return n
+}
+
+// provisionName は IssueKeys・RevokeKey が呼ぶアダプタの名前: 文脈の名前が優先、無ければ結線の名前。
+func (s *KeyService) provisionName(ctx context.Context) string {
+	if n := provisionNameFrom(ctx); n != "" {
+		return n
+	}
+	return s.ProvisionName
+}
+
 // provisionCall は保管先準備アダプタを 1 回呼ぶ。
 func provisionCall(ctx context.Context, run contract.AdapterRunner, name string, req map[string]any) (json.RawMessage, error) {
 	if run == nil {
@@ -36,7 +58,7 @@ func slotSecrets(slot string, s *contract.Secret) map[string]any {
 
 // IssueKeys は issue-keys を 1 回呼び、roles の順に鍵を返す。要求の役割の一部しか発行されなければ、発行された鍵を失効させて誤りを返す。
 func (s *KeyService) IssueKeys(ctx context.Context, req contract.IssueRequest) ([]contract.IssuedKey, []string, error) {
-	out, err := provisionCall(ctx, s.Provision, s.ProvisionName, map[string]any{
+	out, err := provisionCall(ctx, s.Provision, s.provisionName(ctx), map[string]any{
 		"op": "issue-keys", "endpoint": req.Endpoint, "bucket": req.Bucket, "prefix": req.Prefix, "roles": req.Roles,
 		"max_retention_days": req.MaxRetentionDays, "secrets": slotSecrets("admin", req.Admin),
 	})
@@ -70,7 +92,7 @@ func (s *KeyService) IssueKeys(ctx context.Context, req contract.IssueRequest) (
 		for _, g := range got {
 			g.Secret.Wipe()
 		}
-		return nil, s.revokeAfterPartial(ctx, req, ids), mkErr(contract.CodeAdapterError, map[string]string{"kind": "provision", "name": s.ProvisionName, "adapter_code": "ISSUE_INCOMPLETE"})
+		return nil, s.revokeAfterPartial(ctx, req, ids), mkErr(contract.CodeAdapterError, map[string]string{"kind": "provision", "name": s.provisionName(ctx), "adapter_code": "ISSUE_INCOMPLETE"})
 	}
 	return got, nil, nil
 }
@@ -99,7 +121,7 @@ func (s *KeyService) RevokeKey(ctx context.Context, req contract.RevokeRequest) 
 	if len(req.Roles) > 0 {
 		m["roles"] = req.Roles
 	}
-	out, err := provisionCall(ctx, s.Provision, s.ProvisionName, m)
+	out, err := provisionCall(ctx, s.Provision, s.provisionName(ctx), m)
 	if err != nil {
 		return nil, nil, err
 	}

@@ -153,11 +153,11 @@ func bootstrapBackup(t *testing.T, h *host, dir string) *gateCLI {
 	return g
 }
 
-// provisionDouble は試験用の保管先準備アダプタ(test/mainpath/provminio)を、置き場の b2 の adapter.json と署名の差し替えとして置く。
-// 実行ファイルの sha256 を入れた adapter.json に試験の鍵で署名する(署名・sha256・trusted comment の経路は同梱のアダプタと同じ)。
-// 差し替えるのは置き場 /usr/libexec/sitate/adapters/provision/b2/ だけで、版ディレクトリの同梱の b2 はそのまま(bin/ へ写す対象)。
-// secrets は adapter.json の secrets[](核は宣言に無い枠を落とす)。
-func (h *host) provisionDouble(t *testing.T, secrets []string) {
+// provisionDouble は試験用の保管先準備アダプタ(test/mainpath/provminio)を、置き場に名前 minio として置く(init-storage・bucket check の --adapter minio で呼ぶ)。
+// 同梱の b2 は置き場にそのまま残す(bin/ へ写す対象でもある)。実行ファイルの sha256 を入れた adapter.json に試験の鍵で署名する
+// (署名・sha256・trusted comment の経路は同梱のアダプタと同じ)。adapter.json の secrets[] は、製品の同梱の b2 の adapter.json の宣言をそのまま使う
+// (E1: 宣言が実際に読む枠を含むことを、核が枠を落とす経路で確かめる)。環境が作った MinIO の鍵は、同じ場所の keys.json に置く(アダプタが issue-keys で返す)。
+func (h *host) provisionDouble(t *testing.T, name string, s3 s3Env) {
 	t.Helper()
 	arch := h.arch()
 	tmp := t.TempDir()
@@ -168,20 +168,29 @@ func (h *host) provisionDouble(t *testing.T, secrets []string) {
 	if b, err := c.CombinedOutput(); err != nil {
 		t.Fatalf("provminio のビルド: %v\n%s", err, b)
 	}
+	var shipped struct {
+		Secrets []string `json:"secrets"`
+	}
+	if err := json.Unmarshal(readF(t, filepath.Join(repoRoot, "adapters/provision/b2/adapter.json")), &shipped); err != nil || len(shipped.Secrets) == 0 {
+		t.Fatalf("同梱の b2 の adapter.json の secrets[] を読めない: %v", err)
+	}
 	eb := readF(t, exe)
-	decl, _ := json.Marshal(map[string]any{"kind": "provision", "name": "b2", "version": "0.1.0-dev", "contract": "sitate.provision/v1",
-		"exe": "minio", "secrets": secrets, "network": true, "sha256": hexStr(sha256Of(eb))})
+	decl, _ := json.Marshal(map[string]any{"kind": "provision", "name": name, "version": "0.1.0-dev", "contract": "sitate.provision/v1",
+		"exe": "minio", "secrets": shipped.Secrets, "network": true, "sha256": hexStr(sha256Of(eb))})
 	dj := filepath.Join(tmp, "adapter.json")
 	if err := os.WriteFile(dj, decl, 0o644); err != nil {
 		t.Fatal(err)
 	}
 	sg := exec.Command("minisign", "-S", "-s", "../../test/env/.run/keys/sitate-test.key", "-m", dj, "-x", dj+".sig",
-		"-t", "version=0.1.0-dev arch="+arch+" path="+arch+"/adapters/provision/b2/adapter.json")
+		"-t", "version=0.1.0-dev arch="+arch+" path="+arch+"/adapters/provision/"+name+"/adapter.json")
 	if b, err := sg.CombinedOutput(); err != nil {
 		t.Fatalf("minisign: %v\n%s", err, b)
 	}
-	d := libexecDir + "/adapters/provision/b2/"
+	keys, _ := json.Marshal(map[string]any{"default_retention_days": 90, "keys": map[string]any{
+		"write": map[string]string{"key_id": s3.wk, "secret": s3.ws}, "read": map[string]string{"key_id": s3.rk, "secret": s3.rs}}})
+	d := libexecDir + "/adapters/provision/" + name + "/"
 	h.put(d+"minio", eb, "0755", "root")
+	h.put(d+"keys.json", keys, "0644", "root")
 	h.put(d+"adapter.json", decl, "0644", "root")
 	h.put(d+"adapter.json.sig", readF(t, dj+".sig"), "0644", "root")
 }

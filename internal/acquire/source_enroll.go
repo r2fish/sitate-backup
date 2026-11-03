@@ -344,6 +344,15 @@ func (a *Acquire) SourceEnroll(ctx context.Context, c contract.Call) (contract.R
 	if err := need(a.State, a.SSH); err != nil {
 		return contract.Reply{}, err
 	}
+	// seal の後の source enroll(--rotate を含む)は承認を要する(propose source-change。spec 3.1.2)。直接実行は定義も SSH も使う前に拒否する。
+	// apply の Enroller(SourceEnroller.Enroll)は承認の後に呼ばれるので止めない。
+	if sealed, err := getBool(ctx, a.State, "sealed"); err != nil {
+		return contract.Reply{}, err
+	} else if sealed {
+		e := mkErr(contract.CodeApprovalRequired, map[string]any{"kind": "source-change"})
+		e.Next = []contract.Next{{Argv: []string{"sitate", "propose", "source-change"}, RequiresApproval: true}}
+		return contract.Reply{}, e
+	}
 	h, err := hostArg(c)
 	if err != nil {
 		return contract.Reply{}, err

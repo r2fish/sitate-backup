@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"net/url"
 	"path"
 	"regexp"
 	"sort"
@@ -80,7 +81,7 @@ func (s *StateFiles) ValidateDef(ctx context.Context, def []byte, skipRefs bool)
 		return v.result(nil)
 	}
 	v.root(root)
-	if err := v.resolveRefs(); err != nil {
+	if err := v.resolveRefs(root); err != nil {
 		return nil, "", nil, err
 	}
 	if err := v.checkAgainstApproved(root); err != nil {
@@ -262,11 +263,25 @@ func (v *validator) root(m map[string]any) {
 }
 
 // resolveRefs は参照名が秘密ファイルとして存在することを確かめる(Refs が無いか skipRefs が真なら省く)。
-func (v *validator) resolveRefs() error {
+// ssh-host の restore.dest.key_ref は秘密ファイルを指さない(初期資格情報はバックアップサーバーのディスクに置かない)ので、
+// 手順 9 の登録の記録で確かめる(spec 3.1.2 の def validate。D-0162)。
+func (v *validator) resolveRefs(root map[string]any) error {
 	if v.skipRefs || v.s.Refs == nil {
 		return nil
 	}
 	for _, r := range v.refs {
+		if r.pointer == "/restore/dest/key_ref" {
+			if host, ok := sshHostDest(root); ok {
+				done, err := v.destEnrolled(host)
+				if err != nil {
+					return err
+				}
+				if !done {
+					v.add(r.pointer, rUnresolve)
+				}
+				continue
+			}
+		}
 		ok, err := v.s.Refs(v.ctx, r.ref)
 		if err != nil {
 			return err
@@ -276,6 +291,50 @@ func (v *validator) resolveRefs() error {
 		}
 	}
 	return nil
+}
+
+// sshHostDest は復元先が ssh-host(adapter の省略時も)なら restore.dest.at のホスト名の部分(ssh://<user>@<host>:<port> の <host>。IPv6 の [...] を除く)を返す。
+func sshHostDest(root map[string]any) (string, bool) {
+	r, _ := root["restore"].(map[string]any)
+	if a, has := r["adapter"]; has {
+		if s, _ := a.(string); s != "ssh-host" {
+			return "", false
+		}
+	}
+	d, _ := r["dest"].(map[string]any)
+	at, _ := d["at"].(string)
+	u, err := url.Parse(at)
+	if err != nil || u.Scheme != "ssh" || u.Hostname() == "" {
+		return "", false
+	}
+	return u.Hostname(), true
+}
+
+// destEnrolled は seal の後は検査せず(登録は restore-change の適用が行う)、seal の前は host_keys[] の role: restore_dest で host の要素があり、
+// restore_dest_enrollment が null でないか(手順 9 の登録の記録)。
+func (v *validator) destEnrolled(host string) (bool, error) {
+	if raw, err := v.s.Get(v.ctx, "sealed"); err != nil {
+		return false, err
+	} else if string(raw) == "true" {
+		return true, nil
+	}
+	raw, err := v.s.Get(v.ctx, "host_keys")
+	if err != nil {
+		return false, err
+	}
+	var hks []struct{ Role, Host string }
+	if json.Unmarshal(raw, &hks) != nil {
+		return false, nil
+	}
+	found := false
+	for _, h := range hks {
+		found = found || (h.Role == "restore_dest" && h.Host == host)
+	}
+	enr, err := v.s.Get(v.ctx, "restore_dest_enrollment")
+	if err != nil {
+		return false, err
+	}
+	return found && len(enr) > 0 && string(enr) != "null", nil
 }
 
 // rootForbidden は files の根が根に置けない場所の (i)〜(iii) に当たるか。

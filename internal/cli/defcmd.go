@@ -48,19 +48,29 @@ func defValidate(d *Deps, ctx context.Context, c contract.Call) (contract.Reply,
 	if err != nil {
 		return contract.Reply{}, argErr("--file", "format")
 	}
-	norm, hash, issues, err := d.State.ValidateDef(ctx, in, false)
-	if err != nil {
-		return contract.Reply{}, err
-	}
-	if norm == nil {
-		return contract.Reply{}, newErr(contract.CodeDefInvalid, map[string]any{"issues": issues})
-	}
 	cur, _, derr := d.State.ReadDef(ctx)
 	approved := derr == nil
 	if derr != nil {
 		if e, ok := derr.(*contract.Error); !ok || (e.Code != contract.CodeNotSealed && e.Code != contract.CodeNotInitialized) {
 			return contract.Reply{}, derr
 		}
+	}
+	norm, hash, issues, err := d.State.ValidateDef(ctx, in, false)
+	if err != nil {
+		return contract.Reply{}, err
+	}
+	pending := []string{}
+	if norm == nil && !approved {
+		// seal の前は、導入の後の手順で置かれる参照名(storage[0].key_ref、restore.dest.key_ref)の未解決だけを許す(D-0160)。
+		var ok bool
+		if pending, ok = onlyPendingRefs(issues); ok {
+			if norm, hash, issues, err = d.State.ValidateDef(ctx, in, true); err != nil {
+				return contract.Reply{}, err
+			}
+		}
+	}
+	if norm == nil {
+		return contract.Reply{}, newErr(contract.CodeDefInvalid, map[string]any{"issues": issues})
 	}
 	if !approved && !c.DryRun { // seal の前は通った最新の内容を候補として保存する(--dry-run は保存しない)
 		if err := d.State.StageDef(ctx, norm); err != nil {
@@ -71,8 +81,28 @@ func defValidate(d *Deps, ctx context.Context, c contract.Call) (contract.Reply,
 	if approved {
 		diff = defDiff(cur, norm)
 	}
-	b, _ := json.Marshal(map[string]any{"normalized": json.RawMessage(norm), "def_hash": hash, "diff_from_approved": diff})
+	b, _ := json.Marshal(map[string]any{"normalized": json.RawMessage(norm), "def_hash": hash, "diff_from_approved": diff, "pending_refs": pending})
 	return contract.Reply{Result: b}, nil
+}
+
+// pendingRefPointers は seal の前の def validate が未解決のまま通す参照名の JSON Pointer(spec 3.1.2 の def validate。D-0160)。
+var pendingRefPointers = map[string]bool{"/storage/0/key_ref": true, "/restore/dest/key_ref": true}
+
+// onlyPendingRefs は issues が、未解決のまま通してよい参照名の指摘(unresolved_ref)だけで、1 件以上あるときにその Pointer の列(昇順)を返す。
+func onlyPendingRefs(issues json.RawMessage) ([]string, bool) {
+	var l []struct{ Pointer, Reason string }
+	if json.Unmarshal(issues, &l) != nil || len(l) == 0 {
+		return nil, false
+	}
+	out := []string{}
+	for _, i := range l {
+		if i.Reason != "unresolved_ref" || !pendingRefPointers[i.Pointer] {
+			return nil, false
+		}
+		out = append(out, i.Pointer)
+	}
+	sort.Strings(out)
+	return out, true
 }
 
 func defShow(d *Deps, ctx context.Context, _ contract.Call) (contract.Reply, error) {

@@ -275,6 +275,9 @@ func (t *Timers) render(tab contract.TimerDefTable, sched, tz string) (map[strin
 		if err != nil {
 			return nil, err
 		}
+		if svc, err = withMemoryLimits(svc); err != nil {
+			return nil, err
+		}
 		tm, err := renderTmpl("systemd.timer.tmpl", map[string]any{"Name": u.Name, "OnCalendar": calendar(u, h, m, tz), "Persistent": u.Persistent, "UnitName": name})
 		if err != nil {
 			return nil, err
@@ -288,4 +291,27 @@ func (t *Timers) render(tab contract.TimerDefTable, sched, tz string) (map[strin
 	c, err := renderTmpl("cron.tmpl", map[string]any{"TZ": tz, "Lines": cron})
 	out["cron"] = c
 	return out, err
+}
+
+// withMemoryLimits は単位の [Service] に LimitCORE=0 と LimitMEMLOCK=infinity を足す(spec 3.1.1「鍵のメモリ」: 核は鍵のメモリを mlock し、コアダンプを出さない)。
+// 単位の雛形(internal/contract/timers/systemd.service.tmpl)にこの 2 行が無いため、描画の後に TimeoutStartSec= の行の次へ置く。雛形に入ったら二重に足さない。
+func withMemoryLimits(svc string) (string, error) {
+	add := ""
+	for _, l := range []string{"LimitCORE=0", "LimitMEMLOCK=infinity"} {
+		if !strings.Contains(svc, l+"\n") {
+			add += l + "\n"
+		}
+	}
+	if add == "" {
+		return svc, nil
+	}
+	i := strings.Index(svc, "TimeoutStartSec=")
+	if i < 0 {
+		return "", internalErr()
+	}
+	j := strings.Index(svc[i:], "\n")
+	if j < 0 {
+		return "", internalErr()
+	}
+	return svc[:i+j+1] + add + svc[i+j+1:], nil
 }

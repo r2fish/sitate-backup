@@ -15,7 +15,7 @@ type Subcommand struct {
 var SubcommandTable = []Subcommand{
 	{Words: []string{"version"}, Public: PublicTool, ResultKeys: []string{"version", "format_versions", "signing_key_fp", "build"}},
 	{Words: []string{"doctor"}, Public: PublicTool, ResultKeys: []string{"stage", "passed", "checks", "checks", "advisory"}},
-	{Words: []string{"def", "validate"}, Public: PublicTool, DryRun: true, ResultKeys: []string{"normalized", "def_hash", "diff_from_approved"}},
+	{Words: []string{"def", "validate"}, Public: PublicTool, DryRun: true, ResultKeys: []string{"normalized", "def_hash", "diff_from_approved", "pending_refs"}},
 	{Words: []string{"def", "show"}, Public: PublicTool, ResultKeys: []string{"normalized", "def_hash", "sealed", "approved_at", "storage_country"}},
 	{Words: []string{"init-storage"}, Public: PublicTool, DryRun: true, ResultKeys: []string{"created", "lock_mode", "versioning", "default_retention_days", "keys", "revoked", "permissions"}},
 	{Words: []string{"storage", "issue-read-key"}, Public: PublicTool, ResultKeys: []string{"key_ref", "key_id", "permissions", "previous_revoked"}},

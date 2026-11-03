@@ -2,6 +2,7 @@
 import assert from "node:assert/strict";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
+import { createHash } from "node:crypto";
 import { dirname, join } from "node:path";
 import { test } from "node:test";
 import { loadBundle } from "../../src/main/bundle-load.ts";
@@ -48,4 +49,40 @@ test("bundle load: an unsigned file, a tampered file and a missing required file
       assert.equal(r.ok, false, skip);
     } finally { rmSync(c.dir, { recursive: true, force: true }); }
   }
+});
+
+// C2(spec 3.2.1): アダプタの実行ファイルは署名せず、署名付きの adapter.json の sha256 で照らす。宣言の無い署名なしのファイルと、sha256 の違う実行ファイルは拒否する。
+const ARCH = "linux-x86_64";
+const sha = (b: string): string => createHash("sha256").update(b).digest("hex");
+function withAdapter(exeBody: string, declared: string) {
+  const b = build();
+  const dir = `${ARCH}/adapters/provision/b2`;
+  const decl = JSON.stringify({ kind: "provision", name: "b2", exe: "b2", sha256: sha(declared) });
+  mkdirSync(join(b.dir, dir), { recursive: true });
+  writeFileSync(join(b.dir, dir, "adapter.json"), decl);
+  writeFileSync(join(b.dir, dir, "adapter.json.sig"), b.s.signFile(Buffer.from(decl), `${dir}/adapter.json`, V, ARCH));
+  writeFileSync(join(b.dir, dir, "b2"), exeBody); // 署名なし
+  return b;
+}
+
+test("bundle load: an unsigned adapter executable is accepted only when the signed adapter.json pins its sha256", () => {
+  const ok = withAdapter("EXE", "EXE");
+  try {
+    const r = loadBundle(ok.dir, V, ok.keys, "ja");
+    assert.equal(r.ok, true);
+    if (r.ok) assert.equal(r.byPath(`${ARCH}/adapters/provision/b2/b2`), "EXE");
+  } finally { rmSync(ok.dir, { recursive: true, force: true }); }
+  const bad = withAdapter("TAMPERED", "EXE");
+  try {
+    const r = loadBundle(bad.dir, V, bad.keys, "ja");
+    assert.equal(r.ok, false);
+    if (!r.ok) assert.equal(r.reason, "sha256");
+  } finally { rmSync(bad.dir, { recursive: true, force: true }); }
+  const other = withAdapter("EXE", "EXE");
+  try {
+    writeFileSync(join(other.dir, ARCH, "adapters", "provision", "b2", "other"), "x"); // 宣言に無い署名なしのファイル
+    const r = loadBundle(other.dir, V, other.keys, "ja");
+    assert.equal(r.ok, false);
+    if (!r.ok) assert.equal(r.reason, "unsigned");
+  } finally { rmSync(other.dir, { recursive: true, force: true }); }
 });

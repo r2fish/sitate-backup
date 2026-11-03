@@ -54,10 +54,20 @@ function setup(host: FakeHost, server: TestServer, dir: string, over: Partial<Bo
   const sigs = new Map<string, string>();
   const add = (rel: string, body: string, arch = ARCH): void => { const b = Buffer.from(body); files.set(rel, b); sigs.set(rel, signer.signFile(b, rel, VERSION, arch)); };
   add(`${ARCH}/sitate`, "CORE");
-  add(`${ARCH}/adapters/notify/mail/adapter.json`, "{}");
-  add(`${ARCH}/adapters/notify/mail/run`, "ADAPTER");
+  // アダプタの実行ファイルは署名せず、署名付きの adapter.json の sha256 で照らす(spec 3.2.1。tools/sign.sh)。
+  const addAdapter = (arch: string, exeBody: string): void => {
+    add(`${arch}/adapters/notify/mail/adapter.json`, JSON.stringify({ kind: "notify", name: "mail", exe: "run", sha256: createHash("sha256").update(exeBody).digest("hex") }), arch);
+    files.set(`${arch}/adapters/notify/mail/run`, Buffer.from(exeBody));
+  };
+  addAdapter(ARCH, "ADAPTER");
   add("prices/prices.json", "{}", "any");
-  const bundle: BundleReader = { version: VERSION, list: (p) => [...files.keys()].filter((k) => k.startsWith(p)), read: (rel) => (files.has(rel) ? { bytes: files.get(rel)!, sig: sigs.get(rel)! } : null) };
+  // 動いているホストと別の arch の核とアダプタ、ソースのアーカイブ(phrase verify が保管先の bin/ へ写すために版ディレクトリに要る。spec 4.2。C1)。
+  add("linux-arm64/sitate", "CORE-ARM", "linux-arm64");
+  addAdapter("linux-arm64", "ADAPTER-ARM");
+  add(`sitate-${VERSION}-src.tar.gz`, "SRC", "any");
+  add(`sitate-${VERSION}.spdx.json`, "{}", "any");
+  add("install.md", "HANDBOOK", "any"); // アプリの同梱物(配布物 bundle/<version>/ ではない)。サーバーへは置かない
+  const bundle: BundleReader = { version: VERSION, list: (p) => [...files.keys()].filter((k) => k.startsWith(p)), read: (rel) => (files.has(rel) ? { bytes: files.get(rel)!, sig: sigs.get(rel) ?? "" } : null) };
   const state = { cleared: 0, savedKey: null as string | null };
   const targets = new TargetStore(join(dir, "ssh-target.json"));
   const deps: BootstrapDeps = {
@@ -90,6 +100,18 @@ test("bootstrap: the full sequence places verified files, registers the gate lin
     assert.equal(host.files.get("/usr/libexec/sitate/adapters/notify/mail/run")?.toString(), "ADAPTER");
     assert.equal(host.files.get("/usr/libexec/sitate/prices/prices.json")?.toString(), "{}");
     assert.ok(host.files.has(`/usr/libexec/sitate/bundle/${VERSION}/${ARCH}/sitate`));
+    // C1: 版ディレクトリは配布物の全体(両方の arch、ソースのアーカイブ)。署名のあるものは .sig ごと、アダプタの実行ファイルは .sig なし。
+    const vd = `/usr/libexec/sitate/bundle/${VERSION}`;
+    assert.equal(host.files.get(`${vd}/linux-arm64/sitate`)?.toString(), "CORE-ARM");
+    assert.ok(host.files.has(`${vd}/linux-arm64/sitate.sig`) && host.files.has(`${vd}/${ARCH}/sitate.sig`));
+    assert.equal(host.files.get(`${vd}/linux-arm64/adapters/notify/mail/run`)?.toString(), "ADAPTER-ARM");
+    assert.equal(host.files.get(`${vd}/${ARCH}/adapters/notify/mail/run`)?.toString(), "ADAPTER");
+    assert.ok(host.files.has(`${vd}/sitate-${VERSION}-src.tar.gz`) && host.files.has(`${vd}/sitate-${VERSION}-src.tar.gz.sig`));
+    assert.ok(host.files.has(`${vd}/sitate-${VERSION}.spdx.json`));
+    assert.ok([...host.files.keys()].every((k) => !k.includes("install.md")), "F10: アプリの同梱物(手順書など)は置かない");
+    // C2: アダプタの実行ファイルに .sig は無い(置かない)。動いているホストの arch のアダプタだけが置き場の adapters/ にある。
+    assert.ok(!host.files.has(`${vd}/${ARCH}/adapters/notify/mail/run.sig`) && !host.files.has("/usr/libexec/sitate/adapters/notify/mail/run.sig"));
+    assert.ok(host.files.has("/usr/libexec/sitate/adapters/notify/mail/adapter.json.sig"));
     assert.match(host.authorizedKeys, /^command="\/usr\/local\/bin\/sitate gate",restrict ssh-ed25519 \S+ sitate-admin\n$/);
     assert.equal(t.targets.read()?.hostKeyFp, fingerprintOf(server.hostKeyBlob));
     assert.equal(t.state.cleared, 1, "閉じた後に admin_ref を消す");
@@ -257,5 +279,20 @@ test("bootstrap: omitting port uses the default 22 so the target file stays read
     assert.notEqual(r.error?.code, "SSH_HOSTKEY_MISMATCH", "port 省略は 22 として登録の 22 と一致する");
     assert.equal(t.targets.read()?.port, 22);
     assert.ok(t.targets.read() !== null, "接続先ファイルが読める");
+  } finally { await server.close(); rmSync(dir, { recursive: true, force: true }); }
+});
+
+// C2: 実行ファイルが署名付きの adapter.json の sha256 と合わなければ、何も信頼せず BOOTSTRAP_SIGNATURE_INVALID。
+test("bootstrap: an adapter executable that does not match the signed adapter.json sha256 is BOOTSTRAP_SIGNATURE_INVALID", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "u3a-bs-"));
+  const host = new FakeHost();
+  const server = await startServer({ acceptAnyKey: true, onExec: host.handler });
+  try {
+    const t = setup(host, server, dir);
+    const reader = t.deps.bundle;
+    const bad: BundleReader = { ...reader, read: (rel) => (rel === `${ARCH}/adapters/notify/mail/run` ? { bytes: Buffer.from("TAMPERED"), sig: "" } : reader.read(rel)) };
+    const env = await runBootstrap(input(server.port), { ...t.deps, bundle: bad }) as { ok: boolean; error: { code: string } };
+    assert.equal(env.ok, false);
+    assert.equal(env.error.code, "BOOTSTRAP_SIGNATURE_INVALID");
   } finally { await server.close(); rmSync(dir, { recursive: true, force: true }); }
 });

@@ -82,9 +82,16 @@ func TestDefaultDepsResolvesSecretRefs(t *testing.T) {
 	if err != nil || !strings.Contains(string(issues), "unresolved_ref") {
 		t.Fatalf("秘密が無いのに解決された: %s %v", issues, err)
 	}
-	for _, ref := range []string{"storage", "restore-init"} {
-		_ = d.Secrets.Put(ctx, ref, json.RawMessage(`{}`))
+	_ = d.Secrets.Put(ctx, "storage", json.RawMessage(`{}`))
+	// ssh-host の restore.dest.key_ref は秘密ファイルで解決せず、登録の記録(host_keys[] の role: restore_dest と restore_dest_enrollment)で解決する(D-0162)。
+	_, _, issues, _ = d.State.ValidateDef(ctx, []byte(applyDef), false)
+	if !strings.Contains(string(issues), "/restore/dest/key_ref") || strings.Contains(string(issues), "/storage/0/key_ref") {
+		t.Fatalf("storage は秘密で解決し、restore.dest は登録の記録が無いので未解決のはず: %s", issues)
 	}
+	h, _ := d.State.Lock(ctx)
+	_ = d.State.Update(ctx, h, "host_keys", json.RawMessage(`[{"role":"restore_dest","host":"203.0.113.10","host_key_fp":"SHA256:x","session_id":null}]`))
+	_ = d.State.Update(ctx, h, "restore_dest_enrollment", json.RawMessage(`{"egress":["192.0.2.1"]}`))
+	h.Release()
 	_, _, issues, err = d.State.ValidateDef(ctx, []byte(applyDef), false)
 	if err != nil || strings.Contains(string(issues), "unresolved_ref") {
 		t.Errorf("秘密があるのに未解決: %s %v", issues, err)

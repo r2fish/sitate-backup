@@ -8,6 +8,7 @@ import ssh2 from "ssh2";
 import { DEFAULT_SSH_PORT } from "../../constants.ts";
 import { appErrorEnvelope } from "../app-envelope.ts";
 import type { AppEnvelope, AppErrorCode } from "../app-envelope.ts";
+import { declaredExes } from "../bundle-verify.ts";
 import { verifyMinisign } from "../minisign.ts";
 import type { TrustedKey } from "../minisign.ts";
 import { parseStdoutRecords } from "../stdout-records.ts";
@@ -164,6 +165,7 @@ async function connectAdmin(input: ResolvedInput, deps: BootstrapDeps, conn: Ssh
 /** 段 (4): 署名を検証して置き、置いた後の SHA-256 を照らす。 */
 async function place(r: Remote, deps: BootstrapDeps, osArch: string): Promise<void> {
   const { bundle, keys } = deps;
+  const archOf = (rel: string): string => /^(linux-[a-z0-9_]+)\//.exec(rel)?.[1] ?? "any";
   const check = (rel: string, arch: string): Buffer => {
     const f = bundle.read(rel);
     if (f === null) throw new Fail("BOOTSTRAP_SIGNATURE_INVALID");
@@ -174,23 +176,38 @@ async function place(r: Remote, deps: BootstrapDeps, osArch: string): Promise<vo
   const putChecked = async (dest: string, bytes: Buffer, mode: string): Promise<void> => {
     if (!(await r.put(dest, bytes, mode)) || (await r.sha256(dest)) !== sha256(bytes)) throw new Fail("BOOTSTRAP_SIGNATURE_INVALID");
   };
-  const core = check(`${osArch}/sitate`, osArch);
-  await putChecked(SITATE_BIN, core, "0755");
-  const vdir = `${LIBEXEC}/bundle/${bundle.version}`;
-  await putChecked(`${vdir}/${osArch}/sitate`, core, "0755");
-  const sig = bundle.read(`${osArch}/sitate`)!.sig;
-  await putChecked(`${vdir}/${osArch}/sitate.sig`, Buffer.from(sig, "utf8"), "0644");
-  for (const rel of bundle.list(`${osArch}/adapters/`)) {
-    const b = check(rel, osArch);
-    const exec = !rel.endsWith(".json");
-    await putChecked(`${vdir}/${rel}`, b, exec ? "0755" : "0644");
-    await putChecked(`${LIBEXEC}/${rel.slice(osArch.length + 1)}`, b, exec ? "0755" : "0644");
-    await putChecked(`${LIBEXEC}/${rel.slice(osArch.length + 1)}.sig`, Buffer.from(bundle.read(rel)!.sig, "utf8"), "0644");
+  const putSig = (dest: string, rel: string): Promise<void> => putChecked(`${dest}.sig`, Buffer.from(bundle.read(rel)!.sig, "utf8"), "0644");
+  // 配布物の全体(両方の arch、ソースのアーカイブ、SBOM、価格表)を版ディレクトリへ置く(spec 3.7 の bootstrap、4.2。phrase verify が保管先の bin/ へ写す元)。
+  // 署名があるものは署名を検証して .sig ごと置く。アダプタの実行ファイルは署名せず、署名付きの adapter.json の sha256 で照らす(spec 3.2.1)。
+  // 配布物 bundle/<version>/ の中身だけ(spec 4.2): <os>-<arch>/、prices/、版ディレクトリ直下のソースのアーカイブと SBOM。アプリの同梱物(手順書・道具の定義など)は含まない。
+  const rels = bundle.list("").filter((rel) => /^linux-[a-z0-9_]+\//.test(rel) || rel.startsWith("prices/") || /^[^/]+-src\.tar\.gz$/.test(rel) || /^[^/]+\.spdx\.json$/.test(rel));
+  const files = new Map<string, Buffer>();
+  const exes = declaredExes(rels.flatMap((rel) => (rel.endsWith("/adapter.json") ? [{ path: rel, bytes: check(rel, archOf(rel)), sig: "" }] : [])));
+  for (const rel of rels) {
+    if (exes.has(rel)) {
+      const f = bundle.read(rel);
+      if (f === null || sha256(f.bytes) !== exes.get(rel)) throw new Fail("BOOTSTRAP_SIGNATURE_INVALID");
+      files.set(rel, f.bytes);
+    } else files.set(rel, check(rel, archOf(rel)));
   }
-  for (const rel of bundle.list("prices/")) {
-    const b = check(rel, "any");
-    await putChecked(`${LIBEXEC}/${rel}`, b, "0644");
-    await putChecked(`${LIBEXEC}/${rel}.sig`, Buffer.from(bundle.read(rel)!.sig, "utf8"), "0644");
+  const vdir = `${LIBEXEC}/bundle/${bundle.version}`;
+  const modeOf = (rel: string): string => (exes.has(rel) || rel.endsWith("/sitate") ? "0755" : "0644");
+  const core = files.get(`${osArch}/sitate`);
+  if (core === undefined) throw new Fail("BOOTSTRAP_SIGNATURE_INVALID");
+  await putChecked(SITATE_BIN, core, "0755");
+  for (const [rel, bytes] of files) {
+    await putChecked(`${vdir}/${rel}`, bytes, modeOf(rel));
+    if (!exes.has(rel)) await putSig(`${vdir}/${rel}`, rel);
+  }
+  // 動いているホストの <os>-<arch> のアダプタと価格表は、核が使う置き場へも置く(署名を付け直さない)。
+  for (const rel of rels.filter((x) => x.startsWith(`${osArch}/adapters/`))) {
+    const dest = `${LIBEXEC}/${rel.slice(osArch.length + 1)}`;
+    await putChecked(dest, files.get(rel)!, modeOf(rel));
+    if (!exes.has(rel)) await putSig(dest, rel);
+  }
+  for (const rel of rels.filter((x) => x.startsWith("prices/"))) {
+    await putChecked(`${LIBEXEC}/${rel}`, files.get(rel)!, "0644");
+    await putSig(`${LIBEXEC}/${rel}`, rel);
   }
 }
 

@@ -2,7 +2,7 @@
 // ビルドが書く manifest.json(署名を持たない)は信頼の入力にしない。署名の無いファイルがあれば全体を拒否し、必須の同梱物が欠けても拒否する。
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
-import { BUNDLE_REFUSAL, verifyBundle } from "./bundle-verify.ts";
+import { BUNDLE_REFUSAL, declaredExes, sha256Hex, verifyBundle } from "./bundle-verify.ts";
 import type { BundleFile, BundleResult } from "./bundle-verify.ts";
 import type { TrustedKey } from "./minisign.ts";
 
@@ -20,11 +20,19 @@ const refuse = (path: string, reason: string): LoadedBundle => ({ ok: false, pat
 export function loadBundle(dir: string, version: string, keys: readonly TrustedKey[], locale: string): LoadedBundle {
   const all = walk(dir).map((f) => relative(dir, f));
   const targets = all.filter((p) => !p.endsWith(".sig") && p !== "manifest.json");
-  const unsigned = targets.find((p) => !all.includes(p + ".sig"));
-  if (unsigned !== undefined) return refuse(unsigned, "unsigned");
-  const files: BundleFile[] = targets.map((p) => ({ path: p, bytes: readFileSync(join(dir, p)), sig: readFileSync(join(dir, p + ".sig"), "utf8") }));
+  // 署名の無いファイルは、検証済みの adapter.json が sha256 で固定したアダプタの実行ファイルだけ(spec 3.2.1)。
+  const unsignedPaths = targets.filter((p) => !all.includes(p + ".sig"));
+  const files: BundleFile[] = targets.filter((p) => !unsignedPaths.includes(p)).map((p) => ({ path: p, bytes: readFileSync(join(dir, p)), sig: readFileSync(join(dir, p + ".sig"), "utf8") }));
   const verified = verifyBundle(files, keys, version);
   if (!verified.ok) return verified;
+  const exes = declaredExes(files);
+  for (const p of unsignedPaths) {
+    const want = exes.get(p);
+    if (want === undefined) return refuse(p, "unsigned");
+    const bytes = readFileSync(join(dir, p));
+    if (sha256Hex(bytes) !== want) return refuse(p, "sha256");
+    files.push({ path: p, bytes, sig: "" });
+  }
   const needed = [...REQUIRED_FILES, `i18n/${locale}/catalog.json`];
   const missing = needed.find((p) => !targets.includes(p));
   if (missing !== undefined) return refuse(missing, "missing");

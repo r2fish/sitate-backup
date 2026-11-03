@@ -108,7 +108,7 @@ func (a *Acquire) Ingest(ctx context.Context, c contract.Call) (IngestResult, er
 	if !ok {
 		return IngestResult{}, mkErr(contract.CodeNotInitialized, map[string]any{}, nextOf(contract.CodeNotInitialized, false, "init"))
 	}
-	raw, _, err := a.State.ReadDef(ctx)
+	raw, err := a.runDefinition(ctx)
 	if err != nil {
 		return IngestResult{}, err
 	}

@@ -85,7 +85,8 @@
      "before": "ops@example.jp",
      "after": "new@example.jp"
     }
-   ]
+   ],
+   "pending_refs": []
   },
   "def_show": {
    "normalized": {

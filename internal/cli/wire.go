@@ -57,5 +57,6 @@ func DefaultDeps(stateDir string) *Deps {
 	d.State = &state.StateFiles{Dir: stateDir, Clock: d.Clock, LockWait: d.Limits.StateLockWait, Refs: d.Secrets.(*Secrets).Exists}
 	d.OSProbe = &HostProbe{StateDir: stateDir, TimersDir: TimersDirDefault(), State: d.State}
 	wireParts(d, stateDir) // 受け入れ済みの部品の実物(wire_parts.go)
+	wireRunDef(d)          // seal の前も止めない操作の定義の読み先(wire_rundef.go)
 	return d
 }

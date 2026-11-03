@@ -115,7 +115,7 @@ func newIngestEnv(t *testing.T, def string) *ingestEnv {
 	store, _, _ := fake.NewTestStore(fake.RoleWrite)
 	dir := t.TempDir()
 	codec := &harness.RefCodec{}
-	st := &fake.StateFiles{Def: []byte(def), Items: map[string]json.RawMessage{"initialized": json.RawMessage("true"), "sealed": json.RawMessage("true")}}
+	st := &fake.StateFiles{Def: []byte(def), Items: map[string]json.RawMessage{"initialized": json.RawMessage("true"), "sealed": json.RawMessage("true"), "phrase_confirmed": json.RawMessage("true")}}
 	ad := fake.NewAdapterRunner()
 	a := &Acquire{Store: store, State: st, Index: &Index{Dir: dir, Codec: codec, KeyS: fake.KeyService{}}, Codec: codec, KeyS: fake.KeyService{},
 		Adapters: ad, Clock: &fake.Clock{T: fake.StartTime}, Dir: dir}

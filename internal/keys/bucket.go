@@ -159,13 +159,16 @@ func (k *Keys) BucketCheck(ctx context.Context, c contract.Call) (contract.Reply
 	if err := errNeedDeps(k.State != nil, k.Store != nil, k.Probe != nil, k.Provision != nil, k.Recorder != nil); err != nil {
 		return contract.Reply{}, err
 	}
-	ref, ok := argOne(c, "key-ref")
-	if !ok || ref == "" {
-		return contract.Reply{}, errArg("--key-ref", "missing")
-	}
-	t, _, err := k.storageTarget(ctx, c)
+	t, found, err := k.storageTarget(ctx, c)
 	if err != nil {
 		return contract.Reply{}, err
+	}
+	ref, _ := argOne(c, "key-ref")
+	if ref == "" { // 省くと定義の storage[0].key_ref。seal の前は候補の値(spec 3.1.2 の bucket check。D-0160)。候補が無ければ DEF_INVALID
+		if !found || t.KeyRef == "" {
+			return contract.Reply{}, mkErr(contract.CodeDefInvalid, map[string]any{"issues": []map[string]string{{"pointer": "/storage/0/key_ref", "reason": "missing"}}})
+		}
+		ref = t.KeyRef
 	}
 	out, err := k.checkBucket(ctx, c, t, ref)
 	if err != nil {

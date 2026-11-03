@@ -138,7 +138,7 @@ func (r *Recorder) Record(ctx context.Context, entry []byte) (string, error) {
 	}
 	name, prev, err := r.appendLocked(ctx, entry)
 	h.Release()
-	if err != nil {
+	if err != nil || name == "" {
 		return "", err
 	}
 	return prev, r.WriteRemote(ctx, []byte(name))
@@ -161,11 +161,22 @@ func (r *Recorder) AppendLocked(ctx context.Context, held contract.StateLockHand
 	return name, err
 }
 
-func (r *Recorder) appendLocked(_ context.Context, entry []byte) (name, prev string, err error) {
+func (r *Recorder) appendLocked(ctx context.Context, entry []byte) (name, prev string, err error) {
 	obj := map[string]json.RawMessage{}
 	if json.Unmarshal(entry, &obj) != nil || obj == nil {
 		return "", "", newErr(contract.CodeArgInvalid, map[string]any{"flag": "entry", "reason": "format"})
 	}
+	if deferred, err := r.deferWithoutMaster(obj, entry); deferred || err != nil {
+		return "", "", err
+	}
+	if err := r.flushPreMaster(ctx); err != nil {
+		return "", "", err
+	}
+	return r.appendOne(obj)
+}
+
+// appendOne は 1 項目を連番の次に封じて状態ディレクトリへ置く。
+func (r *Recorder) appendOne(obj map[string]json.RawMessage) (name, prev string, err error) {
 	names, err := r.listLocal()
 	if err != nil {
 		return "", "", err
@@ -197,6 +208,9 @@ func (r *Recorder) appendLocked(_ context.Context, entry []byte) (name, prev str
 func (r *Recorder) WriteRemote(ctx context.Context, item []byte) error {
 	if r.State == nil || r.Store == nil {
 		return internalErr()
+	}
+	if r.masterUncommitted() {
+		return nil // 確定の前の項目は保管先へ書かない(確定の後の SyncRemote が写す)
 	}
 	name := string(item)
 	if !journalItemRe.MatchString(name) {
@@ -235,6 +249,9 @@ func (r *Recorder) WriteRemote(ctx context.Context, item []byte) error {
 func (r *Recorder) SyncRemote(ctx context.Context) error {
 	if r.State == nil || r.Store == nil {
 		return internalErr()
+	}
+	if r.masterUncommitted() {
+		return nil
 	}
 	names, err := r.listLocal()
 	if err != nil {

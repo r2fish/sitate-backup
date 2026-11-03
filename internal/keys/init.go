@@ -132,8 +132,8 @@ func (k *Keys) initCreate(ctx context.Context, now time.Time, pub string, blob [
 		return contract.Reply{}, err
 	}
 	repo, _ := json.Marshal(map[string]any{"format": "sitate.repo/v1", "repo_id": repoID, "keyring_id": keyringID, "created_at": fmtTime(now), "format_version": contract.FormatVersion})
-	if err := savePending(k.Dir, pendingFiles{Op: "init", Keyring: keyring, Repo: repo, Mstr: mfile}); err != nil {
-		return contract.Reply{}, errInternal()
+	if err := k.replacePending(ctx, pendingFiles{Op: "init", Keyring: keyring, Repo: repo, Mstr: mfile}); err != nil {
+		return contract.Reply{}, err
 	}
 	kv, err := k.kitVersion(ctx, kitBase{RepoID: repoID, KeyringVersion: 1, FormatVersion: contract.FormatVersion})
 	if err != nil {

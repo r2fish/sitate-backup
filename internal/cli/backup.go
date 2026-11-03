@@ -56,6 +56,9 @@ func intOf(v any) int { f, _ := v.(float64); return int(f) }
 // backupEntry は backup の入口。取得・保管の失敗はすべて backup.failed で知らせる(spec 4.8)。
 // 対象がすべて failed の ALL_TARGETS_FAILED は finishResult が発行済みなので重ねない。
 func backupEntry(d *Deps, ctx context.Context, c contract.Call) (contract.Reply, error) {
+	if rep, skip := d.skipTimerSetup(ctx, c); skip {
+		return rep, nil
+	}
 	rep, err := backupBody(d, ctx, c)
 	if err != nil {
 		if e := toError(err); notifiableBackupFailure(e.Code) {

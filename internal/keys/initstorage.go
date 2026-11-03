@@ -57,6 +57,16 @@ func (k *Keys) InitStorage(ctx context.Context, c contract.Call) (contract.Reply
 	if err := errNeedDeps(k.Secrets != nil, k.State != nil, k.KeyS != nil, k.Store != nil, k.Probe != nil, k.Provision != nil, k.Recorder != nil, k.Clock != nil); err != nil {
 		return contract.Reply{}, err
 	}
+	// seal の後の init-storage(--reissue・--dry-run を含む)は承認を要する(propose storage-init。spec 3.1.2)。直接実行は拒否する。
+	var sealed bool
+	if _, err := k.getItem(ctx, "sealed", &sealed); err != nil {
+		return contract.Reply{}, err
+	}
+	if sealed {
+		e := mkErr(contract.CodeApprovalRequired, map[string]any{"kind": "storage-init"})
+		e.Next = []contract.Next{{Argv: []string{"sitate", "propose", "storage-init"}, RequiresApproval: true}}
+		return contract.Reply{}, e
+	}
 	t, found, err := k.storageTarget(ctx, c)
 	if err != nil {
 		return contract.Reply{}, err
@@ -68,6 +78,7 @@ func (k *Keys) InitStorage(ctx context.Context, c contract.Call) (contract.Reply
 		return contract.Reply{}, mkErr(contract.CodeDefInvalid, map[string]any{"issues": []map[string]string{{"pointer": "/storage/0/key_ref", "reason": "missing"}}})
 	}
 	ic := &isCtx{c: c, t: t, name: k.provisionName(c)}
+	ctx = withProvision(ctx, ic.name) // 鍵の発行・失効(KeyService)も --adapter のアダプタを呼ぶ
 	adminRef, ok := argOne(c, contract.ArgAdminRef)
 	if !ok || adminRef == "" {
 		adminRef = adminRefDefault

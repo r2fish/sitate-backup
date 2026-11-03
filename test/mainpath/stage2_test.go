@@ -5,14 +5,16 @@ package mainpath
 // 主経路の第 2 段(作業指示書 6 章): 実物の sitate(make build-test の試験ビルド)を、受入試験の環境で、root でない sitate ユーザーとして
 // 管理用 SSH の強制コマンド gate 経由で実行し、init から restore-test の入口までを通す。
 // 実物: sitate のバイナリ・gate・SSH(sshd と x/crypto/ssh)・systemd/cron のタイマー・MinIO・rootless の podman・署名の検証(試験の鍵)。
-// 偽物(代役): 保管先準備アダプタ minio(B2 の API を呼ばない代わり。test/mainpath/provminio)。
+// 偽物(代役): 保管先準備アダプタ minio と、置き場の b2 の差し替え(B2 の API を呼ばない代わり。test/mainpath/provminio)。
 
 import (
 	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"os"
+	"sort"
 	"strings"
 	"testing"
 
@@ -66,28 +68,39 @@ func newS2(t *testing.T) *s2 {
 	return w
 }
 
-// seedSecrets は def validate の参照名の解決(StateFiles.Refs)を通すための秘密ファイルを、sitate ユーザーの置き場に置く。
-//   - storage: 保管先の書き込み鍵と読み取り鍵(kind storage_keys)。本来は init-storage が保管先準備アダプタで発行して置く(B2)か、
-//     secrets set で置く(イテレーション 3)。init-storage は bucket check が初期化の前後で INTERNAL になり(下の記録の「見つけたもの」)通せないため、
-//     台本が試験環境の MinIO の鍵をそのまま置く。
-//   - restore-init: 復元先の初期資格情報の参照名。仕様 3.8 の順(手順 4 の def validate が手順 9 の restore-dest enroll の前)では
-//     まだ存在せず def validate が unresolved_ref で止まる(仕様の穴として報告)ため、仮の中身を置く。
-func (w *s2) seedSecrets() {
-	w.bak.root("install -d -m 0700 -o sitate -g sitate " + stateDir + "/secrets")
-	keys, _ := json.Marshal(map[string]any{"kind": "storage_keys", "keys": []map[string]string{
-		{"role": "write", "key_id": w.s3.wk, "secret": w.s3.ws}, {"role": "read", "key_id": w.s3.rk, "secret": w.s3.rs}}})
-	w.bak.put(stateDir+"/secrets/storage.json", keys, "0600", "sitate")
-	w.bak.put(stateDir+"/secrets/restore-init.json", []byte(`{"kind":"token","value":"placeholder"}`), "0600", "sitate")
+// provisionAdapter は保管先準備アダプタの試験用の代役(test/mainpath/provminio)の置き場の名前。init-storage・bucket check に --adapter で渡す。
+const provisionAdapter = "minio"
+
+// storageAdmin は init-storage の事業者の管理用鍵(--admin-ref admin の値)を --secrets-stdin の 1 行にする。代役のアダプタは中身を見ない(枠が届くことだけ確かめる)。
+func storageAdmin() string {
+	b, _ := json.Marshal(map[string]any{"admin": map[string]string{"key_id": "mp-admin-id", "secret": "mp-admin-secret-value"}})
+	return string(b) + "\n"
 }
 
+// initAndStorage は仕様 3.8 の順(手順 4 def validate → 手順 5 init-storage → init → phrase verify → bucket check)を実物の順で通す。
+//   - def validate は seal の前なので storage[0].key_ref と restore.dest.key_ref の未解決を pending_refs[] に返す(D-0160)。台本は秘密ファイルを置かない。
+//   - init-storage は保管先準備アダプタ(代役 minio)で鍵を発行して秘密ファイルに保存する。init の前なので記録はマスター鍵がまだ無い(E3 の pre-master)。
+//   - phrase verify の確定は、マスター鍵が keys/pending/master.json にある間に記録を書く(E3)。台本は master.json を写さない。
+//   - bucket check は --key-ref を省き、候補の storage[0].key_ref を使う(D-0160)。
 func (w *s2) initAndStorage() {
 	t := w.t
-	// 保管先は MinIO で、同梱の保管先準備アダプタ b2 は B2 の API にしか届かない。bucket check の権限の読み取りは b2 の check(枠 key)を呼ぶので、
-	// 置き場の b2 の adapter.json を試験用の代役(test/mainpath/provminio)に差し替える(B2 の鍵の発行は台本の範囲外で、init-storage は通さない)。
-	w.bak.provisionDouble(t, []string{"admin", "key"})
-	w.seedSecrets()
-	w.g.call(w.definition()+"\n", "def", "validate", "--file", "-").ok(t, "def validate")
-	o := w.g.call("", "init", "--approval-pubkey", w.approvalPub, "--secret-fd", "3").ok(t, "init")
+	w.bak.provisionDouble(t, provisionAdapter, w.s3)
+	// bucket check は --adapter を受けず、既定の保管先準備アダプタ b2 を呼ぶ(spec 3.1.2)。同梱の b2 は B2 の API にしか届かないので、置き場の b2 を代役に差し替える。
+	// init-storage は --adapter minio で呼び、--adapter が鍵の発行まで効くこと(E2)を通す。
+	w.bak.provisionDouble(t, "b2", w.s3)
+	o := w.g.call(w.definition()+"\n", "def", "validate", "--file", "-").ok(t, "def validate")
+	var dv struct {
+		Pending []string `json:"pending_refs"`
+	}
+	_ = json.Unmarshal(o.Env.Result, &dv)
+	sort.Strings(dv.Pending)
+	if strings.Join(dv.Pending, ",") != "/restore/dest/key_ref,/storage/0/key_ref" {
+		t.Fatalf("def validate の pending_refs = %v", dv.Pending)
+	}
+	is := w.g.call(storageAdmin(), "init-storage", "--endpoint", w.s3.endpoint, "--bucket", w.s3.bucket, "--prefix", "sitate/", "--adapter", provisionAdapter, "--admin-ref", "admin", "--secrets-stdin").ok(t, "init-storage")
+	t.Logf("init-storage: %.600s", is.Env.Result)
+	checkPermissions(t, "init-storage", is.resultMap(t))
+	o = w.g.call("", "init", "--approval-pubkey", w.approvalPub, "--secret-fd", "3").ok(t, "init")
 	var rec struct {
 		Words []string `json:"words"`
 	}
@@ -98,14 +111,59 @@ func (w *s2) initAndStorage() {
 	r := o.resultMap(t)
 	w.repoID, _ = r["repo_id"].(string)
 	w.keyringID, _ = r["keyring_id"].(string)
-	// 回避(実装の誤りとして報告): phrase verify の確定は保管先へ書く前に write_intent を Recorder に書くが、Recorder の journal 鍵は
-	// keys/master.json から導かれ、master は確定の最後(keys/pending/master.json の rename)まで存在せず INTERNAL になる。
-	// 同じ内容の master.json を先に置いて確定を通す。確定の rename は同じ内容で置き換える。
-	w.bak.root("runuser -u sitate -- cp -p " + stateDir + "/keys/pending/master.json " + stateDir + "/keys/master.json")
 	w.g.call(w.phrase+"\n", "phrase", "verify", "--phrase-stdin").ok(t, "phrase verify")
-	// 仕様 3.8 の手順 5 は引数なしの bucket check だが、seal の前は --key-ref の既定が効かず ARG_INVALID(missing)になる(報告)。明示する。
-	o = w.g.call("", "bucket", "check", "--key-ref", "storage").ok(t, "bucket check")
+	o = w.g.call("", "bucket", "check").ok(t, "bucket check")
 	t.Logf("bucket check: %s", o.Env.Result)
+	checkPermissions(t, "bucket check", o.resultMap(t))
+}
+
+// checkPermissions は結果の permissions[] を判定する: 要素があり、すべて actual が expected と一致し、untested が無い。
+// 注意: capabilities の列(権限の読み取りで判定する操作)は、代役のアダプタ(provminio)が環境のポリシーと同じ固定の表を返すので、MinIO の鍵の実際の権限を読んだ値ではない。
+// 試す操作(版指定なしの削除、保持の短縮、リーガルホールドなど)は実物の MinIO に実際に試している。
+func checkPermissions(t *testing.T, what string, r map[string]any) {
+	t.Helper()
+	ps, _ := r["permissions"].([]any)
+	if len(ps) == 0 {
+		t.Fatalf("%s: permissions[] が空", what)
+	}
+	for _, p := range ps {
+		m, _ := p.(map[string]any)
+		if m["actual"] == "untested" || m["actual"] != m["expected"] {
+			t.Errorf("%s: %v/%v の expected=%v actual=%v", what, m["op"], m["key_role"], m["expected"], m["actual"])
+		}
+	}
+	t.Logf("%s: permissions[] %d 要素すべてで expected = actual(untested なし)", what, len(ps))
+}
+
+// verifyJournal は、確定の後の実行を重ねた最後に、状態ディレクトリの journal/ の連番が 1 から切れずに並び、
+// すべての項目が保管先に写った記録(state.json の objects[] の journal/<名前>)を持つことを確かめる(E3: 確定の前の項目は確定の後に写る)。
+func (w *s2) verifyJournal() {
+	t := w.t
+	names := strings.Fields(w.bak.root("ls " + stateDir + "/journal | grep -E '^[0-9]{12}-[0-9a-f]{64}$' | sort"))
+	if len(names) == 0 {
+		t.Fatal("journal/ に項目が無い")
+	}
+	var st struct {
+		Objects []struct {
+			Key string `json:"key"`
+		} `json:"objects"`
+	}
+	if err := json.Unmarshal([]byte(w.bak.root("cat "+stateDir+"/state.json")), &st); err != nil {
+		t.Fatalf("state.json: %v", err)
+	}
+	have := map[string]bool{}
+	for _, o := range st.Objects {
+		have[o.Key] = true
+	}
+	for i, n := range names {
+		if got := n[:12]; got != fmt.Sprintf("%012d", i+1) {
+			t.Fatalf("journal/ の連番が 1 から切れずに並んでいない: %d 番目が %s", i+1, got)
+		}
+		if !have["journal/"+n] {
+			t.Errorf("journal/%s が保管先に写った記録(objects[])に無い", n)
+		}
+	}
+	t.Logf("journal/: %d 項目が連番で並び、すべて保管先に写っている", len(names))
 }
 
 // sourceAdmin は元サーバーの管理用資格情報(OpenSSH 形式の秘密鍵)を --secrets-stdin の 1 行にする。
@@ -157,12 +215,12 @@ func TestStage2MainPath(t *testing.T) {
 	w.initAndStorage()
 	w.verifyTimers()
 	w.enrollSource()
-	// 回避(実装の誤りとして報告): 仕様は seal の前も backup を止めないが、acquire.Ingest は承認済みの定義(def/approved.json)だけを読み NOT_SEALED で止まる。
-	// seal(propose seal → 承認の署名・通知の確認語・遅延 → apply)は台本の外で、候補を承認済みの定義の場所へ写して先へ進む。
-	w.bak.root("runuser -u sitate -- cp -p " + stateDir + "/def/candidate.json " + stateDir + "/def/approved.json")
+	// seal(propose seal → 承認の署名・通知の確認語・遅延 → apply)は台本の外(承認の署名は台本の外)。seal の前のまま進める:
+	// backup・restore-test は seal の前も止まらず、候補の定義で動く(spec 3.1.3 の NOT_SEALED、D-0025 の 5)。
 	ref := w.backupAndList()
 	w.restoreAndCompare(ref)
 	w.destEnrollAndRestoreTest(ref)
+	w.verifyJournal()
 }
 
 // backupAndList は backup(gate 経由。実物の SSH で元サーバーから pull し、rootless の podman の容器で取得する)→ list。世代の ref を返す。
@@ -210,8 +268,15 @@ func (w *s2) destEnrollAndRestoreTest(ref string) {
 	}
 	c := w.g.call("", "restore-dest", "check").ok(t, "restore-dest check")
 	t.Logf("restore-dest check: %.400s", c.Env.Result)
+	// 手順 10: 実物の propose seal。ssh-host の restore.dest.key_ref は登録の記録で解決し、提案が作られる(承認の署名の先は台本の外。seal は未到達)。
+	ps := w.g.call(w.definition()+"\n", "propose", "seal", "--file", "-").ok(t, "propose seal")
+	if id, _ := ps.resultMap(t)["change_id"].(string); id == "" {
+		t.Fatalf("propose seal が change_id を返さない: %s", ps.Env.Result)
+	}
+	t.Logf("propose seal: %.400s", ps.Env.Result)
 	rt := w.g.call("", "restore-test").ok(t, "restore-test")
 	var rr struct {
+		RestoreOK  bool   `json:"restore_ok"`
 		BackupRef  string `json:"backup_ref"`
 		KeyringOK  bool   `json:"keyring_ok"`
 		DefCopyOK  bool   `json:"def_copy_ok"`
@@ -224,7 +289,7 @@ func (w *s2) destEnrollAndRestoreTest(ref string) {
 		t.Fatalf("restore-test の結果: %v", err)
 	}
 	// config_copy_ok は、seal(apply の定義の確定)が config/<def_hash> を保管先へ書くため、seal を省いたこの台本では false になる。
-	if rr.BackupRef != ref || !rr.KeyringOK || !rr.DefCopyOK || rr.Deferred || rr.EgressByte <= 0 {
+	if !rr.RestoreOK || rr.BackupRef != ref || !rr.KeyringOK || !rr.DefCopyOK || rr.Deferred || rr.EgressByte <= 0 {
 		t.Fatalf("restore-test の結果が期待と違う(期待: 直近の世代 %s、keyring_ok・def_copy_ok が真、送らない、保管先からの読み出し>0): %s", ref, rt.Env.Result)
 	}
 	t.Logf("restore-test: 世代 %s を dest で復元して照合(duration_s=%d、読み出し %d バイト、config_copy_ok=%v)", rr.BackupRef, rr.DurationS, rr.EgressByte, rr.ConfigOK)
