@@ -75,7 +75,7 @@ func TestApplyIDStates(t *testing.T) {
 	e := newEnv(t, true)
 	p := e.propose("restore-test-increase", incr)
 	_, err := e.apply(map[string][]string{"id": {p.ChangeID}})
-	want(t, "未承認", err, contract.CodeSignatureInvalid, "")
+	want(t, "未承認", err, contract.CodeChangeStateInvalid, "") // spec 3.1.3(D-0107): 未承認への apply --id
 	if lastState(t, e, p.ChangeID) != "proposed" {
 		t.Error("未承認の変更が failed になった")
 	}

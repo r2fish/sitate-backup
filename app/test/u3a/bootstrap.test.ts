@@ -26,6 +26,7 @@ class FakeHost {
   binExists = false;
   authorizedKeys = "";
   failPackages = false;
+  failLinger = false;
   uid = "0";
   handler = (cmd: string, stdin: Buffer, st: ssh2.ServerChannel): void => {
     this.log.push(cmd);
@@ -41,6 +42,7 @@ class FakeHost {
     if (inner === undefined) return out("", 127);
     const put = /cat > '([^']+)'/.exec(inner);
     if (inner.includes("apt-get") && this.failPackages) return out("", 100);
+    if (inner.includes("enable-linger") && this.failLinger) return out("", 1);
     if (inner.startsWith("sha256sum")) { const p = /'([^']+)'/.exec(inner)![1]!; const f = this.files.get(p); return f ? out(`${createHash("sha256").update(f).digest("hex")}  ${p}\n`) : out("", 1); }
     if (inner.startsWith("cat '") && inner.includes("authorized_keys") && inner.includes("|| true")) return out(this.authorizedKeys);
     if (put) { this.files.set(put[1]!, stdin); if (put[1]!.endsWith("authorized_keys")) this.authorizedKeys = stdin.toString(); return out(""); }
@@ -311,5 +313,28 @@ test("bootstrap: an adapter executable that does not match the signed adapter.js
     const env = await runBootstrap(input(server.port), { ...t.deps, bundle: bad }) as { ok: boolean; error: { code: string } };
     assert.equal(env.ok, false);
     assert.equal(env.error.code, "BOOTSTRAP_SIGNATURE_INVALID");
+  } finally { await server.close(); rmSync(dir, { recursive: true, force: true }); }
+});
+
+// D-0164: 段 (5) が定義ファイルの置き場 /etc/sitate を所有者 sitate・モード 0750 で作る(seal と def-change の apply が書く)。やり直しでも同じ形。
+test("bootstrap: stage 5 creates /etc/sitate owned by sitate with mode 0750, the same on a repeat run (D-0164)", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "u3a-bs-"));
+  const host = new FakeHost();
+  const server = await startServer({ acceptAnyKey: true, onExec: host.handler });
+  try {
+    const t = setup(host, server, dir);
+    const etcCmds = (): string[] => host.log.filter((c) => c.includes("install -d") && c.includes("/etc/sitate") && !c.includes("/etc/sitate-"));
+    host.failLinger = true; // /etc/sitate の後(linger)で止まった実行をやり直す
+    const failed = await runBootstrap(input(server.port), t.deps) as { ok: boolean; error: { code: string } };
+    assert.equal(failed.ok, false);
+    assert.equal(failed.error.code, "BOOTSTRAP_PACKAGE_FAILED");
+    const first = etcCmds();
+    assert.equal(first.length, 1, "/etc/sitate を作るコマンドが 1 つ");
+    assert.match(first[0]!, /install -d -m 0750 -o sitate -g sitate \/etc\/sitate(\s|'|$)/, "モード 0750・所有者 sitate");
+    host.failLinger = false;
+    await runBootstrap(input(server.port), t.deps);
+    const all = etcCmds();
+    assert.equal(all.length, 2, "やり直しでも同じコマンドを実行する(install -d は冪等)");
+    assert.equal(all[1], first[0], "やり直しでも同じ形");
   } finally { await server.close(); rmSync(dir, { recursive: true, force: true }); }
 });

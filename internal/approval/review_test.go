@@ -175,3 +175,25 @@ func TestHostKeyPinning(t *testing.T) {
 var _ = fake.StartTime
 var _ = time.Second
 var _ = sha256.Size
+
+// changeTagged は change_id を受けられる試験通知(state.TestNotifier の TestFor と同じ形)。notify-add の提案の作成時に、提案の change_id を渡す(spec 4.8 の notify.test)。
+type changeTagged struct {
+	fakeProofs
+	ids []string
+}
+
+func (c *changeTagged) TestFor(ctx ctxT, changeID string, to []string) (map[string]string, error) {
+	c.ids = append(c.ids, changeID)
+	return c.Test(ctx, to)
+}
+
+func TestNotifyAddPassesChangeIDToTestNotice(t *testing.T) {
+	e := newEnv(t, true)
+	ct := &changeTagged{}
+	e.a.TestNotifier = ct
+	e.setDef(`{"restore_test":"monthly","notify":{"to":["a@x"]}}`)
+	p := e.propose("notify-add", map[string][]string{"notify": {`{"to":["a@x","b@x"]}`}})
+	if len(ct.ids) != 1 || ct.ids[0] != p.ChangeID || p.ChangeID == "" {
+		t.Errorf("試験通知に提案の change_id を渡す: got %v want %q", ct.ids, p.ChangeID)
+	}
+}

@@ -102,6 +102,10 @@ func (w *s2) approveAndApply(id, word string) {
 	if len(hookEvents(t, hookDest, "change.applied")) == 0 {
 		t.Fatalf("change.applied が hook に届いていない")
 	}
+	// D-0164: /etc/sitate は bootstrap と同じ形(所有者 sitate・モード 0750)で、apply が sitate.yaml を書いた。
+	if got := strings.TrimSpace(w.bak.root("stat -c '%U:%G %a' /etc/sitate")); got != "sitate:sitate 750" {
+		t.Fatalf("/etc/sitate の所有者とモードが想定と違う: %q", got)
+	}
 	if got := w.bak.root("test -s /etc/sitate/sitate.yaml && echo present"); !strings.Contains(got, "present") {
 		t.Fatalf("/etc/sitate/sitate.yaml が書かれていない")
 	}

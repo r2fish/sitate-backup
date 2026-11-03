@@ -132,8 +132,8 @@ func (r *applyRun) beginDue() error {
 	return nil
 }
 
-// checkOnlyID は --id で指定した変更の状態を確かめる: 署名のない(未承認の)変更は SIGNATURE_INVALID(変更は failed にしない)、
-// 未知や終わった変更は CHANGE_STATE_INVALID。
+// checkOnlyID は --id で指定した変更の状態を確かめる: 未承認(proposed)の変更、未知や終わった変更は CHANGE_STATE_INVALID
+// (spec 3.1.3 の組み合わせの表。変更は failed にせず change.failed も送らない)。署名の検査は承認済みの変更の開始時(beginOne)で行う。
 func (r *applyRun) checkOnlyID() error {
 	if r.onlyID == "" {
 		return nil
@@ -142,8 +142,6 @@ func (r *applyRun) checkOnlyID() error {
 	switch {
 	case st == nil:
 		return stateErr(r.onlyID, nil)
-	case st.Last == evProposed:
-		return sigErr("bad_signature", nil)
 	case st.Last != evApproved && st.Last != evApplying:
 		return stateErr(r.onlyID, &st.Last)
 	}

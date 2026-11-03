@@ -218,6 +218,8 @@ async function prerequisites(r: Remote): Promise<void> {
     ["user", `id ${SITATE_USER} >/dev/null 2>&1 || useradd --system --create-home --home-dir ${STATE_DIR} --shell /bin/bash ${SITATE_USER}`],
     ["subids", `grep -q '^${SITATE_USER}:' /etc/subuid || usermod --add-subuids 200000-265535 --add-subgids 200000-265535 ${SITATE_USER}`],
     ["state_dir", `install -d -m 0700 -o ${SITATE_USER} -g ${SITATE_USER} ${STATE_DIR} ${STATE_DIR}/run && for f in run.lock state.lock; do [ -e ${STATE_DIR}/$f ] || install -m 0600 -o ${SITATE_USER} -g ${SITATE_USER} /dev/null ${STATE_DIR}/$f; done`],
+    // 定義ファイルの置き場(seal と def-change の apply が sitate として書く。D-0164)。install -d は繰り返しても同じ形になる。
+    ["etc_dir", `install -d -m 0750 -o ${SITATE_USER} -g ${SITATE_USER} /etc/sitate`],
     ["linger", `loginctl enable-linger ${SITATE_USER}`],
   ];
   for (const [step, cmd] of stepsList) if ((await r.root(cmd)).code !== 0) throw new Fail("BOOTSTRAP_PACKAGE_FAILED", { step });

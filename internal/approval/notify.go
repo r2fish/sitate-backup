@@ -107,7 +107,15 @@ func (a *Approval) issueChangeProofs(ctx context.Context, s *pstore, rec changeR
 	if len(plan.Required) == 0 {
 		return nil
 	}
-	hashes, err := a.TestNotifier.Test(ctx, plan.Required)
+	var hashes map[string]string
+	var err error
+	if tf, ok := a.TestNotifier.(interface {
+		TestFor(ctx context.Context, changeID string, to []string) (map[string]string, error)
+	}); ok { // 提案の change_id を facts.change_id に載せられる実装(state.TestNotifier)。契約の Test は change_id を受けない
+		hashes, err = tf.TestFor(ctx, rec.ChangeID, plan.Required)
+	} else {
+		hashes, err = a.TestNotifier.Test(ctx, plan.Required)
+	}
 	var rows []proofRow
 	for to, v := range hashes {
 		salt, hash, ok := strings.Cut(v, "|")

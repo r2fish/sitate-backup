@@ -190,13 +190,20 @@ func (t *TestNotifier) Test(ctx context.Context, to []string) (map[string]string
 	return h, err
 }
 
+// TestFor は Test に加えて、notify-add・notify-change の提案の change_id を試験通知の facts.change_id に載せる(spec 4.8 の notify.test)。
+// contract.TestNotifier は change_id を受けないので、approval がこの口を(あれば)使う。
+func (t *TestNotifier) TestFor(ctx context.Context, changeID string, to []string) (map[string]string, error) {
+	h, _, _, err := t.test(ctx, &changeID, to)
+	return h, err
+}
+
 // TestWithResults は Test に加えて、宛先ごとの配送の結果と確認語を送った時刻を返す(`notify test` の結果。contract.TestNotifier は結果を返さない)。
 func (t *TestNotifier) TestWithResults(ctx context.Context, to []string) (map[string]string, []contract.DeliveryResult, time.Time, error) {
-	hashes, res, now, err := t.test(ctx, to)
+	hashes, res, now, err := t.test(ctx, nil, to)
 	return hashes, res, now, err
 }
 
-func (t *TestNotifier) test(ctx context.Context, to []string) (map[string]string, []contract.DeliveryResult, time.Time, error) {
+func (t *TestNotifier) test(ctx context.Context, changeID *string, to []string) (map[string]string, []contract.DeliveryResult, time.Time, error) {
 	if len(to) == 0 {
 		return nil, nil, time.Time{}, newErr(contract.CodeArgInvalid, map[string]any{"flag": "--to", "reason": "missing"})
 	}
@@ -221,7 +228,7 @@ func (t *TestNotifier) test(ctx context.Context, to []string) (map[string]string
 		saltB64 := base64.StdEncoding.EncodeToString(salt)
 		hashes[addr] = saltB64 + "|" + h // 契約の注釈: <word_salt>|<word_hash>
 		proofs = append(proofs, map[string]string{"to": addr, "word_salt": saltB64, "word_hash": h})
-		facts, _ := json.Marshal(map[string]any{"confirmation_word": word, "change_id": nil}) // facts_notify_test は change_id も必須(notify test では null。notify-add・notify-change の試験通知は提案の change_id)
+		facts, _ := json.Marshal(map[string]any{"confirmation_word": word, "change_id": changeID}) // facts_notify_test は change_id も必須(notify test では null。notify-add・notify-change の試験通知は提案の change_id)
 		ev := contract.Event{ID: "e-" + base + "-" + twoDigits(i+1), Type: "notify.test", Severity: "info", Time: now, Facts: facts, Next: []contract.Next{}}
 		results = append(results, nn.deliverOne(ctx, ev, addr))
 	}

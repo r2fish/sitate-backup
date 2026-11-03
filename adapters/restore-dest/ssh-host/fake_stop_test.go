@@ -244,3 +244,32 @@ func resTypes(rs []contract.AdapterResource) []string {
 	}
 	return out
 }
+
+// 作業ディレクトリを作れない失敗(権限など)は SESSION_EXISTS ではなく SCRATCH_FAILED。何も作っていないので資源は返さない。
+func TestFakeCreateScratchMkdirFailureIsNotSessionExists(t *testing.T) {
+	f, priv := fakeWithKey(t, false)
+	f.withStubs(t)
+	c := dialFake(t, f, priv)
+	run := filepath.Join(f.home, ".sitate", "run")
+	if err := os.MkdirAll(run, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(run, 0o500); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(run, 0o700) })
+	_, res, e := createScratch(c, sidA)
+	if e == nil || e.code != "adapter:ssh-host:SCRATCH_FAILED" || len(res) != 0 {
+		t.Fatalf("作れない失敗は SCRATCH_FAILED: res=%v e=%v", res, e)
+	}
+	// 既にあるときだけ SESSION_EXISTS。
+	if err := os.Chmod(run, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Mkdir(filepath.Join(run, sidA), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if _, res, e = createScratch(c, sidA); e == nil || e.code != "adapter:ssh-host:SESSION_EXISTS" || len(res) != 0 {
+		t.Errorf("既にあれば SESSION_EXISTS: res=%v e=%v", res, e)
+	}
+}

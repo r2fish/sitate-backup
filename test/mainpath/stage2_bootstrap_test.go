@@ -111,10 +111,9 @@ func (h *host) prerequisites(t *testing.T, packages bool) {
 		"id sitate >/dev/null 2>&1 || useradd --system --create-home --home-dir "+stateDir+" --shell /bin/bash sitate",
 		"grep -q '^sitate:' /etc/subuid || usermod --add-subuids 200000-265535 --add-subgids 200000-265535 sitate",
 		"install -d -m 0700 -o sitate -g sitate "+stateDir+" "+stateDir+"/run && for f in run.lock state.lock; do [ -e "+stateDir+"/$f ] || install -m 0600 -o sitate -g sitate /dev/null "+stateDir+"/$f; done",
-		"loginctl enable-linger sitate",
-		// 代役(第 3 段で見つけた仕様の穴): seal の apply は sitate ユーザーとして /etc/sitate/sitate.yaml を書くが、bootstrap の段 (5) にそのディレクトリを
-		// sitate が書ける形で置く手順が無い(bootstrap.ts にも仕様 3.7 にも無い)。台本が置く。記録 stage3 の「代役」。
-		"install -d -m 0755 -o sitate -g sitate /etc/sitate")
+		// D-0164: 定義ファイルの置き場は bootstrap.ts の etc_dir と同じ所有者・モード(台本が緩い権限を足さない)。
+		"install -d -m 0750 -o sitate -g sitate /etc/sitate",
+		"loginctl enable-linger sitate")
 	for _, s := range steps {
 		h.root(s)
 	}

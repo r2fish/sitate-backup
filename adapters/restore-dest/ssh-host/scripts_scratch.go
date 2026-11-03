@@ -10,7 +10,7 @@ const scratchCreateScript = shPrelude + `isid "$1" || exit 64
 umask 077
 mkdir -p "$HOME/.sitate/run" || exit 1
 w="$HOME/.sitate/run/$1"
-mkdir "$w" 2>/dev/null || exit 3
+mkdir "$w" 2>/dev/null || { if [ -e "$w" ] || [ -L "$w" ]; then exit 3; fi; exit 1; }
 mkdir "$w/cipher" "$w/scratch" || exit 5
 echo "$w"
 `

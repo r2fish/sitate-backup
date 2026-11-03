@@ -243,3 +243,26 @@ func TestAppendEventRejectsBadTransitions(t *testing.T) {
 		}
 	}
 }
+
+// 承認の前(proposed)の `apply --id` は CHANGE_STATE_INVALID(spec 3.1.3 の組み合わせの表。D-0107)。
+// 署名の不一致(SIGNATURE_INVALID)ではなく、変更を failed にせず、change.failed も送らない。
+func TestApplyIDOfUnapprovedIsStateInvalid(t *testing.T) {
+	e := newEnv(t, true)
+	p := e.propose("restore-test-increase", incr) // 未承認のまま
+	_, err := e.apply(map[string][]string{"id": {p.ChangeID}})
+	if codeOf(err) != contract.CodeChangeStateInvalid {
+		t.Fatalf("未承認の apply --id: %v", err)
+	}
+	if got := lastState(t, e, p.ChangeID); got != "proposed" {
+		t.Errorf("状態が変わった: %s", got)
+	}
+	for _, ev := range e.rec.Events {
+		if ev.Type == "change.failed" {
+			t.Errorf("change.failed を送った")
+		}
+	}
+	// 未知の id も CHANGE_STATE_INVALID。
+	if _, err := e.apply(map[string][]string{"id": {"no-such"}}); codeOf(err) != contract.CodeChangeStateInvalid {
+		t.Errorf("未知の id: %v", err)
+	}
+}
