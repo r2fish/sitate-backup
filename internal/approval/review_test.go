@@ -155,7 +155,7 @@ func TestHostKeyPinning(t *testing.T) {
 	if err != nil || len(plan.Changes) != 1 {
 		t.Fatalf("%+v %v", plan, err)
 	}
-	if _, err := e.a.ApplyEnroll(ctx, p.ChangeID, 0); err != nil || len(enr.in) != 1 || enr.in[0].HostKeyFP != "SHA256:CARD" || enr.in[0].AdminRef != "r" || enr.in[0].Admin == nil || string(enr.in[0].Admin.Reveal()) != "k" {
+	if _, err := e.a.ApplyEnroll(ctx, p.ChangeID, 0); err != nil || len(enr.in) != 1 || enr.in[0].HostKeyFP != "SHA256:CARD" || enr.in[0].AdminRef != "r" || len(enr.admin) != 1 || enr.admin[0] != "k" {
 		t.Fatalf("カードの指紋が登録に届かない: %+v %v", enr.in, err)
 	}
 	// 節に別の指紋があれば提案を作らない。

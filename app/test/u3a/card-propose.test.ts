@@ -34,6 +34,23 @@ test("seal: ホスト鍵の固定値・承認鍵の指紋・宛先が行に出�
   assert.ok(s.includes("/approval_delay_hours"), "既定より弱い項目");
 });
 
+test("seal: 保管先・復元先・通知先が行に出る(F2)", () => {
+  const s = text(card("seal"));
+  for (const v of ["s3.example.invalid", "bkt", "dest.example.invalid", "ops@example.invalid"]) assert.ok(s.includes(v), v);
+});
+
+test("seal: 確認語の欄が定義の notify.to の宛先ごとに出る(F1。核は notify.to の全部に確認語を求める)", () => {
+  const c = card("seal");
+  assert.deepEqual(c.proofRecipients, ["ops@example.invalid"]);
+  assert.deepEqual(Object.keys(c.proofLabels), ["ops@example.invalid"]);
+  assert.ok(text(c).includes("card.confirm_word.note"));
+});
+
+test("notify-add: 実物の記録で、確認語の欄は proof_required の宛先だけ(F1)", () => {
+  const c = card("notify-add");
+  assert.deepEqual(c.proofRecipients, ["b@x"]);
+});
+
 test("source-change・restore-change: 変更後の宛先と指紋が行に出る", () => {
   const sc = text(card("source-change"));
   assert.ok(sc.includes("attacker.example.invalid") && sc.includes(FP));

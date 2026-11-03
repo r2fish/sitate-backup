@@ -81,7 +81,7 @@ func (p *proposeStub) Propose(context.Context, contract.Call) (contract.Reply, e
 // propose notify-change の資格情報(--secrets-stdin)は、作成時に秘密ファイルへ置く。提案を作れなければ消す。使用中の参照名は上書きしない(ARG_INVALID)。
 func TestProposeNotifyChangePlacesAndDropsSecret(t *testing.T) {
 	call := func(secrets string) contract.Call {
-		return contract.Call{Words: []string{"propose"}, Positional: []string{"notify-change"}, Secrets: contract.SecretInput{"hook-2": []byte(secrets)}}
+		return contract.Call{Words: []string{"propose"}, Positional: []string{"notify-change"}, Args: map[string][]string{"notify": {`{"to":["hook-2"]}`}}, Secrets: contract.SecretInput{"hook-2": []byte(secrets)}}
 	}
 	file := func(d *Deps) string { return filepath.Join(d.StateDir, "secrets", "hook-2.json") }
 	d, _ := notifyDeps(t, "")

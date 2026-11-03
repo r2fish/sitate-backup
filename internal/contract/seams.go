@@ -13,8 +13,10 @@ import (
 
 // SSH の接続の失敗の理由(SSHError.Reason)。
 const (
-	SSHReasonConnect = "connect" // 届かない・名前解決・タイムアウト
-	SSHReasonAuth    = "auth"    // 資格情報の拒否
+	SSHReasonConnect = "connect" // 届かない・名前解決
+	// SSHReasonTimeout は接続または握手が時限内に終わらない(STORAGE_UNREACHABLE の reason: timeout)。
+	SSHReasonTimeout = "timeout"
+	SSHReasonAuth    = "auth" // 資格情報の拒否
 
 	// SSHReasonKeyUnparsable は Cred が鍵として読めない(パスフレーズ付きを含む)。
 	SSHReasonKeyUnparsable = "key_unparsable"

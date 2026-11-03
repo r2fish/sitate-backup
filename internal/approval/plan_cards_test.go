@@ -80,9 +80,12 @@ func TestProposePlansCarryCardMaterial(t *testing.T) {
 	if !strings.Contains(string(p["host_keys"]), fixSrcFP) || !strings.Contains(string(p["weaker_items"]), "/approval_delay_hours") {
 		t.Errorf("seal: host_keys=%s weaker_items=%s", p["host_keys"], p["weaker_items"])
 	}
+	checkSealProofsMatchCard(t, es, rec, p)
 	recs = append(recs, rec)
 
 	recs = append(recs, proposeSectionKinds(t)...)
+
+	recs = append(recs, proposeNotifyAdd(t))
 
 	got, _ := json.MarshalIndent(recs, "", " ")
 	got = append(got, '\n')
@@ -95,6 +98,35 @@ func TestProposePlansCarryCardMaterial(t *testing.T) {
 	if err != nil || string(want) != string(got) {
 		t.Errorf("%s が実物の propose の記録と違う(UPDATE_PROPOSE_FIXTURE=1 で書き直す): %v", proposeFixture, err)
 	}
+}
+
+// F1: アプリのカードは seal の確認語の欄を plan.definition.notify.to から作る。核が approve で照合する宛先と同じ集合であること。
+func checkSealProofsMatchCard(t *testing.T, e *env, rec json.RawMessage, p map[string]json.RawMessage) {
+	var sealRec changeRec
+	if err := json.Unmarshal(rec, &sealRec); err != nil {
+		t.Fatal(err)
+	}
+	need, _, err := e.a.requiredProofs(ctx, sealRec)
+	var planDef struct {
+		Notify struct {
+			To []string `json:"to"`
+		} `json:"notify"`
+	}
+	_ = json.Unmarshal(p["definition"], &planDef)
+	if err != nil || len(need) == 0 || strings.Join(need, ",") != strings.Join(planDef.Notify.To, ",") {
+		t.Errorf("seal の確認語の宛先 %v と plan.definition.notify.to %v が違う: %v", need, planDef.Notify.To, err)
+	}
+}
+
+// notify-add: 確認語を入れさせる宛先 proof_required[] は核が作る(アプリのカードの確認語の欄の材料)。
+func proposeNotifyAdd(t *testing.T) json.RawMessage {
+	en, _ := newProofEnv(t)
+	fixedKey(en)
+	rec := en.proposeShape("notify-add", map[string][]string{"notify": {`{"to":["a@x","b@x"]}`}})
+	if p := planOfRec(t, rec); string(p["proof_required"]) != `["b@x"]` {
+		t.Errorf("notify-add の plan: %s", rec)
+	}
+	return rec
 }
 
 // 承認済みの定義の後の種別(source-change・restore-change・delay-change・def-change)。

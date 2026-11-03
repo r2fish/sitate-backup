@@ -63,7 +63,7 @@ func (c SSHClient) Run(ctx context.Context, req contract.SSHRequest) (contract.S
 	defer cancel()
 	conn, err := (&net.Dialer{}).DialContext(dctx, "tcp", net.JoinHostPort(req.Target.Host, strconv.Itoa(port)))
 	if err != nil {
-		return res, &contract.SSHError{Reason: contract.SSHReasonConnect}
+		return res, &contract.SSHError{Reason: connectReason(err)}
 	}
 	_ = conn.SetDeadline(time.Now().Add(timeout)) // 握手の間だけ
 	cc, chans, reqs, err := ssh.NewClientConn(conn, net.JoinHostPort(req.Target.Host, strconv.Itoa(port)), cfg)
@@ -76,12 +76,21 @@ func (c SSHClient) Run(ctx context.Context, req contract.SSHRequest) (contract.S
 		case strings.Contains(err.Error(), "unable to authenticate"):
 			return res, &contract.SSHError{Reason: contract.SSHReasonAuth}
 		}
-		return res, &contract.SSHError{Reason: contract.SSHReasonConnect}
+		return res, &contract.SSHError{Reason: connectReason(err)}
 	}
 	_ = conn.SetDeadline(time.Time{})
 	client := ssh.NewClient(cc, chans, reqs)
 	defer client.Close()
 	return c.exec(ctx, client, req, res)
+}
+
+// connectReason は接続・握手の失敗の理由: 時限内に終わらなければ timeout、それ以外(届かない・拒まれた・名前解決)は connect。
+func connectReason(err error) string {
+	var ne net.Error
+	if errors.Is(err, context.DeadlineExceeded) || (errors.As(err, &ne) && ne.Timeout()) || strings.Contains(err.Error(), "i/o timeout") {
+		return contract.SSHReasonTimeout
+	}
+	return contract.SSHReasonConnect
 }
 
 func (SSHClient) exec(ctx context.Context, client *ssh.Client, req contract.SSHRequest, res contract.SSHResult) (contract.SSHResult, error) {

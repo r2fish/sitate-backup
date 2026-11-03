@@ -84,7 +84,7 @@ export function buildCard(record: PendingRecord, ctx: CardContext): CardModel {
     sections.push({ no: 5, title: t("card.section.cost"), rows: [], lines });
   }
   sections.push(timingSection(record, delay, plan, t));
-  const proofs = PROOF_OPS.includes(op) ? strs(plan.proof_required) : [];
+  const proofs = proofsOf(op, plan);
   sections.push(opSection(op, record, plan, proofs, t));
   if (ctx.aiExplanation !== undefined && ctx.aiExplanation !== null) sections.push({ no: 9, title: t("card.ai_explanation.heading"), rows: [], lines: [ctx.aiExplanation] });
   else if (op === "attest" && isRec(record.args) && typeof record.args.note === "string") sections.push({ no: 9, title: t("card.ai_explanation.heading"), rows: [], lines: [record.args.note] });
@@ -92,6 +92,12 @@ export function buildCard(record: PendingRecord, ctx: CardContext): CardModel {
     changeId: typeof record.change_id === "string" ? record.change_id : "", op, canonicalHash: hash, sections, proofRecipients: proofs, proofLabels: Object.fromEntries(proofs.map((r) => [r, t("card.confirm_word.label", { recipient: r })])),
     approveEnabled: reason === null, disabledReason: reason, updatePrompt: reason === "unknown_op" || reason === "unknown_field" ? t("card.unknown.update_prompt") : null,
   };
+}
+
+/** 確認語を入れさせる宛先。seal は核が渡した定義の notify.to の全部(plan に proof_required は無い)、notify-add・notify-change は plan.proof_required[]。 */
+function proofsOf(op: string, plan: Record<string, unknown>): string[] {
+  if (op === "seal") return isRec(plan.definition) && isRec(plan.definition.notify) ? strs(plan.definition.notify.to) : [];
+  return PROOF_OPS.includes(op) ? strs(plan.proof_required) : [];
 }
 
 function timingSection(record: PendingRecord, delay: number, plan: Record<string, unknown>, t: Translate): CardSection {

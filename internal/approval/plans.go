@@ -138,6 +138,15 @@ func (a *Approval) sectionPlan(ctx context.Context, kind string, args, plan map[
 	if err != nil {
 		return err
 	}
+	strip := []string{"host_key_fp"}
+	if key == "source" {
+		strip = append(strip, "admin_user") // 定義に入れない項目(登録を伴う変更の管理用の利用者とホスト鍵の固定値)
+	}
+	canon, err := a.checkSection(ctx, cur, key, args[key], strip...)
+	if err != nil {
+		return err
+	}
+	args[key] = canon
 	before := sectionOf(cur, key)
 	if len(before) == 0 {
 		before = jsonNull
@@ -155,6 +164,9 @@ func (a *Approval) sectionPlan(ctx context.Context, kind string, args, plan map[
 	after := withoutKeys(args[key], "admin_user", "host_key_fp")
 	plan["before"], plan["after"] = before, after
 	needs := sectionNeedsSecret(key, before, after)
+	if !needs && sec.FP != nil && !a.pinnedHostKeyIs(ctx, key, sec.Host, sec.Dest.At, *sec.FP) {
+		needs = true // 固定値だけの差し替えも、取得と登録(資格情報で本人のホストと確かめる)を通す(まとめレビュー F4)
+	}
 	plan["needs_secret"] = mustJSON(needs)
 	plan["host_key_fp"] = jsonNull
 	if sec.FP != nil {
@@ -175,6 +187,27 @@ func (a *Approval) sectionPlan(ctx context.Context, kind string, args, plan map[
 		return a.fetchHostKeyInto(ctx, key, sec.Host, sec.Adapter, sec.Dest.At, sec.FP, plan)
 	}
 	return nil
+}
+
+// pinnedHostKeyIs は今のホスト鍵の固定値(host_keys[])が、その宛先について fp と同じか。固定値が無ければ偽。
+func (a *Approval) pinnedHostKeyIs(ctx context.Context, key, host, at, fp string) bool {
+	role := "source"
+	if key == "restore" {
+		role = "restore_dest"
+		if u, err := url.Parse(at); err == nil {
+			host = u.Hostname()
+		}
+	}
+	var hks []hostPin
+	if _, err := a.getItem(ctx, "host_keys", &hks); err != nil {
+		return false
+	}
+	for _, h := range hks {
+		if h.Role == role && h.Host == host && h.HostKeyFP != nil && *h.HostKeyFP == fp {
+			return true
+		}
+	}
+	return false
 }
 
 var adminUserRe = regexp.MustCompile(`^[a-z_][a-z0-9_-]{0,31}$`)

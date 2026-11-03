@@ -106,6 +106,30 @@ export function labelledRows(op: string, plan: Record<string, unknown>, names: r
   return rows;
 }
 
+const str = (v: unknown): string | null => (typeof v === "string" && v !== "" ? v : null);
+
+/**
+ * seal の定義のうち人が見て決める宛先: 元サーバー、保管先(endpoint・bucket・prefix)、復元先、通知先(spec 3.6。定義を承認カードに示す)。
+ * 対象と除外は sourceRows が描く。
+ */
+function sealDefinitionRows(def: unknown, t: Translate): CardRow[] {
+  if (!isRec(def)) return [];
+  const rows: CardRow[] = [];
+  const host = isRec(def.source) ? str(def.source.host) : null;
+  if (host !== null) rows.push({ label: t(fieldKey("seal", "definition")), value: host });
+  const stores = Array.isArray(def.storage) ? def.storage : [];
+  for (const s of stores) {
+    if (!isRec(s)) continue;
+    const parts = [str(s.endpoint), str(s.bucket), str(s.prefix)].filter((x): x is string => x !== null);
+    rows.push({ label: t("card.seal.storage"), value: parts.join(" / ") });
+  }
+  const dest = isRec(def.restore) && isRec(def.restore.dest) ? str(def.restore.dest.at) : null;
+  if (dest !== null) rows.push({ label: t("card.seal.restore_dest"), value: dest });
+  const to = isRec(def.notify) && Array.isArray(def.notify.to) ? def.notify.to.filter((x): x is string => typeof x === "string") : [];
+  if (to.length > 0) rows.push({ label: t("card.seal.notify_to"), value: to.join(", ") });
+  return rows;
+}
+
 /** 区画 3 の欄: fields の順。別の区画で描く欄は除く。diff は JSON Pointer ごとに 1 行。 */
 export function changeFieldRows(op: string, plan: Record<string, unknown>, t: Translate, costShown: boolean): CardRow[] {
   const spec = CARD_FIELDS[op];
@@ -116,8 +140,7 @@ export function changeFieldRows(op: string, plan: Record<string, unknown>, t: Tr
     ...(costShown ? YEN_FIELDS : []), // 区画 5 に描く
   ];
   const rows: CardRow[] = [];
-  const host = op === "seal" && isRec(plan.definition) && isRec(plan.definition.source) ? plan.definition.source.host : undefined;
-  if (typeof host === "string" && has(t, fieldKey(op, "definition"))) rows.push({ label: t(fieldKey(op, "definition")), value: host });
+  if (op === "seal") rows.push(...sealDefinitionRows(plan.definition, t));
   for (const n of spec.fields) {
     if (skip.includes(n) || plan[n] === undefined) continue;
     const v = plan[n];

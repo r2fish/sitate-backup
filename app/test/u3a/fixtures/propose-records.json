@@ -276,5 +276,48 @@
   "precondition_hash": "sha256:11904b83ec4bb7dc5898a3f8e5c16fe0ce7936f35951f37deec2b649c2a43c0d",
   "proposed_at": "2027-03-01T00:00:00Z",
   "target": null
+ },
+ {
+  "args": {
+   "notify": {
+    "to": [
+     "a@x",
+     "b@x"
+    ]
+   }
+  },
+  "canonical_hash": "sha256:5484c2b888301e572111111bc944389100a729fc1f6d3a5d68de830545fb5258",
+  "change_id": "c-20270301-0001",
+  "delay_hours": 0,
+  "expires_at": "2027-03-08T00:00:00Z",
+  "op": "notify-add",
+  "plan": {
+   "after": {
+    "to": [
+     "a@x",
+     "b@x"
+    ]
+   },
+   "before": {
+    "heartbeat_ref": null,
+    "smtp_ref": null,
+    "to": [
+     "a@x"
+    ]
+   },
+   "conflicts": [],
+   "errors": [],
+   "machine": [],
+   "proof_required": [
+    "b@x"
+   ],
+   "reversible": true
+  },
+  "precondition_hash": "sha256:fffcd53ea6ebc5f2c36e5af3990d57a1a58a4f7c78f8d391390ddbbd766584ea",
+  "proposed_at": "2027-03-01T00:00:00Z",
+  "target": {
+   "section": "notify",
+   "section_hash_before": "sha256:5d6a78a3e96b8b92a53e3caef0f93e4a05e8b4533d7ccb7ce029d4b16d487854"
+  }
  }
 ]

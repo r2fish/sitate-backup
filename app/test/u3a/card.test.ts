@@ -95,12 +95,17 @@ test("attest の本文と note は別枠", () => {
   assert.ok(c.sections.find((s) => s.no === 9)!.lines.includes("NOTE-X"));
 });
 
-test("確認語の入力欄は proof_required の宛先ごとに 1 つ、machine には置かない", () => {
-  const rec = sealRecord({ proof_required: ["a@example.test", "b@example.test"], machine: ["hook"] });
+// 実物の propose の記録(核が書き出した固定ファイル)の形で確かめる: seal は plan.definition.notify.to、notify-add は plan.proof_required[] と machine[]。
+test("確認語の入力欄は宛先ごとに 1 つ: seal は定義の notify.to、notify-add は proof_required(machine には置かない)", () => {
+  const seal = sealRecord();
+  (seal.plan as Record<string, unknown>).definition = { notify: { to: ["a@example.test", "b@example.test"] }, source: { host: "app01.example.internal" } };
+  seal.canonical_hash = canonicalHash(seal);
+  assert.deepEqual(buildCard(seal, { t }).proofRecipients, ["a@example.test", "b@example.test"]);
+  const rec = sealRecord({ proof_required: ["a@example.test"], machine: ["hook"] });
   rec.op = "notify-add";
   rec.canonical_hash = canonicalHash(rec);
   const c = buildCard(rec, { t });
-  assert.deepEqual(c.proofRecipients, ["a@example.test", "b@example.test"]);
+  assert.deepEqual(c.proofRecipients, ["a@example.test"]);
   assert.ok(allText(c).includes("card.proof.machine_heading"));
 });
 

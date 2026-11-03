@@ -33,8 +33,8 @@ func sshErr(err error) error {
 		return newErr(contract.CodeRestoreHostkeyMismatch, map[string]any{"expected_fp": hk.Pinned, "seen_fp": hk.Seen, "session_id": nil})
 	case errors.As(err, &se) && se.Reason == contract.SSHReasonAuth:
 		return newErr(contract.CodeRestoreHostDenied, map[string]any{"reason": "auth"})
-	case errors.As(err, &se) && se.Reason == contract.SSHReasonConnect:
-		return newErr(contract.CodeStorageUnreachable, map[string]any{"target": "restore_host", "reason": "connect", "http_status": nil})
+	case errors.As(err, &se) && (se.Reason == contract.SSHReasonConnect || se.Reason == contract.SSHReasonTimeout):
+		return newErr(contract.CodeStorageUnreachable, map[string]any{"target": "restore_host", "reason": se.Reason, "http_status": nil})
 	case errors.As(err, &se):
 		return internalErr("contract")
 	}

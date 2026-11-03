@@ -31,7 +31,7 @@ func TestEnrollGetsKeyTextNotJSONLiteral(t *testing.T) {
 		if _, err := e.a.ApplyEnroll(ctx, p.ChangeID, 0); err != nil {
 			t.Fatalf("%s: %v", name, err)
 		}
-		if len(en.in) != 1 || en.in[0].Admin == nil || string(en.in[0].Admin.Reveal()) != tc.want {
+		if len(en.in) != 1 || len(en.admin) != 1 || en.admin[0] != tc.want {
 			t.Errorf("%s: 登録に渡った秘密の数 = %d(鍵の文字列 %q のはず)", name, len(en.in), tc.want)
 		}
 	}

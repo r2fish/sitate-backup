@@ -61,6 +61,9 @@ func (a *Approval) ApplyEnroll(ctx context.Context, changeID string, pos int) (c
 	if err != nil {
 		return contract.StepResult{}, err
 	}
+	if in.Admin != nil {
+		defer in.Admin.Wipe() // 管理用資格情報は登録が終わったらメモリから消す
+	}
 	res, err := a.Enroller.Enroll(ctx, in)
 	if err != nil {
 		var ce *contract.Error

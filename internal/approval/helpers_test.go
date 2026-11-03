@@ -130,11 +130,17 @@ func (c *candState) ValidateDef(_ ctxT, d []byte, _ bool) ([]byte, string, json.
 	return d, c.defHash, json.RawMessage(`[]`), nil
 }
 
-// recEnroller は登録の入力を覚える。
-type recEnroller struct{ in []contract.EnrollInput }
+// recEnroller は登録の入力を覚える。admin は呼ばれた時点の管理用資格情報の値(登録の後に核が消すので、入力の Admin では読めない)。
+type recEnroller struct {
+	in    []contract.EnrollInput
+	admin []string
+}
 
 func (r *recEnroller) Enroll(_ ctxT, in contract.EnrollInput) (contract.EnrollResult, error) {
 	r.in = append(r.in, in)
+	if in.Admin != nil {
+		r.admin = append(r.admin, string(in.Admin.Reveal()))
+	}
 	return contract.EnrollResult{}, nil
 }
 

@@ -82,12 +82,17 @@ func eqPtr(a, b *string) bool { return (a == nil && b == nil) || (a != nil && b 
 // 変更前後の notify.to の差(足した宛先。smtp_ref を替えたときは人向けのすべての宛先)から核が計算する。
 func (a *Approval) checkNotify(ctx context.Context, kind string, args, plan map[string]json.RawMessage) error {
 	var after, before notifySection
-	if json.Unmarshal(args["notify"], &after) != nil {
-		return argErr("--notify", "format")
-	}
 	norm, _, err := a.State.ReadDef(ctx)
 	if err != nil {
 		return err
+	}
+	canon, err := a.checkSection(ctx, norm, "notify", args["notify"])
+	if err != nil {
+		return err
+	}
+	args["notify"] = canon
+	if json.Unmarshal(args["notify"], &after) != nil {
+		return argErr("--notify", "format")
 	}
 	var d struct {
 		Notify notifySection `json:"notify"`
