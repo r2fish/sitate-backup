@@ -264,3 +264,14 @@ U1f-1 の途中から: `--snapshot-key-stdin` の標準入力の終わりの `RU
 - 「アダプタの無い事業者」の判定の出所が仕様に無い。配布物は常に `b2` を同梱し、`bucket check` は `--adapter` を受けないので、B2 以外の事業者でも `b2` の `check` を呼ぶ。`untested` の経路に実物の入口が無い。
 - seal の前は候補の復元先へ `restore-test` がスナップショット鍵を渡す(D-0025 の 5 の範囲。E4 の修正で初めて動く)。乗っ取られたエージェントが seal の前に候補の `restore.dest` を替えると、取得済みのデータを読める。消せるようにはならない。残るリスクの表にあるかを確かめてほしい。
 - `mlock`・`PR_SET_DUMPABLE` の呼び出しが `internal/`・`cmd/` に無い(仕様 3.1.1「鍵のメモリ」)。実装の欠けとして次の WP で扱う。
+
+## 33. 鍵のメモリと gate 経由の起動(2026-11-03。裁定の依頼)
+
+仕様 3.1.1 の「鍵のメモリ」を `mlockall(MCL_CURRENT|MCL_ONFAULT)` で実装した(`internal/keys/memguard_linux.go`)。Go の鍵の写しはヒープに散るのでプロセス全体を固定する。カーネルは仮想サイズが `RLIMIT_MEMLOCK` を超えると拒むので、無制限か `CAP_IPC_LOCK` のときだけ成功する。
+
+- systemd の単位は `LimitMEMLOCK=infinity` で成功する見込み。`gate` 経由と直接の起動は `sitate` ユーザーの既定の上限に当たり、毎回 `MLOCK_FAILED` が出る見込み(開発用コンテナの上限 8192 KB で失敗を確かめた。実物の `gate` 経由では未確認)。エージェントが呼ぶたびに警告が封筒に載る。
+- 案 A: `bootstrap` が `/etc/security/limits.d/` に `sitate` の `memlock unlimited` を置き、`sshd` の PAM で効かせる。案 B: 手順書の確認項目にして、警告は残す。案 C: 鍵の領域だけを固定する(既定の 8 MB で足りる見込み。`contract.Secret` と全パッケージの変更が要り、ヒープの写しは残る)。案 D: 警告の扱いを `doctor` の 1 回にして、毎回は出さない。
+
+導入の話の流れに毎回の警告が混ざるので、A2 の前に決めたい。
+
+急がない疑義: 導入中に飛ばした結果 `{"skipped":true,"reason":"setup_incomplete"}` は結果のスキーマに形が無い。`init` の再実行で `journal/pre-master` へ戻す `write_intent` の平文は、`probe/` のほかに `repo.json`・`keyring/` などのキー名を含む(秘密は含まない)。
