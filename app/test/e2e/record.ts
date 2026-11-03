@@ -1,6 +1,6 @@
 // 記録(作業指示書 5.14 の完了条件 12、GB-126): 1 件 1 行の JSON。時刻と種類を持つ。引数の値・参照名・秘密は出さない。
 // 記録を書く直前に、人の役の秘密の値(そのままの文字列と base64 の表記)が含まれていないかを検査し、含まれていれば値を伏せて `secret_redacted` を数える(防御。通常は 0)。
-import { appendFileSync, mkdirSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, renameSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 export class Recorder {
@@ -34,4 +34,17 @@ export class Recorder {
   }
 
   count(kind: string): number { return this.counts.get(kind) ?? 0; }
+}
+
+const pad = (n: number): string => String(n).padStart(2, "0");
+
+/** `--out` に前の回の記録があれば、record.<日時>.jsonl に退避する(要約に混ぜない。予行の b2-preflight.sh と同じ形)。退避先の名前を返す。 */
+export function archiveExisting(outDir: string, now: Date = new Date(), fileName = "record.jsonl"): string | null {
+  const file = join(outDir, fileName);
+  if (!existsSync(file) || statSync(file).size === 0) return null;
+  const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}T${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  let to = join(outDir, `record.${stamp}.jsonl`);
+  for (let i = 1; existsSync(to); i++) to = join(outDir, `record.${stamp}-${i}.jsonl`);
+  renameSync(file, to);
+  return to;
 }

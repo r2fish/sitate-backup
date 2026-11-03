@@ -10,7 +10,7 @@ import { Human } from "./human.ts";
 import type { HumanDeps, Outcome } from "./human.ts";
 import type { Port } from "./port.ts";
 import type { Recorder } from "./record.ts";
-import { isQuestion, locationMessage, matchQuestion } from "./script.ts";
+import { isQuestion, lastSentence, locationMessage, matchQuestion, questionForm } from "./script.ts";
 import type { A2Script, Answers, QId } from "./script.ts";
 import type { TestEvent } from "../../src/testing/driver-server.ts";
 
@@ -22,6 +22,8 @@ const MAX_INTERVENTIONS = 40;
 const RATE_WAIT_MS = 60000;
 const RATE_RETRY_MAX = 5;
 const LAST_STEP = 13;
+/** 続行の介入の直前の応答の最後の文が同じなら、この回数目で「同じ依頼の繰り返し」の印を付ける(D-0171)。 */
+const REPEAT_MARK = 3;
 
 export interface LoopDeps {
   readonly port: Port;
@@ -46,7 +48,8 @@ export class A2Loop {
   readonly #human: Human;
   readonly stepsPassed = new Set<number>();
   readonly marks: Mark[] = [];
-  readonly counts = { questions: 0, unscripted: 0, continues: 0, turnLimit: 0, toolCalls: 0, withheld: 0, rateRetries: 0 };
+  readonly counts = { questions: 0, unscripted: 0, continues: 0, turnLimit: 0, toolCalls: 0, withheld: 0, rateRetries: 0, questionNotLast: 0, multiQuestion: 0, repeatedRequests: 0 };
+  readonly #repeats = new Map<string, number>();
   status: ReturnType<typeof judgeStatus> | null = null;
   #lines = 0;
   #active = false;
@@ -136,11 +139,28 @@ export class A2Loop {
   async #drainLines(): Promise<void> {
     const lines = await this.#d.port.lines();
     for (const l of lines.slice(this.#lines)) {
-      if (l.role === "agent") { this.#lastAgent = l.text; this.#d.rec.write("displayed_reply", { text: l.text }); }
+      if (l.role === "agent") { this.#lastAgent = l.text; this.#d.rec.write("displayed_reply", { text: l.text }); this.#checkForm(l.text); }
       else if (l.role === "tool") this.#onToolLine(l.text);
       else if (l.role === "notice") this.#onNotice(l.text);
     }
     this.#lines = lines.length;
+  }
+
+  /** 問いの出し方の規則(D-0171)の違反を数える。応答の本文は displayed_reply にある。 */
+  #checkForm(text: string): void {
+    const f = questionForm(text, this.#d.endings);
+    if (f.notLast) { this.counts.questionNotLast += 1; this.#d.rec.write("question_not_last", { count: this.counts.questionNotLast }); }
+    if (f.multi) { this.counts.multiQuestion += 1; this.#d.rec.write("multi_question", { count: this.counts.multiQuestion }); }
+  }
+
+  /** 続行の介入が同じ依頼(直前の応答の最後の文が同じ)への返しになっていないか。3 回目で印を付ける。 */
+  #noteContinue(): void {
+    this.counts.continues += 1; this.marks.push("intervene");
+    const key = lastSentence(this.#lastAgent);
+    if (key === "") return;
+    const n = (this.#repeats.get(key) ?? 0) + 1;
+    this.#repeats.set(key, n);
+    if (n === REPEAT_MARK) { this.counts.repeatedRequests += 1; this.#d.rec.write("repeated_request", { sentence: key.slice(0, 120), times: n }); }
   }
 
   #onToolLine(text: string): void {
@@ -195,7 +215,7 @@ export class A2Loop {
     if (this.#lastRun?.outcome === "failure" && this.#lastRun.code === "LLM_RATE_LIMITED") return this.#rateRetry();
     if (this.#lastRun?.outcome === "failure") return this.#say("turn_limit_input", this.#d.script.turn_limit_input, () => { this.counts.turnLimit += 1; });
     const reply = this.#lastAgent;
-    if (!isQuestion(reply, this.#d.endings)) return this.#say("continue_intervention", this.#d.script.continue_input, () => { this.counts.continues += 1; this.marks.push("intervene"); });
+    if (!isQuestion(reply, this.#d.endings)) return this.#say("continue_intervention", this.#d.script.continue_input, () => this.#noteContinue());
     return this.#answer(reply);
   }
 

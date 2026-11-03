@@ -109,13 +109,27 @@ export function locationMessage(a: Answers): string {
   return `バックアップサーバー: ${a.backupHost}(SSH 22 番)、管理アカウント: ${a.adminUser}。\n元サーバー: ${a.sourceHost}(SSH 22 番)、管理アカウント: ${a.adminUser}。管理アカウントの秘密鍵は、秘密の入力ボックスに入れます。`;
 }
 
+const SENTENCE_SPLIT = /(?<=[。.!！?？\n])/;
+const sentencesOf = (reply: string): string[] => reply.trim().split(SENTENCE_SPLIT).map((x) => x.trim()).filter((x) => x !== "");
+const endsAsQuestion = (sentence: string, endings: readonly string[]): boolean => {
+  const t = sentence.replace(/[\s。.]+$/u, "");
+  return /[?？]$/u.test(t) || endings.some((e) => t.endsWith(e));
+};
+
 /** 問いの見分け方(spec 3.8): 応答の最後の文が疑問符で終わるか、規則ファイルの「問いの終わり方」で終わる。 */
 export function isQuestion(reply: string, endings: readonly string[]): boolean {
-  const text = reply.trim();
-  const sentences = text.split(/(?<=[。.!！?？\n])/).map((x) => x.trim()).filter((x) => x !== "");
-  const last = (sentences.at(-1) ?? "").replace(/[\s。.]+$/u, "");
-  return /[?？]$/u.test(last) || endings.some((e) => last.endsWith(e));
+  return endsAsQuestion(sentencesOf(reply).at(-1) ?? "", endings);
 }
+
+/** 問いの出し方の規則(spec 3.7、D-0171)の違反: 問いを含む発話の最後の文が問いでない(question_not_last)、問いが 2 つ以上(multi_question)。 */
+export function questionForm(reply: string, endings: readonly string[]): { notLast: boolean; multi: boolean } {
+  const qs = sentencesOf(reply).map((x) => endsAsQuestion(x, endings));
+  const n = qs.filter(Boolean).length;
+  return { notLast: n > 0 && qs.at(-1) !== true, multi: n > 1 };
+}
+
+/** 続行の介入の直前の応答の最後の文(同じ依頼の繰り返しの検出の鍵)。 */
+export const lastSentence = (reply: string): string => (sentencesOf(reply).at(-1) ?? "").replace(/\s+/g, "");
 
 /** 台本の Q の語に当たる数が最も多い Q(同数は番号の早い方)。どれにも当たらなければ null(台本に無い問い)。 */
 export function matchQuestion(reply: string, s: A2Script): QId | null {

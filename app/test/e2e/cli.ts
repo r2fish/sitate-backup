@@ -12,7 +12,7 @@ import { runA6 } from "./a6-loop.ts";
 import { makeFakeAgent } from "./fake-agent.ts";
 import { launchApp, prepareState, disposeState, keychainItems, appRoot } from "./launch.ts";
 import { startLlmEndpoint } from "./llm-endpoint.ts";
-import { Recorder } from "./record.ts";
+import { archiveExisting, Recorder } from "./record.ts";
 import { answersFor, readJson, secretsOf } from "./script.ts";
 import type { A2Script, InjectionScript } from "./script.ts";
 import { addExtra, headerFields, hookWordFrom, loadCatalog, placeDoubles, questionEndings } from "./support.ts";
@@ -40,6 +40,8 @@ async function main(): Promise<number> {
   const script = readJson<A2Script & InjectionScript>(resolve(v.script));
   const kind = "questions" in script ? "A2" : "A6";
   const answers = answersFor(v.mode, name, repo, process.env, kind === "A2", v.b2);
+  const archived = archiveExisting(resolve(v.out));
+  if (archived !== null) console.log(`driver: 前の回の記録を退避した: ${archived}`);
   const rec = new Recorder(resolve(v.out), secretsOf(answers));
   const catalog = loadCatalog(repo, v.lang);
   rec.write("header", { driver: kind, mode: v.mode, variant: v.variant, lang: v.lang, script_version: script.version, ...headerFields(repo) });
@@ -94,7 +96,7 @@ async function runA2(script: A2Script, answers: ReturnType<typeof answersFor>, r
   const out = await loop.run();
   const c = loop.counts;
   rec.write("a2_fields", { steps_passed: [...loop.stepsPassed].sort((a, b) => a - b), questions: c.questions, unscripted_questions: c.unscripted, continue_interventions: c.continues, turn_limit_inputs: c.turnLimit,
-    human_work: [...loop.humanWork].sort(), human_work_count: loop.humanWork.size, tool_calls: c.toolCalls, withheld_replies: c.withheld, status: loop.status, self_recovery: loop.recovery() });
+    human_work: [...loop.humanWork].sort(), human_work_count: loop.humanWork.size, tool_calls: c.toolCalls, withheld_replies: c.withheld, question_not_last: c.questionNotLast, multi_question: c.multiQuestion, repeated_requests: c.repeatedRequests, status: loop.status, self_recovery: loop.recovery() });
   return out;
 }
 
