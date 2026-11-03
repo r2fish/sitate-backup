@@ -1,0 +1,68 @@
+sitate_init_storage: ok=true
+sitate_init_storage: ok=true
+sitate_bucket_check: ok=true
+  permissions: op=put key_role=write expected=allow actual=allow
+  permissions: op=put key_role=read expected=deny actual=deny
+  permissions: op=list_versions key_role=write expected=allow actual=allow
+  permissions: op=list_versions key_role=read expected=allow actual=allow
+  permissions: op=get_version key_role=write expected=allow actual=allow
+  permissions: op=get_version key_role=read expected=allow actual=allow
+  permissions: op=get_retention key_role=write expected=allow actual=allow
+  permissions: op=get_bucket_config key_role=write expected=allow actual=allow
+  permissions: op=extend_retention key_role=write expected=allow actual=allow
+  permissions: op=extend_retention key_role=read expected=deny actual=deny
+  permissions: op=delete_version key_role=write expected=allow actual=allow
+  permissions: op=delete_version key_role=read expected=deny actual=deny
+  permissions: op=retention_shorten key_role=write expected=deny actual=deny
+  permissions: op=retention_shorten key_role=read expected=deny actual=deny
+  permissions: op=unversioned_delete key_role=write expected=deny actual=allow  <-- 不一致
+  permissions: op=unversioned_delete key_role=read expected=deny actual=deny
+  permissions: op=bucket_policy key_role=write expected=deny actual=deny
+  permissions: op=bucket_policy key_role=read expected=deny actual=deny
+  permissions: op=lifecycle key_role=write expected=deny actual=deny
+  permissions: op=lifecycle key_role=read expected=deny actual=deny
+  permissions: op=default_retention key_role=write expected=deny actual=deny
+  permissions: op=default_retention key_role=read expected=deny actual=deny
+  permissions: op=governance_bypass key_role=write expected=deny actual=deny
+  permissions: op=governance_bypass key_role=read expected=deny actual=deny
+  permissions: op=legal_hold key_role=write expected=deny actual=deny
+  permissions: op=legal_hold key_role=read expected=deny actual=deny
+  permissions: op=bucket_delete key_role=write expected=deny actual=deny
+  permissions: op=bucket_delete key_role=read expected=deny actual=deny
+  permissions: op=key_manage key_role=write expected=deny actual=deny
+  permissions: op=key_manage key_role=read expected=deny actual=deny
+sitate_backup: ok=true
+sitate_restore_test: ok=true
+sitate_extend: ok=true
+sitate_bucket_check: ok=true
+  permissions: op=put key_role=write expected=allow actual=allow
+  permissions: op=put key_role=read expected=deny actual=deny
+  permissions: op=list_versions key_role=write expected=allow actual=allow
+  permissions: op=list_versions key_role=read expected=allow actual=allow
+  permissions: op=get_version key_role=write expected=allow actual=allow
+  permissions: op=get_version key_role=read expected=allow actual=allow
+  permissions: op=get_retention key_role=write expected=allow actual=allow
+  permissions: op=get_bucket_config key_role=write expected=allow actual=allow
+  permissions: op=extend_retention key_role=write expected=allow actual=allow
+  permissions: op=extend_retention key_role=read expected=deny actual=deny
+  permissions: op=delete_version key_role=write expected=allow actual=allow
+  permissions: op=delete_version key_role=read expected=deny actual=deny
+  permissions: op=retention_shorten key_role=write expected=deny actual=deny
+  permissions: op=retention_shorten key_role=read expected=deny actual=deny
+  permissions: op=unversioned_delete key_role=write expected=deny actual=allow  <-- 不一致
+  permissions: op=unversioned_delete key_role=read expected=deny actual=deny
+  permissions: op=bucket_policy key_role=write expected=deny actual=deny
+  permissions: op=bucket_policy key_role=read expected=deny actual=deny
+  permissions: op=lifecycle key_role=write expected=deny actual=deny
+  permissions: op=lifecycle key_role=read expected=deny actual=deny
+  permissions: op=default_retention key_role=write expected=deny actual=deny
+  permissions: op=default_retention key_role=read expected=deny actual=deny
+  permissions: op=governance_bypass key_role=write expected=deny actual=deny
+  permissions: op=governance_bypass key_role=read expected=deny actual=deny
+  permissions: op=legal_hold key_role=write expected=deny actual=deny
+  permissions: op=legal_hold key_role=read expected=deny actual=deny
+  permissions: op=bucket_delete key_role=write expected=deny actual=deny
+  permissions: op=bucket_delete key_role=read expected=deny actual=deny
+  permissions: op=key_manage key_role=write expected=deny actual=deny
+  permissions: op=key_manage key_role=read expected=deny actual=deny
+driver: 終了コード 0: 導入が完了し、機械で判定する項目を満たした
