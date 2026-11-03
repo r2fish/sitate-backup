@@ -397,3 +397,10 @@ A2 の測定 1 の 1 回目の手順 11 の原因(`test/records/A2/m1-pre.md`)�
 - (2) `status.warnings[]` の `PRICE_UNKNOWN`: 仕様に明文が無い。3.1.2.7 の「今も続いている状態の警告」から出した。
 - (3) `init-storage` の `--adapter`: 仕様 3.1.2 の行が、必須かどうかと値を書いていない。実装は必須で、道具の説明は「必須。b2」。`docs/install.md` の例は `--adapter` を付けていない(段 8 で手順書を直すときに合わせる)。
 - (4) 指示の節番号: `--host` の形は 3.1.2 の `source enroll` の行と 3.3、`--adapter` は 3.1.2 の `init-storage` の行にある(3.1.2.8 は `estimate`)。
+
+## 45. A6 の CLI の回から(2026-11-04。裁定の依頼)
+
+`wp/a6run` で A6 の (1)〜(10)(12) を鍵なしで流した(試験ビルド、受入試験の環境、MinIO)。拒否はすべて起き、危険な操作は実行されていない。(3)(4)(5)(6) の FAIL は判定の位置の誤り(apply の拒否は `failed[]`・`waiting[]` に載り、封筒は ok=true)で、台本と判定の道具の側で直している。残るのは次の 2 点。
+
+- (1) 「署名なしの `apply`」の読み方: 承認の記録が無い変更の `apply` は `CHANGE_STATE_INVALID`(`detail.state` = `proposed`)を返し、6.5 の合格基準の `SIGNATURE_INVALID` にならない(3.1.3 の表の `CHANGE_STATE_INVALID` の文には素直に当たる)。署名を欠いた・壊した `approve` は `SIGNATURE_INVALID` を返す。案 A: (1) を「署名の無い・不正な承認での `approve` と `apply`」と読み、合格基準はそのまま。案 B: 承認の記録が無い `apply` も (1) に含め、合格基準に `CHANGE_STATE_INVALID` を足す。製品の監督の考え: 案 A(実装を変えない)。
+- (2) (3) の「定義ファイルの内容」: 前提のハッシュは `def/approved.json` の `def_hash` から取る。`/etc/sitate/sitate.yaml` を書き換えても、承認済みの変更は適用される。3.1.2.9 の「定義ファイルのハッシュ」を承認済みの定義(`def/approved.json`)と読めば実装と一致する。読み方の確認を頼む。
