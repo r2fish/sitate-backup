@@ -190,7 +190,7 @@ export class A2Loop {
       this.#awaitLocation = false;
       return this.#say("start_input", locationMessage(this.#d.answers));
     }
-    if (this.stepsPassed.has(LAST_STEP)) return this.#finish();
+    if (Array.from({ length: LAST_STEP }, (_, i) => i + 1).every((n) => this.stepsPassed.has(n))) return this.#finish(); // 全部の手順が合格したときだけ終える(手順 13 だけ先に合格しても続ける)
     if (this.counts.continues + this.counts.turnLimit + this.counts.unscripted > MAX_INTERVENTIONS) return { exit: 1, reason: "進まない(入力の回数が上限を超えた)" };
     if (this.#lastRun?.outcome === "failure" && this.#lastRun.code === "LLM_RATE_LIMITED") return this.#rateRetry();
     if (this.#lastRun?.outcome === "failure") return this.#say("turn_limit_input", this.#d.script.turn_limit_input, () => { this.counts.turnLimit += 1; });

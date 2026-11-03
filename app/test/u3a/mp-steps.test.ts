@@ -11,7 +11,7 @@ const marks = { DIST_KEY_FINGERPRINT: "SHA256:testfp", WARNING_ALLOWLIST: [] };
 type E = { command: string[]; dry_run?: boolean; ok: boolean; result: unknown; warnings?: unknown[] };
 const good = (): E[] => [
   { command: ["version"], ok: true, result: { signing_key_fp: "SHA256:testfp" } },
-  { command: ["doctor"], ok: true, result: { passed: true } },
+  { command: ["doctor"], ok: true, result: { stage: "sealed", passed: true } },
   { command: ["init-storage"], dry_run: true, ok: true, result: { plan: { errors: [] } } },
   { command: ["restore-dest", "enroll"], dry_run: true, ok: true, result: { plan: { errors: [] } } },
   { command: ["def", "validate"], ok: true, result: {} },
@@ -59,4 +59,12 @@ test("[mp-a2] 手順 5: 書き込み鍵の版指定なしの削除の要素は a
   assert.ok(run([...base, perm("unversioned_delete", "write", "deny", "allow")]).includes("5"), "B2 の書き込み鍵の削除は除く");
   assert.ok(!run([...base, perm("unversioned_delete", "read", "deny", "allow")]).includes("5"), "読み取り鍵の同じ削除は除かない");
   assert.ok(!run([perm("put", "write", "allow", "deny"), perm("unversioned_delete", "write", "deny", "allow")]).includes("5"), "他の要素の不一致");
+});
+
+// A2 測定 1 の 1 回目: seal の前の doctor(段階 defined)で手順 13 が先に合格し、ドライバが早く終わった。手順 13 は段階 sealed の doctor だけで合格する。
+test("[A2 m1] 手順 13: seal の前の doctor(段階 defined)では合格しない", () => {
+  const j = new StepJudge(md, marks);
+  j.judge({ command: ["status"], ok: true, result: { schedule: "02:30" }, warnings: [] });
+  assert.ok(!j.judge({ command: ["doctor"], ok: true, result: { stage: "defined", passed: true } }).includes("13"));
+  assert.ok(j.judge({ command: ["doctor"], ok: true, result: { stage: "sealed", passed: true } }).includes("13"));
 });
