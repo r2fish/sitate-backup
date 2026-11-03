@@ -18,7 +18,7 @@ import { newRunId } from "../ssh/core-runner.ts";
 import type { TargetStore } from "../ssh/target-store.ts";
 import { DEFAULT_PLATFORMS, supported } from "./platform.ts";
 import type { PlatformList } from "./platform.ts";
-import { LIBEXEC, Remote, RemoteDisconnected, SITATE_BIN, SITATE_USER, SSHD_DROPIN, SSHD_DROPIN_BODY, STATE_DIR, shq } from "./remote.ts";
+import { LIBEXEC, LIMITS_DROPIN, LIMITS_DROPIN_BODY, Remote, RemoteDisconnected, SITATE_BIN, SITATE_USER, SSHD_DROPIN, SSHD_DROPIN_BODY, STATE_DIR, shq } from "./remote.ts";
 
 const { utils } = ssh2;
 
@@ -221,6 +221,9 @@ async function prerequisites(r: Remote): Promise<void> {
     ["linger", `loginctl enable-linger ${SITATE_USER}`],
   ];
   for (const [step, cmd] of stepsList) if ((await r.root(cmd)).code !== 0) throw new Fail("BOOTSTRAP_PACKAGE_FAILED", { step });
+  // memlock の上限(同じ内容で置き直すので繰り返しても変わらない)。効くかどうかは sshd の PAM 次第で、ここでは置くだけ。
+  const lim = await r.root(`cat > ${shq(LIMITS_DROPIN)} && chmod 0644 ${shq(LIMITS_DROPIN)}`, LIMITS_DROPIN_BODY);
+  if (lim.code !== 0) throw new Fail("BOOTSTRAP_PACKAGE_FAILED", { step: "memlock" });
 }
 
 /** 段 (6): authorized_keys の管理用の行を登録する。置き換えた行の数を返す。別の鍵の行が既にあれば(rekey でなければ)BOOTSTRAP_ALREADY_DONE。 */

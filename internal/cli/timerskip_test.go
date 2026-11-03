@@ -83,3 +83,18 @@ func TestTimerRestoreTestSkippedWhileSetupIncomplete(t *testing.T) {
 		t.Fatalf("タイマーの restore-test は前提が欠けると飛ばすはず: %v %v", res, err)
 	}
 }
+
+// 飛ばした結果(spec 3.1.2)は CLI の結果の契約(cli/envelope.json)を通る。backup と restore-test の両方。
+func TestTimerSkippedResultPassesEnvelopeContract(t *testing.T) {
+	_, res, err := timerBackup(t, func(f *flowEnv) { setItem(t, f, "sealed", "false") }, true)
+	if err != nil || res["skipped"] != true {
+		t.Fatalf("飛ばされなかった: %v %v", res, err)
+	}
+	for _, words := range [][]string{{"backup"}, {"restore-test"}} {
+		b, _ := json.Marshal(map[string]any{"schema": "sitate.out/v1", "command": words, "ok": true, "dry_run": false,
+			"run_id": "r-20261018T173000Z-3f9a", "result": res, "warnings": []any{}, "error": nil})
+		if err := contract.Validate("cli/envelope.json", b); err != nil {
+			t.Errorf("%v: 契約を通らない: %v", words, err)
+		}
+	}
+}

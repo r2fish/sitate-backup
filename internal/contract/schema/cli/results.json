@@ -2842,6 +2842,16 @@
    }
   },
   "backup": {
+   "anyOf": [
+    {
+     "$ref": "#/$defs/backup_done"
+    },
+    {
+     "$ref": "#/$defs/timer_skipped"
+    }
+   ]
+  },
+  "backup_done": {
    "type": "object",
    "required": [
     "snapshot_ref",
@@ -3246,6 +3256,16 @@
    }
   },
   "restore_test": {
+   "anyOf": [
+    {
+     "$ref": "#/$defs/restore_test_done"
+    },
+    {
+     "$ref": "#/$defs/timer_skipped"
+    }
+   ]
+  },
+  "restore_test_done": {
    "type": "object",
    "required": [
     "backup_ref",
@@ -4540,6 +4560,22 @@
        }
       }
      }
+    }
+   }
+  },
+  "timer_skipped": {
+   "type": "object",
+   "required": [
+    "skipped",
+    "reason"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "skipped": {
+     "const": true
+    },
+    "reason": {
+     "const": "setup_incomplete"
     }
    }
   }

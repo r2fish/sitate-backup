@@ -10,6 +10,9 @@ export const STATE_DIR = "/var/lib/sitate";
 export const LIBEXEC = "/usr/libexec/sitate";
 export const SSHD_DROPIN = "/etc/ssh/sshd_config.d/00-sitate.conf";
 export const SSHD_DROPIN_BODY = "PasswordAuthentication no\nPermitRootLogin prohibit-password\n";
+/** `gate` 経由の起動でも鍵のメモリを固定できるよう、sshd の PAM(pam_limits)が読む上限(spec 3.1.1 「鍵のメモリ」、3.7 段 (5)。D-0163)。 */
+export const LIMITS_DROPIN = "/etc/security/limits.d/sitate.conf";
+export const LIMITS_DROPIN_BODY = "sitate - memlock unlimited\n";
 
 export interface RemoteResult { readonly code: number; readonly out: string }
 

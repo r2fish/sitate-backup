@@ -1090,6 +1090,20 @@
   }
  },
  "extra": {
+  "backup_timer_skipped": {
+   "def": "backup",
+   "result": {
+    "skipped": true,
+    "reason": "setup_incomplete"
+   }
+  },
+  "restore_test_timer_skipped": {
+   "def": "restore_test",
+   "result": {
+    "skipped": true,
+    "reason": "setup_incomplete"
+   }
+  },
   "init_adopt": {
    "def": "init",
    "result": {
@@ -1433,6 +1447,20 @@
   }
  },
  "reject": {
+  "backup_skipped_wrong_reason": {
+   "def": "backup",
+   "result": {
+    "skipped": true,
+    "reason": "other"
+   }
+  },
+  "restore_test_skipped_false": {
+   "def": "restore_test",
+   "result": {
+    "skipped": false,
+    "reason": "setup_incomplete"
+   }
+  },
   "init_key_rotate_with_status": {
    "def": "init",
    "result": {

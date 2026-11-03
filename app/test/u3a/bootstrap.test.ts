@@ -283,6 +283,23 @@ test("bootstrap: omitting port uses the default 22 so the target file stays read
 });
 
 // C2: 実行ファイルが署名付きの adapter.json の sha256 と合わなければ、何も信頼せず BOOTSTRAP_SIGNATURE_INVALID。
+test("bootstrap: stage 5 enables linger and places the memlock limit for sitate (D-0163), the same on a repeat run", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "u3a-bs-"));
+  const host = new FakeHost();
+  const server = await startServer({ acceptAnyKey: true, onExec: host.handler });
+  try {
+    const t = setup(host, server, dir);
+    await runBootstrap(input(server.port), t.deps);
+    assert.ok(host.log.some((c) => c.includes("loginctl enable-linger sitate")), "sitate の linger を有効にする");
+    const lim = "/etc/security/limits.d/sitate.conf";
+    assert.equal(host.files.get(lim)?.toString(), "sitate - memlock unlimited\n");
+    assert.ok(host.log.some((c) => c.includes(lim) && c.includes("chmod 0644")), "モードは 0644");
+    // 繰り返しても同じ内容(冪等)。
+    await runBootstrap(input(server.port), t.deps);
+    assert.equal(host.files.get(lim)?.toString(), "sitate - memlock unlimited\n");
+  } finally { await server.close(); rmSync(dir, { recursive: true, force: true }); }
+});
+
 test("bootstrap: an adapter executable that does not match the signed adapter.json sha256 is BOOTSTRAP_SIGNATURE_INVALID", async () => {
   const dir = mkdtempSync(join(tmpdir(), "u3a-bs-"));
   const host = new FakeHost();
