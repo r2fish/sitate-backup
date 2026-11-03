@@ -13,6 +13,26 @@ import (
 	"github.com/r2fish/sitate-backup/internal/contract"
 )
 
+// TargetOutcome は対象ごとの取得の結果。
+type TargetOutcome struct {
+	ID, Kind, Status  string
+	Files, Bytes      int64
+	ChangedDuringRead int64
+	Dumps             []string // dump の項目(送った順)
+	Errors, Warnings  []ItemRef
+	ErrorsOmitted     int64
+	WarningsOmitted   int64
+	ErrorCode         string // status が failed のとき(それ以外は空)
+	FailInfo                 // failed のとき、その原因コードの detail・next(3.1.3。INTERNAL の detail は component・reason。D-0172)
+	Empty             bool   // アダプタは ok だがエントリが 0 件(核が partial にして警告 TARGET_EMPTY。D-0166)
+}
+
+// FailInfo は failed の対象の detail(他は nil)と next[](他は空)。
+type FailInfo struct {
+	Detail json.RawMessage
+	Next   []contract.Next
+}
+
 func (a *Acquire) fidx() (fileIndex, bool) {
 	if a.Dir == "" || a.Codec == nil || a.KeyS == nil {
 		return fileIndex{}, false
@@ -56,12 +76,14 @@ func (a *Acquire) prevIndex(tid, runID string) (prev []entry, reqPath *string, c
 func targetSpec(t checkTarget) contract.AcquireTarget {
 	var at contract.AcquireTarget
 	at.ID, at.Kind = t.ID, "files"
-	at.Spec.Path = t.Files
-	if t.Postgresql != "" {
-		at.Kind = "postgresql"
-		if t.Port != nil {
-			at.Spec.Port = *t.Port
-		}
+	if t.Postgresql == "" {
+		at.Spec.Path = t.Files
+		return at
+	}
+	// DB の対象の要求の spec は port だけ(path を置かない。受け口は対象 id で DB を引く。spec 3.2.2。D-0172)。
+	at.Kind = "postgresql"
+	if t.Port != nil {
+		at.Spec.Port = *t.Port
 	}
 	return at
 }
@@ -123,11 +145,42 @@ func (a *Acquire) failedTarget(out TargetOutcome, err error, pipe *chunkPipe) (T
 	}
 	var sv *streamViolation
 	if errors.As(err, &sv) {
-		out.ErrorCode = "INTERNAL"
-		return out, nil, nil, nil
+		return violationOutcome(out), nil, nil, nil
 	}
 	out.ErrorCode = failCode(err)
+	out.Detail, out.Next = failDetail(err, out.Kind)
 	return out, nil, nil, nil
+}
+
+// mismatchOutcome は受け口の許可リストと定義が違う対象の失敗(RECEIVER_TARGETS_MISMATCH。detail.target_ids は対象自身)。
+func mismatchOutcome(t checkTarget) TargetOutcome {
+	b, _ := json.Marshal(map[string]any{"target_ids": []string{t.ID}})
+	return TargetOutcome{ID: t.ID, Kind: targetSpec(t).Kind, Status: "failed", ErrorCode: string(contract.CodeReceiverTargetsMismatch), FailInfo: FailInfo{b, []contract.Next{}}}
+}
+
+// violationOutcome は契約違反の対象の失敗: INTERNAL(component: adapter、reason: output。spec 3.1.3)。
+func violationOutcome(out TargetOutcome) TargetOutcome {
+	out.ErrorCode = "INTERNAL"
+	b, _ := json.Marshal(map[string]any{"component": "adapter", "http_status": nil, "kind": "acquire", "name": out.Kind, "reason": "output"})
+	out.Detail, out.Next = b, []contract.Next{}
+	return out
+}
+
+// failDetail は取得アダプタの誤りから、対象の detail・next を決める(error_code と同じ原因コードのもの)。
+// アダプタの終了 1 は error の detail をそのまま使い、核が作った誤りはその detail・next を使う。
+func failDetail(err error, kind string) (json.RawMessage, []contract.Next) {
+	var ce *contract.Error
+	if !errors.As(err, &ce) {
+		return violationOutcome(TargetOutcome{Kind: kind}).Detail, []contract.Next{}
+	}
+	if ce.Code == contract.CodeAdapterError && ce.Adapter != nil && len(ce.Adapter.Detail) > 0 && failCode(err) == ce.Adapter.Code {
+		return ce.Adapter.Detail, []contract.Next{}
+	}
+	next := ce.Next
+	if next == nil {
+		next = []contract.Next{}
+	}
+	return ce.Detail, next
 }
 
 // failCode は取得アダプタの誤りから対象の error_code を決める。アダプタの終了 1 は ADAPTER_ERROR で、error の全体は Error.Adapter にある
@@ -163,16 +216,15 @@ func failCode(err error) string {
 func (a *Acquire) collect(out TargetOutcome, ts *targetStream, raw json.RawMessage, chunks []chunkOut) (TargetOutcome, []entry, []chunkOut, error) {
 	var res contract.AcquireResult
 	if contract.Validate("adapter/acquire.json#/$defs/result", raw) != nil || json.Unmarshal(raw, &res) != nil || !ts.sawEnd {
-		out.ErrorCode = "INTERNAL"
-		return out, nil, nil, nil
+		return violationOutcome(out), nil, nil, nil
 	}
 	ts.setRanges(chunks)
 	ents := ts.liveEntries()
 	sortEntries(ents)
 	out.Status = a.verifiedStatus(ts, ents, res.Status)
 	if out.Status == "violation" {
-		out.Status, out.ErrorCode = "failed", "INTERNAL"
-		return out, nil, nil, nil
+		out.Status = "failed"
+		return violationOutcome(out), nil, nil, nil
 	}
 	out.ChangedDuringRead = ts.changed
 	out.ErrorsOmitted, out.WarningsOmitted = res.Stats.ErrorsOmitted, res.Stats.WarningsOmitted

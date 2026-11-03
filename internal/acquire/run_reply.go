@@ -9,14 +9,16 @@ import (
 )
 
 type backupTargetJSON struct {
-	ID                string  `json:"id"`
-	Status            string  `json:"status"`
-	Bytes             int64   `json:"bytes"`
-	Files             int64   `json:"files"`
-	ChangedDuringRead int64   `json:"changed_during_read"`
-	ErrorsOmitted     int64   `json:"errors_omitted"`
-	WarningsOmitted   int64   `json:"warnings_omitted"`
-	ErrorCode         *string `json:"error_code"`
+	ID                string          `json:"id"`
+	Status            string          `json:"status"`
+	Bytes             int64           `json:"bytes"`
+	Files             int64           `json:"files"`
+	ChangedDuringRead int64           `json:"changed_during_read"`
+	ErrorsOmitted     int64           `json:"errors_omitted"`
+	WarningsOmitted   int64           `json:"warnings_omitted"`
+	ErrorCode         *string         `json:"error_code"`
+	Detail            json.RawMessage `json:"detail"`
+	Next              []contract.Next `json:"next"`
 }
 
 // reply は backup の結果の形の応答。health は取得の結果だけで決めた値(対象が ok でない、または鍵の無いチャンクがあれば incomplete)で、
@@ -30,6 +32,13 @@ func (r IngestResult) reply() (contract.Reply, error) {
 		if t.ErrorCode != "" {
 			c := t.ErrorCode
 			bt.ErrorCode = &c
+		}
+		bt.Next = []contract.Next{}
+		if t.ErrorCode != "" && t.Detail != nil {
+			bt.Detail = t.Detail
+			if t.Next != nil {
+				bt.Next = t.Next
+			}
 		}
 		if t.Status != "ok" {
 			health = "incomplete"

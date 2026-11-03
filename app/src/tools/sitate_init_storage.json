@@ -18,7 +18,8 @@
         "type": "string"
       },
       "adapter": {
-        "type": "string"
+        "type": "string",
+        "description": "保管先準備アダプタの名前(必須。省略できない)。Backblaze B2 を使うときは b2(同梱。bucket check が省略時に使う既定も b2)。"
       },
       "admin_ref": {
         "type": "string",

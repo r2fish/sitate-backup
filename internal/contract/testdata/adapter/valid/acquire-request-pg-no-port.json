@@ -1,0 +1,9 @@
+{
+ "contract": "sitate.acquire/v1",
+ "target": {
+  "id": "t3",
+  "kind": "postgresql",
+  "spec": {}
+ },
+ "previous_index": null
+}

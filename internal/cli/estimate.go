@@ -32,6 +32,8 @@ const (
 	// 引数を省いたときの目安(6.1.1 の入力: 標準例 100/1/5 と上限例 500/5/25 はどちらも対象データの 1 % と 5 %)。
 	dailyRatio = 0.01
 	dumpRatio  = 0.05
+	// costCeilingDefaultYen は cost_ceiling_yen の既定(spec 4.1。要件書の標準例の 1 年目の上限)。
+	costCeilingDefaultYen = 3000
 )
 
 func num(s string) float64 { f, _ := strconv.ParseFloat(s, 64); return f }
@@ -119,7 +121,7 @@ func (d *Deps) estimateNow(ctx context.Context, c contract.Call, pt priceTable) 
 	if row == nil || m.total == nil || m3.total == nil { // 行が無い・要る区分の費目が無い・基本料金か最低料金がある行(3.1.2.8 の分岐 1。missing は storage)
 		warns = append(warns, contract.Warning{Code: contract.CodePriceUnknown, Detail: mustMarshal(map[string]any{"missing": []string{"storage"}}), Next: []contract.Next{}})
 	}
-	ceil, over := ceilingState(haveDef, def.CostCeilingYen, row, m.total, server)
+	ceil, over := ceilingState(def.CostCeilingYen, row, m.total, server)
 	date := any(nil)
 	if row != nil {
 		date = row.CheckedOn
@@ -135,19 +137,20 @@ func (d *Deps) estimateNow(ctx context.Context, c contract.Call, pt priceTable) 
 	return res, warns, nil
 }
 
-// ceilingState は定義の費用の上限と、月額がそれを超えるか(定義が無い・月額が出ないときは比べず null)。
-func ceilingState(haveDef bool, ceilingYen *float64, row *priceRow, total, server *float64) (float64, any) {
-	if !haveDef || ceilingYen == nil {
-		return 0, nil
+// ceilingState は費用の上限(定義の値か既定 3,000)と、月額がそれを超えるか(月額が出ない PRICE_UNKNOWN のときは比べず null)。
+func ceilingState(ceilingYen *float64, row *priceRow, total, server *float64) (float64, any) {
+	ceil := float64(costCeilingDefaultYen) // 定義に書かなければ既定(spec 4.1)。定義が無いときも同じ
+	if ceilingYen != nil {
+		ceil = *ceilingYen
 	}
-	if row == nil || total == nil {
-		return *ceilingYen, nil
+	if row == nil || total == nil { // PRICE_UNKNOWN のときだけ比較を省く(spec 3.1.2.8 の分岐 1)
+		return ceil, nil
 	}
 	t := *total
 	if server != nil {
 		t += *server
 	}
-	return *ceilingYen, t > *ceilingYen
+	return ceil, t > ceil
 }
 
 // estimateInputs は大きさ・日次変更・ダンプ。記録(直近 30 日の backup)から取る経路はイテレーション 3 で足し、いまは引数(basis: args)。

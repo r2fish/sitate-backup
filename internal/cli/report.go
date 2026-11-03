@@ -63,7 +63,7 @@ func reportEntry(d *Deps, ctx context.Context, c contract.Call) (contract.Reply,
 		delivered = deliveredOf(res)
 		d.noteDigest(ctx, now, res)
 	}
-	out := map[string]any{"capacity": weeklyCapacity(ctx, d), "estimate": emptyEstimate(), "restore_tests": []any{}, "delivered": delivered}
+	out := map[string]any{"capacity": weeklyCapacity(ctx, d), "estimate": emptyEstimate(ceilingOf(ctx, d)), "restore_tests": []any{}, "delivered": delivered}
 	b, _ := json.Marshal(out)
 	return contract.Reply{Result: b}, nil
 }
@@ -120,8 +120,8 @@ func weeklyCapacity(ctx context.Context, d *Deps) map[string]any {
 }
 
 // emptyEstimate は価格表と入力が結線されるまでの report の estimate(月額を出さない形。estimate の現在の構成の結果と同じ欄)。
-func emptyEstimate() map[string]any {
-	return map[string]any{"capacity_gb": map[string]any{"y1": 0, "y3": 0}, "monthly_jpy": []any{}, "deltas": []any{}, "cost_ceiling_yen": 0, "over_ceiling": nil,
+func emptyEstimate(ceiling int64) map[string]any {
+	return map[string]any{"capacity_gb": map[string]any{"y1": 0, "y3": 0}, "monthly_jpy": []any{}, "deltas": []any{}, "cost_ceiling_yen": ceiling, "over_ceiling": nil,
 		"uncounted": []string{"server", "restore_dest"}, "excluded_suspect": 0, "price_table_date": nil, "teardown_daily_jpy": 0, "basis": "args",
 		"inputs": map[string]any{"size_gb": 0, "daily_gb": 0, "dump_gb": 0}}
 }

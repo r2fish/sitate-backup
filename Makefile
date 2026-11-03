@@ -57,12 +57,12 @@ test-b2-preflight:
 	@test -n "$(NAME)" || { echo "NAME=<名前> が要ります"; exit 64; }
 	@bash test/wiring/b2-preflight.sh "$(NAME)" $(if $(FAKE),fake)
 
-# 主経路の通し(作業指示書 6 章)。make test に含めない。STAGE は 1〜3。
+# 主経路の通し(作業指示書 6 章)。make test に含めない。STAGE は 1〜3。DB は DB の対象の取得(第 3 段と同じ環境の前提で、別に作った環境で流す)。
 # 第 1 段: make test-env-up NAME=x の後に SITATE_NESTED=1 make test-mainpath STAGE=1 NAME=x。
 # 第 2・3 段: bash test/env/bin/accept-env.sh up x と LOCK_DEFAULT_DAYS=90 make test-env-up NAME=x の後に make test-mainpath STAGE=2 NAME=x(ACCEPT は NAME と同じ。終わったら両方 down)。
 test-mainpath:
-	@case "$(STAGE)" in 1|2|3) ;; *) echo "STAGE は 1|2|3" >&2; exit 64;; esac
-	@$(if $(filter 2 3,$(STAGE)),ACCEPT=$(or $(ACCEPT),$(NAME))) $(LINUX) 'go test -count=1 -v -timeout 40m -tags $(TEST_TAG),mainpath -run "^TestStage$(STAGE)" ./test/mainpath/'
+	@case "$(STAGE)" in 1|2|3|DB) ;; *) echo "STAGE は 1|2|3|DB" >&2; exit 64;; esac
+	@$(if $(filter 2 3 DB,$(STAGE)),ACCEPT=$(or $(ACCEPT),$(NAME))) $(LINUX) 'go test -count=1 -v -timeout 40m -tags $(TEST_TAG),mainpath -run "^TestStage$(STAGE)" ./test/mainpath/'
 
 contract-status:
 	@mkdir -p test/env/.run && (cd app && node scripts/contract-status.mjs) > test/env/.run/app-status.jsonl

@@ -30,19 +30,6 @@ type ItemRef struct {
 	ItemRef *string `json:"item_ref"` // 対象全体の要素は null
 }
 
-// TargetOutcome は対象ごとの取得の結果。
-type TargetOutcome struct {
-	ID, Kind, Status  string
-	Files, Bytes      int64
-	ChangedDuringRead int64
-	Dumps             []string // dump の項目(送った順)
-	Errors, Warnings  []ItemRef
-	ErrorsOmitted     int64
-	WarningsOmitted   int64
-	ErrorCode         string // status が failed のとき(それ以外は空)
-	Empty             bool   // アダプタは ok だがエントリが 0 件(核が partial にして警告 TARGET_EMPTY。D-0166)
-}
-
 // IngestResult は取得の入口の出力(spec 7.5 backup の流れ 1)。cli はこれからマニフェストを組む。
 type IngestResult struct {
 	ManifestID       string
@@ -142,7 +129,7 @@ func (a *Acquire) ingest(ctx context.Context, c contract.Call, rawDef []byte) (I
 	chunks := map[string]chunkOut{}
 	for _, t := range def.Targets {
 		if mism[t.ID] { // 受け口の許可リストと定義が違う対象は取らず failed にする(何も取らない。spec 3.3)
-			res.Targets = append(res.Targets, TargetOutcome{ID: t.ID, Kind: targetSpec(t).Kind, Status: "failed", ErrorCode: string(contract.CodeReceiverTargetsMismatch)})
+			res.Targets = append(res.Targets, mismatchOutcome(t))
 			res.TargetsMismatch = append(res.TargetsMismatch, t.ID)
 			continue
 		}
