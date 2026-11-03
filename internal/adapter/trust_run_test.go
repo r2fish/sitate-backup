@@ -31,7 +31,7 @@ func TestRunSha256MismatchNotStarted(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, err := runNotify(b)
-	internalWith(t, err, "contract")
+	internalWith(t, err, "signature")
 	if started(b) {
 		t.Error("sha256 の合わない実行ファイルを起動した")
 	}
@@ -42,7 +42,7 @@ func TestRunSha256MissingNotStarted(t *testing.T) {
 	s.mod = func(m map[string]any) { delete(m, "sha256") }
 	b := build(t, s)
 	_, err := runNotify(b)
-	internalWith(t, err, "contract")
+	internalWith(t, err, "signature")
 	if started(b) {
 		t.Error("sha256 の無い adapter.json のアダプタを起動した")
 	}
@@ -53,7 +53,7 @@ func TestRunSignatureRejectedNotStarted(t *testing.T) {
 	s.verifier = &wantVerifier{} // 何を渡しても合わない
 	b := build(t, s)
 	_, err := runNotify(b)
-	internalWith(t, err, "contract")
+	internalWith(t, err, "signature")
 	if started(b) {
 		t.Error("署名の合わないアダプタを起動した")
 	}

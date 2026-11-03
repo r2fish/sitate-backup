@@ -16,7 +16,7 @@ func newErr(code contract.Code, detail string) *contract.Error {
 }
 
 // internalErr は INTERNAL(3.1.3 の detail: component・http_status・kind・name・reason の 5 項目)。
-// component は常に adapter、http_status は null。kind・name・reason は列挙(reason は exit_code / output / contract)や
+// component は常に adapter、http_status は null。kind・name・reason は列挙(reason は exit_code / output / contract / signature)や
 // 識別子の形に合うものだけ入れ、合わないもの(要求の不正など)は null にする。
 func internalErr(kind, name, reason string) *contract.Error {
 	m := map[string]any{"component": "adapter", "http_status": nil, "kind": nil, "name": nil, "reason": nil}
@@ -27,7 +27,7 @@ func internalErr(kind, name, reason string) *contract.Error {
 		m["name"] = name
 	}
 	switch reason {
-	case "exit_code", "output", "contract":
+	case "exit_code", "output", "contract", "signature":
 		m["reason"] = reason
 	}
 	b, _ := json.Marshal(m)

@@ -2030,7 +2030,8 @@
        "enum": [
         "exit_code",
         "output",
-        "contract"
+        "contract",
+        "signature"
        ]
       },
       {

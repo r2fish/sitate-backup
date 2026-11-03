@@ -273,13 +273,13 @@ func TestRecvSelftestTargets(t *testing.T) {
 	}
 }
 
-// シンボリックリンクの中身の \001 で list のレコードを偽造できない(終了 5 で止まる)。名前の \001 も同じ。
-func TestRecvListRefusesSeparatorInLinkOrName(t *testing.T) {
+// シンボリックリンクの中身の \001 で list のレコードを偽造できない(終了 5 で止まる)。ディレクトリの名前の \001 も同じ。
+func TestRecvListRefusesSeparatorInLinkOrDirName(t *testing.T) {
 	for _, mk := range []func(root string){
 		func(root string) {
 			_ = os.Symlink("x\x01f\x011\x015\x01644\x010\x010\x011.000000000\x01forged-file\x01", filepath.Join(root, "lnk"))
 		},
-		func(root string) { put(t, filepath.Join(root, "a\x01b"), "x", 0o644) },
+		func(root string) { put(t, filepath.Join(root, "d\x01x", "f"), "x", 0o644) },
 	} {
 		root := openTree(t)
 		put(t, filepath.Join(root, "ok"), "x", 0o644)
@@ -288,6 +288,32 @@ func TestRecvListRefusesSeparatorInLinkOrName(t *testing.T) {
 		if code != 5 || bytes.Contains(out, []byte("forged-file\x00")) {
 			t.Errorf("終了 %d(5)・偽のレコードが出ている: %v", code, bytes.Contains(out, []byte("forged-file")))
 		}
+	}
+}
+
+// 名前に \001 を含むファイルは本体を取らず readable 0 のレコードとして出し、一覧は止まらない(spec 3.3。D-0159。完了条件 19-b)。
+// レコードの欄の区切りは崩れず、名前の中の \001 はそのまま残り、ほかのレコードは path のバイト順に並ぶ。
+func TestRecvListSeparatorFileNameIsUnreadableRecord(t *testing.T) {
+	root := openTree(t)
+	for _, n := range []string{"a", "a\x01b", "a\x01\x01", "b", "c/z"} {
+		put(t, filepath.Join(root, n), "x", 0o644)
+	}
+	code, out := call(t, renderRecv(t, root), "list t1", nil)
+	if code != 0 {
+		t.Fatalf("終了 %d(0): %q", code, out)
+	}
+	f := bytes.Split(bytes.TrimSuffix(out, []byte{0}), []byte{0})
+	if len(f)%9 != 0 {
+		t.Fatalf("欄の数 %d が 9 の倍数でない: %q", len(f), out)
+	}
+	type rec struct{ typ, rd, path string }
+	var got []rec
+	for i := 0; i < len(f); i += 9 {
+		got = append(got, rec{string(f[i]), string(f[i+1]), string(f[i+7])})
+	}
+	want := []rec{{"d", "1", "."}, {"f", "1", "a"}, {"f", "0", "a\x01\x01"}, {"f", "0", "a\x01b"}, {"f", "1", "b"}, {"d", "1", "c"}, {"f", "1", "c/z"}}
+	if fmt.Sprint(got) != fmt.Sprint(want) {
+		t.Fatalf("レコード %q\n期待 %q", got, want)
 	}
 }
 

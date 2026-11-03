@@ -205,8 +205,16 @@ export class PhraseActions {
 
   async #confirm(p: PhrasePanel): Promise<void> {
     if (!p.verified) return;
-    const version = this.#printedVersion;
-    if (version === null) return this.#show(this.#d.label("phrase.confirm.needs_print")); // 印刷が成功するまで保管の確認に進めない
+    let version = this.#printedVersion;
+    if (version === null) {
+      if (!this.#handwritten) return this.#show(this.#d.label("phrase.confirm.needs_print")); // 印刷も手書きも済む前は保管の確認に進めない
+      // 手書きの道(spec 3.7、4.7。D-0159)には印刷した版が無いので、2 か所保管を記録する時点の版を核から読む。
+      const kit = await this.#core(["kit"], "");
+      const v = kit.ok ? kit.result?.kit_version : undefined;
+      if (this.#panel !== p) return;
+      if (typeof v !== "string") return this.#show(this.#codeText(kit.code ?? "ENVELOPE_INVALID"));
+      version = v;
+    }
     const r = await this.#core(["kit", "confirm", "--kit-version", version, "--copies", "2"], "");
     if (this.#panel !== p) return;
     if (!r.ok) return this.#show(this.#codeText(r.code ?? "ENVELOPE_INVALID"));

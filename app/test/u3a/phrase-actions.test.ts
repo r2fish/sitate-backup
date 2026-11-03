@@ -127,19 +127,46 @@ test("kit confirm が失敗したら進まない(固定文を出し、パネル�
   assert.equal(settled, "pending");
 });
 
-test("印刷が成功するまで kit confirm へ進めない: 描画部が無い・手書きだけ・印刷の失敗では confirm を断る", async () => {
+test("印刷が成功するまで印刷の道の kit confirm へ進めない: 印刷の失敗では verify に進めない。描画部が無くても手書きの道は進める", async () => {
   const noKit = rig({ typed: phrase24.join(" "), render: null });
   await noKit.a.handle("print");
   assert.equal(noKit.msgs.at(-1)!.notice, "phrase.print.unavailable");
-  await noKit.a.handle("handwritten");
-  await noKit.a.handle("verify");
-  await noKit.a.handle("confirm");
-  assert.equal(noKit.msgs.at(-1)!.notice, "phrase.confirm.needs_print");
-  assert.ok(!noKit.calls.some((c) => c.argv[1] === "confirm"));
+  await noKit.a.handle("verify"); // 印刷も手書きも前なら verify は何もしない
+  assert.equal(noKit.panel.verified, false);
   const failing = rig({ typed: phrase24.join(" "), print: async () => { throw new Error("spool"); } });
   await failing.a.handle("print");
   assert.equal(failing.msgs.at(-1)!.notice, "phrase.print.failed");
   assert.deepEqual(acts(failing), ["print", "handwritten", "cancel"], "印刷の失敗では verify に進めない");
+});
+
+// 完了条件 7(30-c。spec 3.7、4.7。D-0159): 印刷しないで「手書きで写した」を選んだ道でも、phrase verify の後に kit confirm へ進める。
+test("手書きの道: handwritten → verify → kit confirm(2 か所)まで進み、パネルが済む。描画部が無くても同じ", async () => {
+  for (const render of [undefined, null]) {
+    const t = rig({ typed: phrase24.join(" "), render, kitVersion: "abcdef012345" });
+    await t.a.handle("handwritten");
+    await t.a.handle("verify");
+    assert.equal(t.panel.verified, true);
+    assert.deepEqual(acts(t), ["confirm", "cancel"]);
+    assert.equal(t.proceeded(), 0, "confirm の前は進ませない");
+    await t.a.handle("confirm");
+    const c = t.calls.filter((x) => x.argv[0] === "kit" && x.argv[1] === "confirm");
+    assert.equal(c.length, 1);
+    assert.deepEqual(c[0]!.argv, ["kit", "confirm", "--kit-version", "abcdef012345", "--copies", "2"]);
+    assert.equal(t.panel.kitConfirmed, true);
+    assert.equal(t.proceeded(), 1);
+    assert.equal(await t.outcome, "done");
+  }
+});
+
+test("手書きの道で kit の版が読めなければ confirm へ進まず固定文を出す", async () => {
+  const t = rig({ typed: phrase24.join(" "), throwOn: "kit", throwErr: new Error("x") });
+  await t.a.handle("handwritten");
+  await t.a.handle("verify");
+  await t.a.handle("confirm");
+  assert.ok(!t.calls.some((c) => c.argv[1] === "confirm"));
+  assert.equal(t.proceeded(), 0);
+  assert.equal(t.panel.kitConfirmed, false);
+  assert.ok(typeof t.msgs.at(-1)!.notice === "string" && t.msgs.at(-1)!.notice !== "phrase.confirm.needs_print", "kit の失敗の固定文を出す: " + String(t.msgs.at(-1)!.notice));
 });
 
 test("confirm は印刷した版で記録する(印刷の後に構成が変わっても読み直さない)", async () => {

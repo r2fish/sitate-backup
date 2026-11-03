@@ -6,7 +6,7 @@ import type { Keychain } from "./keychain.ts";
 import { SERVICE_PRE_LLM } from "./keychain.ts";
 import type { SecretMode } from "./ipc-channels.ts";
 
-export const LLM_ACCOUNT = "llm-api-key";
+export const LLM_ACCOUNT = "app:llm-api-key";
 
 /** 入力ボックスのラベルのカタログのキー。参照名(モデルが決める)は画面に出さず、アプリが決めた文だけを出す。 */
 export const SECRET_LABEL = { generic: "chat.secret.label.generic", admin: "chat.secret.label.admin", llm: "chat.secret.label.llm" } as const;

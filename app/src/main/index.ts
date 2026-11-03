@@ -18,7 +18,7 @@ import type { BootstrapInput, BundleReader } from "./bootstrap/bootstrap.ts";
 import { reportFailure } from "./failure-report.ts";
 import { CHANNEL } from "./ipc-channels.ts";
 import type { CardDecision, UiMessage } from "./ipc-channels.ts";
-import { MacKeychain, SERVICE_PRE_ADMIN, SERVICE_PRE_LLM, serviceFor } from "./keychain.ts";
+import { ADMIN_KEY_ACCOUNT, APPROVAL_ACCOUNT, MacKeychain, SERVICE_PRE_ADMIN, SERVICE_PRE_LLM, serviceFor } from "./keychain.ts";
 import { PathRefTable } from "./path-ref.ts";
 import { LLM_ACCOUNT, SECRET_LABEL, SecretBox } from "./secret-box.ts";
 import { Session } from "./session.ts";
@@ -37,8 +37,6 @@ import { translator } from "../i18n/format.ts";
 import { trustedKeysOf } from "../trust/embedded.ts";
 import type { EmbeddedKeys } from "../trust/embedded.ts";
 
-const APPROVAL_ACCOUNT = "approval-key";
-const ADMIN_KEY_ACCOUNT = "admin-ssh-key";
 /** 管理用 SSH の接続の時限(測定項目。初期値)。 */
 const CONNECT_TIMEOUT_MS = 20000;
 

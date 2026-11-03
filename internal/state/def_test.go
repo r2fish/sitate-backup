@@ -72,6 +72,7 @@ func TestValidateDefIssues(t *testing.T) {
 		{"未知のキー", baseDef + "bogus: 1\n", "/bogus", rUnknown},
 		{"復元先なし", strings.Replace(baseDef, "restore:\n  dest: {at: \"ssh://restore@203.0.113.10:22\", key_ref: restore-init}\n", "", 1), "/restore", rMissing},
 		{"遅延の下限", baseDef + "approval_delay_hours: 6\n", "/approval_delay_hours", rInvalid},
+		{"遅延の上限", baseDef + "approval_delay_hours: 8761\n", "/approval_delay_hours", rInvalid},
 		{"遅延の単位", baseDef + "approval_delay_hours: 1.5\n", "/approval_delay_hours", rUnit},
 		{"時刻の単位", baseDef + "schedule: \"2:30pm\"\n", "/schedule", rUnit},
 		{"参照名", strings.Replace(baseDef, "key_ref: storage", "key_ref: Bad.Name", 1), "/storage/0/key_ref", rInvalid},

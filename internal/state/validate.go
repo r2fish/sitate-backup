@@ -255,7 +255,7 @@ func (v *validator) root(m map[string]any) {
 		}
 	}
 	v.enum("", m, "restore_test", "monthly", "weekly")
-	v.intIn("", m, "approval_delay_hours", MinApprovalDelayHours, 1<<31)
+	v.intIn("", m, "approval_delay_hours", MinApprovalDelayHours, contract.ApprovalDelayHoursMax)
 	v.intIn("", m, "auto_hold_days", 1, 1<<31)
 	v.intIn("", m, "cost_ceiling_yen", 0, 1<<53)
 	v.intIn("", m, "server_monthly_yen", 0, 1<<53)

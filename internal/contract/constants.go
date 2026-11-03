@@ -106,6 +106,9 @@ const (
 	StoragePrefixDefault = "sitate/"
 	// RetentionExtendPeriodDays は延長周期(spec 4.2)。月次のマニフェストの retain-until に足す。
 	RetentionExtendPeriodDays = 7
+	// ApprovalDelayHoursMax は approval_delay_hours の上限(APPROVAL_DELAY_HOURS_MAX。8760 時間 = 1 年。spec 3.6、4.1)。
+	// 測定値でなく、値域を有限にして桁あふれを防ぐ線。外れる値は DEF_INVALID。
+	ApprovalDelayHoursMax = 8760
 
 	// StreamFragmentMax は sitate.stream/v1 の data 断片の最大長(形式の版 1。spec 3.2.2 が U0 に委ねた値)。
 	// 1 MiB: 断片は本体をためずに流す単位で、チャンク長の最小(ChunkMin)と同じ桁。大きくするとメモリの先読みが増え、

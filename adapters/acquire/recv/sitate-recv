@@ -69,6 +69,10 @@ st() { cat "$1" 2>/dev/null || echo 99; }
 # JSON 文字列(引用符つき)を標準出力へ。入力は 1 行の値。
 jstr() { printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e "s/$TAB/\\\\t/g" -e '1s/^/"/' -e '$s/$/"/'; }
 
+# 名前に \001 を含むファイル(型 X)は、先頭の 7 個と末尾の区切りだけを NUL にして、名前の中の \001 は残す(型は f。readable は 0)。
+# 1 つのファイルで一覧を止めない(spec 3.3。D-0159)。ほかのレコードは区切りをすべて NUL にする。
+FIELDS_TO_NUL='/^X/{s/\x01/\x00/;s/\x01/\x00/;s/\x01/\x00/;s/\x01/\x00/;s/\x01/\x00/;s/\x01/\x00/;s/\x01/\x00/;s/\x01$/\x00/;s/^X/f/;b};s/\x01/\x00/g'
+
 # --- list ---
 op_list() {
 	root=$T_1
@@ -85,15 +89,16 @@ op_list() {
 	# 根自身(最初のレコード)。時刻の小数は 9 桁にそろえる(下の sed)。
 	find -P . -maxdepth 0 -printf "d${_t}1${_t}%s${_t}%m${_t}${_hdr}.${_t}\\0" | trim_mtime | tr '\001' '\000' || exit 5
 	rc "$tmp/s1" find -P . -mindepth 1 -xdev \( -type f -o -type d -o -type l \) \
-		\( \( \( -path "*$SEP*" -o -lname "*$SEP*" \) -fprint "$tmp/bad" \) \
+		\( \( -type f -path "*$SEP*" -printf "X${_t}0${_t}%s${_t}%m${_t}${_hdr}%P${_t}\\0" \) \
+		-o \( \( \( -path "*$SEP*" -o -lname "*$SEP*" \) -fprint "$tmp/bad" \) \
 		-o \( -type l -printf "l${_t}1${_t}%s${_t}%m${_t}${_hdr}%P${_t}%l\\0" \) \
 		-o \( -type f -readable -printf "f${_t}1${_t}%s${_t}%m${_t}${_hdr}%P${_t}\\0" \) \
 		-o \( -type f -printf "f${_t}0${_t}%s${_t}%m${_t}${_hdr}%P${_t}\\0" \) \
 		-o \( -type d -readable -executable -printf "d${_t}1${_t}%s${_t}%m${_t}${_hdr}%P${_t}\\0" \) \
-		-o \( -type d -printf "d${_t}0${_t}%s${_t}%m${_t}${_hdr}%P${_t}\\0" -prune \) \) 2>"$tmp/ferr" |
+		-o \( -type d -printf "d${_t}0${_t}%s${_t}%m${_t}${_hdr}%P${_t}\\0" -prune \) \) \) 2>"$tmp/ferr" |
 		rc "$tmp/s2" trim_mtime |
-		rc "$tmp/s3" sort -z -t "$SEP" -k8,8 -T "$tmp" |
-		rc "$tmp/s4" tr '\001' '\000'
+		rc "$tmp/s3" sort -z -t "$SEP" -k8 -T "$tmp" |
+		rc "$tmp/s4" sed -z "$FIELDS_TO_NUL"
 	[ "$(st "$tmp/s2")" = 0 ] && [ "$(st "$tmp/s3")" = 0 ] && [ "$(st "$tmp/s4")" = 0 ] || exit 5
 	[ ! -s "$tmp/bad" ] || exit 5
 	_f=$(st "$tmp/s1")

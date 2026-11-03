@@ -42,11 +42,11 @@ func (r *Runner) load(ctx context.Context, kind, name string) (*loaded, error) {
 	}
 	sig, err := os.ReadFile(filepath.Join(dir, "adapter.json.sig"))
 	if err != nil {
-		return nil, internalErr(kind, name, "contract")
+		return nil, internalErr(kind, name, "signature") // 署名が無い物は署名が合わない物として扱う(spec 3.2.1。D-0159)
 	}
 	want := contract.TrustedComment{Version: r.Version, Arch: r.Arch, Path: r.Arch + "/adapters/" + kind + "/" + name + "/adapter.json"}
 	if ok, verr := r.Verifier.Verify(ctx, raw, sig, want); verr != nil || !ok {
-		return nil, internalErr(kind, name, "contract")
+		return nil, internalErr(kind, name, "signature") // 署名が合わない、または確かめられない(spec 3.2.1。D-0159)
 	}
 	return parseDecl(dir, kind, name, raw)
 }
@@ -81,7 +81,7 @@ func (l *loaded) checkExe() error {
 	}
 	sum := sha256.Sum256(b)
 	if l.sha256 == "" || hex.EncodeToString(sum[:]) != l.sha256 {
-		return internalErr(l.decl.Kind, l.decl.Name, "contract")
+		return internalErr(l.decl.Kind, l.decl.Name, "signature") // sha256 が合わない(spec 3.2.1。D-0159)
 	}
 	return nil
 }

@@ -1,14 +1,21 @@
 // キーチェーンの経路(完了条件 4・14)。主プロセスだけが触れる。macOS の `security` を `-i`(標準入力から命令を読む)で呼び、
 // 秘密の値を引数(ps に見える)へ載せない: 値は 16 進(-X)にして標準入力へ渡す。
-// 命名(GB-114): サービス名 = 固定の接頭辞 + "." + repo_id、アカウント名 = 参照名。repo_id が決まる前の項目は接頭辞の下の "pre" + 種別
-// (LLM API キー: pre.llm、bootstrap の admin_ref: pre.admin、新しいホストの初期資格情報: pre.newhost)。接頭辞で全項目を列挙できる。
+// 命名(GB-114。D-0159): サービス名は固定の 1 つ(v1 は 1 台のバックアップサーバー。別のサーバーの区別はイテレーション 2 以降)、
+// アカウント名は参照名。アプリ自身の項目(LLM API キー、承認鍵、管理用 SSH 鍵)のアカウント名は参照名の形(英数字で始まり . _ - だけ)に
+// 当たらない文字(":")を含め、参照名の項目とぶつからない。サービス名で、このアプリの項目を全部列挙できる(A2・A3 の「残っていない」の判定)。
 import { spawn } from "node:child_process";
 
-export const KEYCHAIN_SERVICE_PREFIX = "jp.sitate-backup.app";
-export const SERVICE_PRE_LLM = `${KEYCHAIN_SERVICE_PREFIX}.pre.llm`;
-export const SERVICE_PRE_ADMIN = `${KEYCHAIN_SERVICE_PREFIX}.pre.admin`;
-export const SERVICE_PRE_NEWHOST = `${KEYCHAIN_SERVICE_PREFIX}.pre.newhost`;
-export const serviceFor = (repoId: string): string => `${KEYCHAIN_SERVICE_PREFIX}.${repoId}`;
+export const KEYCHAIN_SERVICE = "jp.sitate-backup.app";
+/** 列挙の既定の接頭辞(固定のサービス名と同じ)。 */
+export const KEYCHAIN_SERVICE_PREFIX = KEYCHAIN_SERVICE;
+export const SERVICE_PRE_LLM = KEYCHAIN_SERVICE;
+export const SERVICE_PRE_ADMIN = KEYCHAIN_SERVICE;
+export const SERVICE_PRE_NEWHOST = KEYCHAIN_SERVICE;
+/** アプリ自身の項目のアカウント名(承認鍵、管理用 SSH 鍵)。 */
+export const APPROVAL_ACCOUNT = "app:approval-key";
+export const ADMIN_KEY_ACCOUNT = "app:admin-ssh-key";
+/** 項目のサービス名。引数(repo_id)は無視する: v1 は 1 台のバックアップサーバーで、サービス名は固定。 */
+export const serviceFor = (_repoId?: string): string => KEYCHAIN_SERVICE;
 
 /** security を実行する関数(試験では差し替える)。stdin を渡し、標準出力と終了コードを返す。 */
 export type SecurityExec = (args: readonly string[], stdin: string) => Promise<{ stdout: string; code: number }>;

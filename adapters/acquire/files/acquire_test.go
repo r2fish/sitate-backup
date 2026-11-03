@@ -215,3 +215,25 @@ func TestFilesPermission(t *testing.T) {
 		t.Errorf("読めないファイルのフレームは出さない")
 	}
 }
+
+// 名前に \001 を含むファイルは本体を取らず、一覧を止めず、errors[] の 1 件(PERMISSION)で対象は partial(完了条件 19-b。spec 3.2.2、3.3。D-0159)。
+func TestFilesSeparatorNameIsPermission(t *testing.T) {
+	root := treeRoot(t)
+	writeFile(t, filepath.Join(root, "ok.txt"), "ok", 0o644)
+	writeFile(t, filepath.Join(root, "bad\x01name"), "x", 0o644)
+	rr := runAdapter(t, realRecv(t, root), request("t1", root, nil))
+	if rr.code != 0 {
+		t.Fatalf("終了 %d: %s", rr.code, rr.stdout)
+	}
+	p := parseOutput(t, rr.stdout)
+	if p.result.Status != "partial" || p.result.Stats.Errors != 1 || len(p.result.Errors) != 1 {
+		t.Fatalf("結果: %+v", p.result)
+	}
+	e := p.result.Errors[0]
+	if e.Code != "PERMISSION" || e.PathB64 == nil || *e.PathB64 != b64([]byte("bad\x01name")) {
+		t.Errorf("errors[0]: %+v", e)
+	}
+	if p.bodies("file")["ok.txt"] != "ok" {
+		t.Errorf("読めるファイルは取れる: %v", p.bodies("file"))
+	}
+}

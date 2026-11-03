@@ -14,6 +14,10 @@
       "adapter": {
         "type": "string"
       },
+      "host_key_fp": {
+        "type": "string",
+        "description": "復元先のホスト鍵の指紋(SHA256:...)。再登録で、提案のカードに示した指紋と照らすために渡す。初回の登録では省く。"
+      },
       "admin_ref": {
         "type": "string",
         "description": "管理用の資格情報の参照名(値ではない)。",

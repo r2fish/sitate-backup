@@ -103,7 +103,7 @@ func (f *fakeSSH) session(ch ssh.Channel, reqs <-chan *ssh.Request) {
 		_ = r.Reply(true, nil)
 		f.sessions.Add(1)
 		cmd := exec.Command("bash", "-c", cmdline)
-		cmd.Env = []string{"HOME=" + f.home, "PATH=" + f.path()}
+		cmd.Env = []string{"HOME=" + f.home, "PATH=" + f.path(), "SITATE_TEST_PID=" + strconv.Itoa(os.Getpid())}
 		if f.sshConn != "" {
 			cmd.Env = append(cmd.Env, "SSH_CONNECTION="+f.sshConn)
 		}

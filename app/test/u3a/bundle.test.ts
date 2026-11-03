@@ -4,7 +4,8 @@ import { createHash, generateKeyPairSync, randomBytes, sign } from "node:crypto"
 import { test } from "node:test";
 import { BUNDLE_REFUSAL, verifyBundle } from "../../src/main/bundle-verify.ts";
 import type { BundleFile } from "../../src/main/bundle-verify.ts";
-import { KEYCHAIN_SERVICE_PREFIX, MacKeychain, MemoryKeychain, serviceFor } from "../../src/main/keychain.ts";
+import { ADMIN_KEY_ACCOUNT, APPROVAL_ACCOUNT, KEYCHAIN_SERVICE_PREFIX, MacKeychain, MemoryKeychain, SERVICE_PRE_ADMIN, SERVICE_PRE_LLM, SERVICE_PRE_NEWHOST, serviceFor } from "../../src/main/keychain.ts";
+import { LLM_ACCOUNT } from "../../src/main/secret-box.ts";
 import { parsePublicKey } from "../../src/main/minisign.ts";
 import { trustedKeysOf } from "../../src/trust/embedded.ts";
 
@@ -48,16 +49,22 @@ test("同梱物: 署名が通り、1 つの改変・置き場の違い・不可�
   assert.equal(parsePublicKey(test1.pub).publicKey.length, 32);
 });
 
-test("キーチェーン: 保存・取り出し・削除・接頭辞での列挙。repo_id で別のサーバーを区別する", async () => {
+// 完了条件 14(GB-114。D-0159): サービス名は固定(v1 は 1 台のバックアップサーバー)、アカウント名は参照名。アプリの項目は固定のサービス名で全部列挙できる。
+test("キーチェーン: サービス名は固定で、保存・取り出し・削除・列挙ができる。アプリの項目も参照名の項目も同じサービス名の下にある", async () => {
+  assert.equal(serviceFor("repoA"), KEYCHAIN_SERVICE_PREFIX);
+  assert.equal(serviceFor("repoB"), KEYCHAIN_SERVICE_PREFIX);
+  for (const s of [SERVICE_PRE_LLM, SERVICE_PRE_ADMIN, SERVICE_PRE_NEWHOST]) assert.equal(s, KEYCHAIN_SERVICE_PREFIX);
   const kc = new MemoryKeychain();
   await kc.set(serviceFor("repoA"), "storage", "v1");
-  await kc.set(serviceFor("repoB"), "storage", "v2");
-  assert.equal(await kc.get(serviceFor("repoA"), "storage"), "v1");
-  assert.equal(await kc.get(serviceFor("repoB"), "storage"), "v2");
-  assert.equal((await kc.list()).length, 2);
+  await kc.set(SERVICE_PRE_LLM, LLM_ACCOUNT, "k");
+  await kc.set(SERVICE_PRE_ADMIN, "admin", "a");
+  assert.equal(await kc.get(serviceFor("anything"), "storage"), "v1");
+  assert.deepEqual((await kc.list(KEYCHAIN_SERVICE_PREFIX)).map((i) => i.account).sort(), [LLM_ACCOUNT, "admin", "storage"].sort());
   assert.equal(await kc.delete(serviceFor("repoA"), "storage"), true);
   assert.equal(await kc.get(serviceFor("repoA"), "storage"), null);
-  assert.ok((await kc.list()).every((i) => i.service.startsWith(KEYCHAIN_SERVICE_PREFIX)));
+  assert.ok((await kc.list()).every((i) => i.service === KEYCHAIN_SERVICE_PREFIX));
+  // アプリ自身の項目のアカウント名は、参照名の形(英数字で始まり . _ - だけ)に当たらない。参照名の項目とぶつからない。
+  for (const a of [LLM_ACCOUNT, APPROVAL_ACCOUNT, ADMIN_KEY_ACCOUNT]) assert.ok(!/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(a), a);
 });
 
 test("MacKeychain: 秘密の値は security の引数に載らず(標準入力の 16 進だけ)、列挙は dump の形から読む", async () => {

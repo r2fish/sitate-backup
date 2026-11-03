@@ -44,10 +44,25 @@ case "$*" in *cipher*) [ -e "$HOME/.mkfail" ] && exit 1;; esac
 exec /bin/mkdir "$@"
 `
 
+// ps: 偽の宛先は試験者と同じ uid で動くため、`ps -u <uid>` の一覧に無関係な処理(並行して走る別のパッケージの試験など)が載り、
+// stop の remaining に拾われる。製品の台本は弱めず、偽のホストの ps だけを、この試験のプロセス(SITATE_TEST_PID)の子孫に絞る。
+// 本物の宛先では専用ユーザーの処理だけが載る。それ以外の形の呼び出しは本物の ps へそのまま渡す。
+const psStub = `#!/bin/bash
+real=/usr/bin/ps; [ -x "$real" ] || real=/bin/ps
+case "$1" in
+-u)
+  [ -n "${SITATE_TEST_PID:-}" ] || exec "$real" "$@"
+  "$real" "$@" | awk -v root="$SITATE_TEST_PID" '{pid[NR]=$1; par[$1]=$2; line[NR]=$0; n=NR}
+    END{for(i=1;i<=n;i++){q=pid[i]; ok=0; while(q!=""&&q>1){if(q==root){ok=1;break}; q=par[q]}; if(ok)print line[i]}}'
+  exit ${PIPESTATUS[0]};;
+esac
+exec "$real" "$@"
+`
+
 func stubBin(t *testing.T) string {
 	t.Helper()
 	d := t.TempDir()
-	for n, body := range map[string]string{"podman": podmanStub, "gocryptfs": gocryptfsStub, "mkdir": mkdirStub} {
+	for n, body := range map[string]string{"podman": podmanStub, "gocryptfs": gocryptfsStub, "mkdir": mkdirStub, "ps": psStub} {
 		if err := os.WriteFile(filepath.Join(d, n), []byte(body), 0o755); err != nil {
 			t.Fatal(err)
 		}

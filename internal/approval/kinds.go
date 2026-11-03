@@ -16,8 +16,8 @@ import (
 const (
 	defaultDelayHours = 24
 	minDelayHours     = 7
-	// delayHoursMax は approval_delay_hours の上限(暫定。spec 4.1 に値が無く、設計の監督へ確認中)。1 か所に置く。
-	delayHoursMax = 8760
+	// delayHoursMax は approval_delay_hours の上限(spec 3.6、4.1。定数表の APPROVAL_DELAY_HOURS_MAX)。
+	delayHoursMax = contract.ApprovalDelayHoursMax
 )
 
 type kindSpec struct {
