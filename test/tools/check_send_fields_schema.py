@@ -14,10 +14,15 @@ import sys
 
 
 def load_defs(schema_dir):
-    defs = {}
-    for name in ("cli/results.json", "cli/common.json", "data/change.json"):
-        with open(os.path.join(schema_dir, name), encoding="utf-8") as f:
-            defs[name] = json.load(f)["$defs"]
+    defs = {}  # $ref が指しうるスキーマのファイルをすべて読む(cli/codes.json などへの $ref を解くため)
+    for d, _, files in os.walk(schema_dir):
+        for fn in files:
+            if fn.endswith(".json"):
+                path = os.path.join(d, fn)
+                with open(path, encoding="utf-8") as f:
+                    doc = json.load(f)
+                if "$defs" in doc:
+                    defs[os.path.relpath(path, schema_dir)] = doc["$defs"]
     return defs
 
 
