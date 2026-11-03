@@ -159,11 +159,25 @@
     "contract",
     "op",
     "dest",
-    "authorized_key",
-    "egress_allow",
-    "egress_host",
     "secrets"
    ],
+   "if": {
+    "required": [
+     "dry_run"
+    ],
+    "properties": {
+     "dry_run": {
+      "const": true
+     }
+    }
+   },
+   "else": {
+    "required": [
+     "authorized_key",
+     "egress_allow",
+     "egress_host"
+    ]
+   },
    "additionalProperties": false,
    "properties": {
     "contract": {
@@ -174,6 +188,9 @@
     },
     "dest": {
      "$ref": "#/$defs/dest"
+    },
+    "dry_run": {
+     "type": "boolean"
     },
     "host_key_fp": {
      "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/fp"

@@ -13,7 +13,7 @@ export const CARD_FIELDS: Readonly<Record<string, OpFields>> = {
   "restore-elsewhere": { target: ["backup", "to", "host_key_fp"], fields: ["read_bytes"] },
   "restore-session-extend": { target: ["session_id", "backup"], fields: ["expires_at_before", "expires_at_after"] },
   "restore-dest-release": { target: ["session_id", "backup", "authorized_key_fp", "allow_from"], fields: ["restore_change"] },
-  "source-change": { target: ["host_key_fp"], fields: ["before", "after", "needs_secret"] },
+  "source-change": { target: ["admin_user", "host_key_fp"], fields: ["before", "after", "needs_secret"] },
   "notify-change": { target: [], fields: ["before", "after"] },
   "notify-add": { target: [], fields: ["before", "after"] },
   "key-rotate": { target: [], fields: ["keyring_version", "over_ceiling"] },
@@ -111,12 +111,13 @@ export function changeFieldRows(op: string, plan: Record<string, unknown>, t: Tr
   const spec = CARD_FIELDS[op];
   if (spec === undefined || isFreeForm(op)) return [];
   const skip = [
-    ...(op === "source-change" ? ["before", "after"] : []), // source 節は sourceRows が描く
-    ...(op === "seal" ? ["definition"] : []),
+    ...(op === "seal" ? ["definition"] : []), // source の対象は sourceRows が描く。宛先(host)はここで 1 行描く
     ...(op === "hold-release" ? spec.fields : []), // 区画 7 に描く
     ...(costShown ? YEN_FIELDS : []), // 区画 5 に描く
   ];
   const rows: CardRow[] = [];
+  const host = op === "seal" && isRec(plan.definition) && isRec(plan.definition.source) ? plan.definition.source.host : undefined;
+  if (typeof host === "string" && has(t, fieldKey(op, "definition"))) rows.push({ label: t(fieldKey(op, "definition")), value: host });
   for (const n of spec.fields) {
     if (skip.includes(n) || plan[n] === undefined) continue;
     const v = plan[n];

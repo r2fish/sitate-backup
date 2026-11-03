@@ -354,6 +354,18 @@
     }
    }
   },
+  "TARGET_EMPTY": {
+   "type": "object",
+   "required": [
+    "target"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "target": {
+     "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/ident"
+    }
+   }
+  },
   "KEY_MISSING_PERMISSION": {
    "type": "object",
    "required": [

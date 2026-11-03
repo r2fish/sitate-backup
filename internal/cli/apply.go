@@ -7,6 +7,7 @@ package cli
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/r2fish/sitate-backup/internal/contract"
@@ -61,7 +62,7 @@ func applyEntry(d *Deps, ctx context.Context, c contract.Call) (contract.Reply, 
 	if d.Approval == nil {
 		return notImpl("apply")
 	}
-	plan, err := d.Approval.ApplyPlan(ctx, c, c.RunID)
+	plan, err := d.Approval.ApplyPlan(ctx, c, processInstance())
 	if err != nil {
 		return contract.Reply{}, err
 	}
@@ -160,4 +161,11 @@ func stepOf(ctx context.Context) func(json.RawMessage, error) contract.StepResul
 func mustMarshal(v any) json.RawMessage {
 	b, _ := json.Marshal(v)
 	return b
+}
+
+// processInstance は実行の個体の識別子 <boot_id>:<pid>:<pid_start_ticks>(spec 4.5「実行中の印と instance」)。--run-id ではない:
+// run_id が同じ再実行が、前の個体の applying を自分のものと見なして再開しないのを防ぐ。
+func processInstance() string {
+	pid, ticks, boot := selfProc()
+	return fmt.Sprintf("%s:%d:%d", boot, pid, ticks)
 }

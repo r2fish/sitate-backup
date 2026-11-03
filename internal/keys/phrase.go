@@ -78,24 +78,22 @@ func (k *Keys) reverify(ctx context.Context, phrase *contract.Secret) (contract.
 
 // commitVerify は保留を開き、開けたら残りを書いて確定する。
 func (k *Keys) commitVerify(ctx context.Context, phrase *contract.Secret, pend pendingFiles) (contract.Reply, error) {
+	if err := k.pendingMatchesState(ctx, pend); err != nil {
+		return contract.Reply{}, err
+	}
 	info, err := k.KeyS.OpenedKeyring(ctx, phrase, pend.Keyring)
 	if err != nil {
 		return contract.Reply{}, err
 	}
-	var repo struct {
-		KeyringID string `json:"keyring_id"`
-	}
-	if pend.Repo != nil && json.Unmarshal(pend.Repo, &repo) != nil {
-		return contract.Reply{}, errInternal()
-	}
-	if repo.KeyringID == "" {
-		repo.KeyringID = info.KeyringID
+	keyringID, err := pendingKeyringID(pend, info.KeyringID)
+	if err != nil {
+		return contract.Reply{}, err
 	}
 	var items []putItem
 	if pend.Repo != nil {
 		items = append(items, putItem{"repo.json", pend.Repo})
 	}
-	items = append(items, putItem{"keyring/" + repo.KeyringID, pend.Keyring})
+	items = append(items, putItem{"keyring/" + keyringID, pend.Keyring})
 	switch pend.Op {
 	case "init":
 		bin, err := k.binItems(ctx)
@@ -113,7 +111,7 @@ func (k *Keys) commitVerify(ctx context.Context, phrase *contract.Secret, pend p
 	}
 	kvid := ""
 	for _, r := range recs {
-		if r.Key == "keyring/"+repo.KeyringID {
+		if r.Key == "keyring/"+keyringID {
 			kvid = r.VersionID
 		}
 	}
@@ -173,4 +171,54 @@ func (k *Keys) writeAll(ctx context.Context, items []putItem) ([]objRec, error) 
 		out = append(out, r)
 	}
 	return out, nil
+}
+
+// pendingMatchesState は保留が状態ファイルの記録と食い違わないことを確かめる(まとめレビュー C1: 保留を差し込まれても確定しない)。
+// repo.json を持つ保留は、状態の repo_id と同じでなければならない。確定の済んだ状態(phrase_confirmed が真)で残る保留は、
+// 確定の途中の再実行(置いたキーリングが last_phrase_verify の keyring_hash と同じもの)だけで、別のキーリングの保留は拒否する。
+func (k *Keys) pendingMatchesState(ctx context.Context, pend pendingFiles) error {
+	var repoID string
+	if _, err := k.getItem(ctx, "repo_id", &repoID); err != nil {
+		return err
+	}
+	if repoID != "" && pend.Repo != nil {
+		var r struct {
+			RepoID string `json:"repo_id"`
+		}
+		if json.Unmarshal(pend.Repo, &r) != nil || r.RepoID != repoID {
+			return mkErr(contract.CodeAlreadyInitialized, empty{})
+		}
+	}
+	var confirmed bool
+	if _, err := k.getItem(ctx, "phrase_confirmed", &confirmed); err != nil {
+		return err
+	}
+	if !confirmed {
+		return nil
+	}
+	var lpv struct {
+		KeyringHash string `json:"keyring_hash"`
+	}
+	if _, err := k.getItem(ctx, "last_phrase_verify", &lpv); err != nil {
+		return err
+	}
+	sum := sha256.Sum256(pend.Keyring)
+	if lpv.KeyringHash != "sha256:"+hex.EncodeToString(sum[:]) {
+		return mkErr(contract.CodeAlreadyInitialized, empty{})
+	}
+	return nil
+}
+
+// pendingKeyringID は保留の repo.json の keyring_id(無ければ開いたキーリングの id)。
+func pendingKeyringID(pend pendingFiles, fallback string) (string, error) {
+	var repo struct {
+		KeyringID string `json:"keyring_id"`
+	}
+	if pend.Repo != nil && json.Unmarshal(pend.Repo, &repo) != nil {
+		return "", errInternal()
+	}
+	if repo.KeyringID == "" {
+		return fallback, nil
+	}
+	return repo.KeyringID, nil
 }

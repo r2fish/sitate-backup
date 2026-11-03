@@ -164,6 +164,10 @@ func (w *world) setupKeys() {
 	pub := base64.StdEncoding.EncodeToString(sp.Marshal())
 	w.keysC = &keys.Keys{Store: w.put, State: w.st, KeyS: w.keyS, Codec: w.codec, Clock: realClock{}, Secrets: w.sec, Dir: w.dir,
 		Recorder: w.rec, Verifier: &keys.Verifier{Anchors: []string{w.sg.anchor()}}, Bundle: w.bundle()}
+	// 導入の順(spec 3.8): init と phrase verify は seal の前。seal の後の init は ALREADY_INITIALIZED(H2)なので、候補の定義を返す状態で通してから seal 済みにする。
+	w.setItem("sealed", false)
+	w.keysC.State = candidateState{w.st, w.def}
+	defer func() { w.keysC.State = w.st; w.setItem("sealed", true) }()
 	r, err := w.keysC.Init(w.ctx, contract.Call{Words: []string{"init"}, SecretOut: true, Args: map[string][]string{"approval-pubkey": {pub}}})
 	if err != nil {
 		t.Fatalf("Keys.Init: %v", err)
@@ -260,4 +264,14 @@ func mkPullKey() (json.RawMessage, error) {
 	}
 	return json.Marshal(contract.SSHKeySecret{Kind: contract.SecretKindSSHKey, PrivateKey: pem,
 		PublicKey: strings.TrimSpace(string(ssh.MarshalAuthorizedKey(sg.PublicKey()))), Fp: ssh.FingerprintSHA256(sg.PublicKey())})
+}
+
+// candidateState は seal の前の候補の定義を返す状態(Keys.Init の storage[0] の読み先)。
+type candidateState struct {
+	*fake.StateFiles
+	def []byte
+}
+
+func (c candidateState) ReadCandidate(context.Context) ([]byte, string, bool, error) {
+	return c.def, "", true, nil
 }

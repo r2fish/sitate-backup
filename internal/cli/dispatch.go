@@ -120,12 +120,7 @@ var routeParts = map[string]entry{
 		}
 		return d.Acquire.SourceSurvey(ctx, c)
 	},
-	"propose": func(d *Deps, ctx context.Context, c contract.Call) (contract.Reply, error) {
-		if d.Approval == nil {
-			return notImpl("propose")
-		}
-		return d.Approval.Propose(ctx, c)
-	},
+	"propose": proposeEntry,
 	"approve": func(d *Deps, ctx context.Context, c contract.Call) (contract.Reply, error) {
 		if d.Approval == nil {
 			return notImpl("approve")

@@ -28,6 +28,8 @@ type Approval struct {
 
 	// Dir は状態ディレクトリ(4.5)。pending/ はこの下に置く。必須(空なら全操作が INTERNAL)。
 	Dir string
+	// Surveyor は propose のホスト鍵の取得(source-change・restore-change の ssh-host。資格情報を使わない。D-0166)。nil なら取得しない。
+	Surveyor contract.Surveyor
 	// Planner は plan の追加項目と前提の材料(nil 可)。
 	Planner PlanHook
 	// ReadDefinition は propose seal・def-change の --file の内容を読む(file は "-" か、バックアップサーバー上のパス。"-" は標準入力)。
@@ -142,6 +144,30 @@ func (a *Approval) emit(ctx context.Context, typ string, facts map[string]any) [
 		return nil
 	}
 	return res
+}
+
+// emitApplied は change.applied を送る。宛先を替える notify-change・notify-add は、変更前の宛先(plan.before.to)にも送る
+// (持ち主を外す変更の最後の知らせが、外された持ち主に届く。spec 3.6 の apply の行)。
+func (a *Approval) emitApplied(ctx context.Context, rec changeRec) {
+	facts := map[string]any{"change_id": rec.ChangeID, "op": rec.Op, "not_before": nil, "expired_reason": nil}
+	var before []string
+	if rec.Op == "notify-change" || rec.Op == "notify-add" {
+		var p struct {
+			Before struct {
+				To []string `json:"to"`
+			} `json:"before"`
+		}
+		_ = json.Unmarshal(rec.Plan, &p)
+		before = p.Before.To
+	}
+	if to, ok := a.Recorder.(interface {
+		EmitTo(context.Context, string, []byte, []string) (contract.Event, []contract.DeliveryResult, error)
+	}); ok && len(before) > 0 {
+		b, _ := json.Marshal(facts)
+		_, _, _ = to.EmitTo(ctx, "change.applied", b, before)
+		return
+	}
+	a.emit(ctx, "change.applied", facts)
 }
 
 func stateOf(m map[string]*chgState, id string) *string {

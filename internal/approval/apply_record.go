@@ -90,13 +90,23 @@ func (a *Approval) enrollInput(rec changeRec, st contract.OpStep) (contract.Enro
 	var sec struct {
 		HostKeyFP string `json:"host_key_fp"`
 		Host      string `json:"host"`
+		Adapter   string `json:"adapter"`
+		AdminUser string `json:"admin_user"`
 		Dest      struct {
 			KeyRef string `json:"key_ref"`
 		} `json:"dest"`
 	}
 	_ = json.Unmarshal(in.Section, &sec)
 	in.HostKeyFP, in.Host = sec.HostKeyFP, sec.Host
-	if in.Kind == "source" && in.HostKeyFP == "" { // カードで照らした指紋が無いまま登録しない
+	if in.Kind == "source" { // 適用の source enroll の --host は ssh://<admin_user>@<source.host>:22(ポートは 22 固定。D-0166)
+		if !adminUserRe.MatchString(sec.AdminUser) {
+			return in, argErr("--source", "missing")
+		}
+		in.Host = sshHostArg(sec.AdminUser, sec.Host)
+		in.Section = withoutKeys(in.Section, "admin_user")
+	}
+	// カードで照らした指紋が無いまま登録しない(元サーバーと、ホスト鍵を持つ ssh-host の復元先。作成 / 破棄の組は指紋を持たない)。
+	if in.HostKeyFP == "" && (in.Kind == "source" || sec.Adapter == "" || sec.Adapter == "ssh-host") {
 		return in, hostkeyErr("", "SHA256:unset")
 	}
 	a.mu.Lock()
@@ -108,7 +118,7 @@ func (a *Approval) enrollInput(rec changeRec, st contract.OpStep) (contract.Enro
 	}
 	in.AdminRef = ref
 	if v, ok := c.Secrets[ref]; ok && ref != "" {
-		in.Admin = contract.NewSecret(v)
+		in.Admin = contract.NewSecret(secretText(v))
 	}
 	return in, nil
 }
@@ -177,7 +187,7 @@ func (a *Approval) appendApplied(ctx context.Context, s *pstore, rec changeRec, 
 	}
 	h.Release()
 	if err == nil {
-		a.emit(ctx, "change.applied", map[string]any{"change_id": rec.ChangeID, "op": rec.Op, "not_before": nil, "expired_reason": nil})
+		a.emitApplied(ctx, rec)
 	}
 	return err
 }

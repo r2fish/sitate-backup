@@ -24,6 +24,7 @@ const (
 	CodeKeyTooPowerful             Code = "KEY_TOO_POWERFUL"
 	CodeKeyAllowsUnversionedDelete Code = "KEY_ALLOWS_UNVERSIONED_DELETE"
 	CodeKeyReconcileUnverified     Code = "KEY_RECONCILE_UNVERIFIED"
+	CodeTargetEmpty                Code = "TARGET_EMPTY"
 	CodeKeyMissingPermission       Code = "KEY_MISSING_PERMISSION"
 	CodePriceUnknown               Code = "PRICE_UNKNOWN"
 	CodeKeyRotateRequired          Code = "KEY_ROTATE_REQUIRED"
@@ -119,6 +120,7 @@ var CodeTable = map[Code]CodeInfo{
 	CodeKeyTooPowerful:             {Exit: 3, Error: true, Warning: false, Failed: false, Retryable: false},
 	CodeKeyAllowsUnversionedDelete: {Exit: 0, Error: false, Warning: true, Failed: false, Retryable: false},
 	CodeKeyReconcileUnverified:     {Exit: 0, Error: false, Warning: true, Failed: false, Retryable: false},
+	CodeTargetEmpty:                {Exit: 0, Error: false, Warning: true, Failed: false, Retryable: false},
 	CodeKeyMissingPermission:       {Exit: 3, Error: true, Warning: false, Failed: false, Retryable: false},
 	CodePriceUnknown:               {Exit: 0, Error: false, Warning: true, Failed: false, Retryable: false},
 	CodeKeyRotateRequired:          {Exit: 0, Error: false, Warning: true, Failed: false, Retryable: false},

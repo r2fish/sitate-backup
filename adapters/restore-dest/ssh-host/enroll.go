@@ -12,6 +12,9 @@ import (
 // 専用ユーザー sitate-restore・その authorized_keys(restrict 付き)・/etc/hosts の固定・nft による隔離を置く。
 // 終了 0 の結果は前提の全項目が ok のときだけ。途中まで置いた物は戻さない(再登録が同じ状態に揃える)。
 func opEnroll(req *contract.RestoreDestRequest) (map[string]any, *adapterErr) {
+	if req.DryRun {
+		return enrollDryRun(req)
+	}
 	t, ok := parseTarget(req.Dest.At)
 	auth, hasAuth := authFromSecret(req.Secrets["dest_key"], true)
 	if !ok || t.user == "" || !hasAuth || !pubKeyRe.MatchString(req.AuthorizedKey) ||
@@ -109,4 +112,42 @@ func setupHost(c *conn, req *contract.RestoreDestRequest, rules string) *adapter
 		return codeErr("enroll_failed")
 	}
 	return nil
+}
+
+// enrollDryRun は dry_run の enroll(spec 3.2.4。D-0165): 接続してホスト鍵を返し、初期資格情報の受理と前提を読むだけで何も置かない。
+// 要求の host_key_fp があれば、初期資格情報を使う前に照らす。前提の欠けは失敗にせず prereq[] の ok: false で返す(人に全項目を示すため)。
+func enrollDryRun(req *contract.RestoreDestRequest) (map[string]any, *adapterErr) {
+	t, ok := parseTarget(req.Dest.At)
+	auth, hasAuth := authFromSecret(req.Secrets["dest_key"], true)
+	if !ok || t.user == "" || !hasAuth {
+		return nil, internalErr("request")
+	}
+	pin := ""
+	if req.HostKeyFP != nil {
+		pin = *req.HostKeyFP
+	}
+	c, e := dial(context.Background(), t, t.user, auth, pin)
+	if e != nil {
+		return nil, e
+	}
+	defer c.close()
+	observed := observedFrom(c) // sudo に入る前に、同じ接続で読む
+	c.sudo = t.user != "root"
+	pr, e := probeAdmin(c)
+	if e != nil {
+		return nil, e
+	}
+	var obs any // 読めなければ null
+	if observed != "" {
+		obs = observed
+	}
+	// subuid は enroll が専用ユーザーを作って初めて入る項目なので、実際の enroll と同じく登録の前は欠けとして数えない。
+	ps := make([]prereq, len(pr.prereqs))
+	for i, p := range pr.prereqs {
+		ps[i] = p
+		if p.Name == "subuid" {
+			ps[i].OK = true
+		}
+	}
+	return map[string]any{"host_key_fp": c.seenFP, "user": restoreUser, "observed_from": obs, "prereq": ps}, nil
 }

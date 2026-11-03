@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -41,6 +42,11 @@ func severityOf(t contract.EventType, facts map[string]json.RawMessage) string {
 	var code string
 	_ = json.Unmarshal(facts["error_code"], &code)
 	if code == "SIGNATURE_INVALID" || code == "PRECONDITION_CHANGED" {
+		return "critical"
+	}
+	var warns []string // backup.partial は TARGET_EMPTY(0 件の対象)があれば critical(D-0166)
+	_ = json.Unmarshal(facts["warning_codes"], &warns)
+	if t.Type == "backup.partial" && slices.Contains(warns, "TARGET_EMPTY") {
 		return "critical"
 	}
 	return "warn"
@@ -132,6 +138,12 @@ func (r *Recorder) newEventID(now time.Time) string {
 
 // Emit は contract.Recorder を満たす。
 func (r *Recorder) Emit(ctx context.Context, typ string, facts []byte) (contract.Event, []contract.DeliveryResult, error) {
+	return r.EmitTo(ctx, typ, facts, nil)
+}
+
+// EmitTo は Emit に、今の宛先へ足す宛先 extra を加えたもの(重複なし。今の宛先の後ろに足す)。宛先を替える変更の change.applied を
+// 変更前の宛先にも届けるために使う(spec 3.6 の apply の行)。extra が空なら Emit と同じ。
+func (r *Recorder) EmitTo(ctx context.Context, typ string, facts []byte, extra []string) (contract.Event, []contract.DeliveryResult, error) {
 	if err := r.ready(); err != nil || r.Notifier == nil {
 		return contract.Event{}, nil, internalErr()
 	}
@@ -148,6 +160,11 @@ func (r *Recorder) Emit(ctx context.Context, typ string, facts []byte) (contract
 	to, repoID, err := r.recipients(ctx)
 	if err != nil {
 		return contract.Event{}, nil, err
+	}
+	for _, x := range extra {
+		if !slices.Contains(to, x) {
+			to = append(append([]string(nil), to...), x)
+		}
 	}
 	ev := contract.Event{ID: r.newEventID(now), Type: typ, Facts: facts, Severity: sev, Time: now.UTC(), RepoID: repoID, Next: nextFor(t)}
 	key := mergeKey(t, fm)

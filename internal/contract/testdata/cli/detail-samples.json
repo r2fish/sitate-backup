@@ -90,6 +90,9 @@
  "KEY_RECONCILE_UNVERIFIED": {
   "reason": "STORAGE_UNREACHABLE"
  },
+ "TARGET_EMPTY": {
+  "target": "t1"
+ },
  "KEY_MISSING_PERMISSION": {
   "role": "write",
   "reason": "denied",

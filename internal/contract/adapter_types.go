@@ -138,6 +138,7 @@ type RestoreDestRequest struct {
 	Op            string            `json:"op"`
 	SessionID     *string           `json:"session_id,omitempty"`
 	Dest          RestoreDest       `json:"dest"`
+	DryRun        bool              `json:"dry_run,omitempty"` // enroll だけ。真なら接続してホスト鍵と前提を読むだけで何も置かない(D-0165)
 	Needs         *RestoreNeeds     `json:"needs,omitempty"`
 	HostKeyFP     *string           `json:"host_key_fp,omitempty"`
 	AuthorizedKey string            `json:"authorized_key,omitempty"`

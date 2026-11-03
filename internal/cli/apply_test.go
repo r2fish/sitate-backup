@@ -22,6 +22,8 @@ type applyStub struct {
 	pending string // Pending の結果
 	rec     []recorded
 	enroll  contract.StepResult
+	// instance は ApplyPlan が受けた実行の個体の識別子。
+	instance string
 }
 
 type recorded struct {
@@ -30,7 +32,8 @@ type recorded struct {
 	res contract.StepResult
 }
 
-func (a *applyStub) ApplyPlan(context.Context, contract.Call, string) (contract.ApplyPlan, error) {
+func (a *applyStub) ApplyPlan(_ context.Context, _ contract.Call, instance string) (contract.ApplyPlan, error) {
+	a.instance = instance
 	return contract.ApplyPlan{Changes: a.changes, Waiting: a.waiting}, nil
 }
 func (a *applyStub) ApplyEnroll(context.Context, string, int) (contract.StepResult, error) {

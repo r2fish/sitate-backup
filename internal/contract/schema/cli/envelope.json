@@ -1381,6 +1381,7 @@
         "STORAGE_DENIED",
         "STORAGE_SIZE_DRIFT",
         "STORAGE_UNREACHABLE",
+        "TARGET_EMPTY",
         "TEARDOWN_PENDING",
         "TEARDOWN_UNVERIFIED",
         "TIME_SKEW",
@@ -2730,6 +2731,7 @@
       "RETENTION_LONG",
       "ROLLBACK_SUSPECTED",
       "STORAGE_SIZE_DRIFT",
+      "TARGET_EMPTY",
       "TEARDOWN_UNVERIFIED"
      ]
     },
@@ -3006,6 +3008,25 @@
       "properties": {
        "detail": {
         "$ref": "https://sitate.invalid/schema/cli/detail.json#/$defs/KEY_RECONCILE_UNVERIFIED"
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "code": {
+        "const": "TARGET_EMPTY"
+       }
+      },
+      "required": [
+       "code"
+      ]
+     },
+     "then": {
+      "properties": {
+       "detail": {
+        "$ref": "https://sitate.invalid/schema/cli/detail.json#/$defs/TARGET_EMPTY"
        }
       }
      }

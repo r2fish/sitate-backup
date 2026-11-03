@@ -40,6 +40,7 @@ type TargetOutcome struct {
 	ErrorsOmitted     int64
 	WarningsOmitted   int64
 	ErrorCode         string // status が failed のとき(それ以外は空)
+	Empty             bool   // アダプタは ok だがエントリが 0 件(核が partial にして警告 TARGET_EMPTY。D-0166)
 }
 
 // IngestResult は取得の入口の出力(spec 7.5 backup の流れ 1)。cli はこれからマニフェストを組む。

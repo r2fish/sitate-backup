@@ -1,0 +1,12 @@
+{
+ "contract": "sitate.restore-dest/v1",
+ "op": "enroll",
+ "dry_run": true,
+ "dest": {
+  "at": "ssh://admin@dest.example.invalid:22",
+  "key_ref": "dest-key"
+ },
+ "secrets": {
+  "dest_key": "x"
+ }
+}

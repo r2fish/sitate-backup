@@ -1592,6 +1592,25 @@
      "if": {
       "properties": {
        "code": {
+        "const": "TARGET_EMPTY"
+       }
+      },
+      "required": [
+       "code"
+      ]
+     },
+     "then": {
+      "properties": {
+       "detail": {
+        "$ref": "https://sitate.invalid/schema/cli/detail.json#/$defs/TARGET_EMPTY"
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "code": {
         "const": "KEY_ROTATE_REQUIRED"
        }
       },

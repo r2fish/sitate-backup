@@ -33,7 +33,7 @@
     "restore-elsewhere": {"target_fields": ["backup", "to", "host_key_fp"], "fields": ["read_bytes"]},
     "restore-session-extend": {"target_fields": ["session_id", "backup"], "fields": ["expires_at_before", "expires_at_after"]},
     "restore-dest-release": {"target_fields": ["session_id", "backup", "authorized_key_fp", "allow_from"], "fields": ["restore_change"]},
-    "source-change": {"target_fields": ["host_key_fp"], "fields": ["before", "after", "needs_secret"]},
+    "source-change": {"target_fields": ["admin_user", "host_key_fp"], "fields": ["before", "after", "needs_secret"]},
     "notify-change": {"target_fields": [], "fields": ["before", "after"]},
     "notify-add": {"target_fields": [], "fields": ["before", "after"]},
     "key-rotate": {"target_fields": [], "fields": ["keyring_version", "over_ceiling"]},

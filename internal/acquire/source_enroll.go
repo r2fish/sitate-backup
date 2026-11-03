@@ -353,6 +353,9 @@ func (a *Acquire) SourceEnroll(ctx context.Context, c contract.Call) (contract.R
 		e.Next = []contract.Next{{Argv: []string{"sitate", "propose", "source-change"}, RequiresApproval: true}}
 		return contract.Reply{}, e
 	}
+	if c.DryRun { // --dry-run は実行しない(spec 3.1.1)。SSH も定義の読みも状態の書き込みもしない
+		return contract.Reply{}, contract.ErrNotImplemented("acquire.Acquire.SourceEnroll.dry-run")
+	}
 	h, err := hostArg(c)
 	if err != nil {
 		return contract.Reply{}, err

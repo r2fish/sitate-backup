@@ -55,7 +55,7 @@ func TestDelayTable(t *testing.T) {
 	e.setDef(`{}`)
 	delayed := map[string]map[string][]string{
 		"restore-change":      {"restore": {`{"adapter":"ssh-host"}`}},
-		"source-change":       {"source": {`{"host":"h"}`}},
+		"source-change":       {"source": {`{"host":"h","admin_user":"deploy"}`}},
 		"notify-change":       {"notify": {`{"to":["z@x"]}`}},
 		"key-rotate":          nil,
 		"phrase-reissue":      nil,

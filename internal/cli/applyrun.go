@@ -48,6 +48,9 @@ func stepCall(c contract.Call, st contract.OpStep) contract.Call {
 			args[k] = v
 		}
 	}
+	if st.Entry == "init-storage" {
+		args["from-apply"] = []string{"true"} // keys.ArgFromApply と同じ名前。seal の後の承認された適用。直接実行は拒む(M1)
+	}
 	return contract.Call{Words: strings.Fields(st.Entry), Args: args, RunID: c.RunID, Secrets: c.Secrets,
 		SecretOut: c.SecretOut, PhraseIn: c.PhraseIn, SnapshotKeyIn: c.SnapshotKeyIn}
 }

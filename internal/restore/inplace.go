@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -73,6 +74,9 @@ func resolveManifest(ctx context.Context, o *objReader, backup string, snapKey [
 			if ctx.Err() != nil {
 				return "", nil, abortError(ctx)
 			}
+			if !skippableManifestErr(err) { // 一時的な読み出しの失敗で、黙って古い世代にしない
+				return "", nil, err
+			}
 			last = err
 			continue
 		}
@@ -85,6 +89,20 @@ func resolveManifest(ctx context.Context, o *objReader, backup string, snapKey [
 		return "", nil, newErr(contract.CodeNoHealthyBackup, nil)
 	}
 	return "", nil, last
+}
+
+// skippableManifestErr は版を飛ばしてよい失敗: 復号・形式・鍵の失敗(書き込み鍵で積まれた偽の版。spec 4.2)。
+// 保管先への到達や読み出しの失敗(コードを持たない I/O の誤りを含む)は飛ばさず、呼び出し側へ返す。
+func skippableManifestErr(err error) bool {
+	var ce *contract.Error
+	if !errors.As(err, &ce) {
+		return false
+	}
+	switch ce.Code {
+	case contract.CodeStorageUnreachable, contract.CodeStorageDenied, contract.CodeStorageSizeDrift, contract.CodeRunAborted, contract.CodeInternal:
+		return false
+	}
+	return true
 }
 
 func allTargetsOK(m *manifestDoc) bool {
@@ -105,10 +123,16 @@ func (r *Restore) Restore(ctx context.Context, c contract.Call) (contract.Reply,
 	if c.DryRun {
 		return contract.Reply{}, contract.ErrNotImplemented("restore.Restore.dry-run")
 	}
-	to, err := filepath.Abs(arg(c, contract.ArgTo))
-	if arg(c, contract.ArgTo) == "" || err != nil {
+	rawTo := arg(c, contract.ArgTo)
+	if rawTo == "" {
 		return contract.Reply{}, argInvalid("--to", "missing")
 	}
+	// イテレーション 1 の (a) は絶対パスの空のディレクトリだけ。gate を通る宛先の字面(ssh://・source:・restore-dest:)や相対パスを
+	// 普通のパスとして読むと、cwd(sitate のホーム = 状態ディレクトリ)の下へ書ける。復元先の宛先はイテレーション 2。
+	if !filepath.IsAbs(rawTo) {
+		return contract.Reply{}, argInvalid("--to", "format")
+	}
+	to := filepath.Clean(rawTo)
 	addr := contract.StoreAddr{Endpoint: arg(c, contract.ArgEndpoint), Bucket: arg(c, contract.ArgBucket), Prefix: arg(c, contract.ArgPrefix)}
 	if addr.Endpoint == "" || addr.Bucket == "" {
 		return contract.Reply{}, argInvalid("--endpoint", "missing")

@@ -130,3 +130,57 @@ func TestAllowFromRule(t *testing.T) {
 		t.Errorf("指定ありで読めないとき(エラーにしない): %v %q %v", got, obs, e)
 	}
 }
+
+// D-0165: dry_run の enroll は接続してホスト鍵を返し、初期資格情報の受理と前提を読むだけで何も置かない。前提の欠けは失敗にせず prereq[] の ok で返す。
+// 復元先の鍵・許可する送信元・送信先の一覧は要らない(定義を組み立てる前の導入の手順 3)。
+func TestFakeEnrollDryRunPlacesNothing(t *testing.T) {
+	f, priv := fakeWithKey(t, false)
+	req := f.enrollReq("root", priv)
+	for _, k := range []string{"authorized_key", "allow_ssh_from", "egress_allow", "egress_host"} {
+		delete(req, k)
+	}
+	req["dry_run"] = true
+	code, res := call(t, req)
+	if code != 0 {
+		t.Fatalf("終了 %d: %v", code, res)
+	}
+	if res["host_key_fp"] != f.fp || res["user"] != restoreUser {
+		t.Errorf("結果 %v", res)
+	}
+	ps, _ := res["prereq"].([]any)
+	if len(ps) != 7 {
+		t.Errorf("prereq %v", ps)
+	}
+	bad := 0
+	for _, p := range ps {
+		if p.(map[string]any)["ok"] == false {
+			bad++
+		}
+	}
+	for _, p := range ps {
+		if m := p.(map[string]any); m["name"] == "subuid" && m["ok"] != true {
+			t.Errorf("subuid は enroll が作る項目で、登録の前は欠けに数えない: %v", m)
+		}
+	}
+	if bad == 0 {
+		t.Error("この偽の宛先は前提を持たないので、欠けが ok: false で載るはず")
+	}
+	if f.auths.Load() == 0 {
+		t.Error("初期資格情報の受理を確かめていない")
+	}
+	if _, err := os.Stat(f.home + "/.sitate"); err == nil {
+		t.Error("dry_run が何かを置いた")
+	}
+}
+
+// dry_run でも、要求の host_key_fp と違えば認証に進まず hostkey_mismatch(dry_run でない enroll に鍵と送信先が要ることは要求のスキーマが守る)。
+func TestFakeEnrollDryRunPin(t *testing.T) {
+	f, priv := fakeWithKey(t, false)
+	req := f.enrollReq("root", priv)
+	req["dry_run"], req["host_key_fp"] = true, "SHA256:"+strings.Repeat("B", 43)
+	code, res := call(t, req)
+	wantErr(t, code, res, "hostkey_mismatch")
+	if f.auths.Load() != 0 {
+		t.Error("不一致なのに認証に進んだ")
+	}
+}

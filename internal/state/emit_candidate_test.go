@@ -40,3 +40,32 @@ func TestEmitUsesCandidateRecipientsBeforeSeal(t *testing.T) {
 		t.Fatalf("候補の宛先に送られない: %v", n.to)
 	}
 }
+
+// M5: 宛先を替える notify-change の change.applied は、変更前の宛先にも届く(spec 3.6 の apply の行)。EmitTo は今の宛先に extra を足した和集合へ送る。
+func TestEmitToAddsPreviousRecipients(t *testing.T) {
+	n := &toNotifier{Notifier: &fake.Notifier{}}
+	r := newRecorder()
+	r.State, r.Notifier = candState{&fake.StateFiles{}, []byte(`{"notify":{"to":["new-hook"]}}`)}, n
+	facts := []byte(`{"change_id":"c-20261103-0001","op":"notify-change","not_before":null,"expired_reason":null}`)
+	if _, _, err := r.EmitTo(ctx, "change.applied", facts, []string{"old-owner", "new-hook"}); err != nil {
+		t.Fatal(err)
+	}
+	if len(n.to) != 2 || n.to[0] != "new-hook" || n.to[1] != "old-owner" {
+		t.Fatalf("宛先 = %v(今の宛先 + 変更前の宛先、重複なし)", n.to)
+	}
+}
+
+// D-0166: backup.partial は warning_codes に TARGET_EMPTY があれば critical、無ければ warn。
+func TestBackupPartialSeverityWithTargetEmpty(t *testing.T) {
+	for codes, want := range map[string]string{`["TARGET_EMPTY"]`: "critical", `[]`: "warn"} {
+		r := newRecorder()
+		r.State = candState{&fake.StateFiles{}, []byte(`{"notify":{"to":["ops-hook"]}}`)}
+		ev, _, err := r.Emit(ctx, "backup.partial", []byte(`{"run_id":"r-1","error_code":null,"warning_codes":`+codes+`,"snapshot_ref":null,"targets_total":1,"targets_failed":0,"chunk_keys_missing":0,"reason":null,"skipped_backups_count":0}`))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if ev.Severity != want {
+			t.Errorf("warning_codes=%s: severity = %s(%s のはず)", codes, ev.Severity, want)
+		}
+	}
+}

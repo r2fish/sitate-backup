@@ -13,7 +13,7 @@ type EventType struct {
 // EventTypes は 4.8 の表の全種類。
 var EventTypes = []EventType{
 	{Type: "backup.failed", Severities: []string{"critical"}, MergeKey: "", Resend: true},
-	{Type: "backup.partial", Severities: []string{"warn"}, MergeKey: "type", Resend: false},
+	{Type: "backup.partial", Severities: []string{"warn", "critical"}, MergeKey: "type", Resend: true},
 	{Type: "check.failed", Severities: []string{"critical"}, MergeKey: "", Resend: true},
 	{Type: "check.error", Severities: []string{"critical"}, MergeKey: "", Resend: true},
 	{Type: "verify.failed", Severities: []string{"critical"}, MergeKey: "", Resend: true},

@@ -27,6 +27,7 @@ type IngestTarget struct {
 	Warnings        []IngestItem
 	ErrorsOmitted   int64
 	WarningsOmitted int64
+	Empty           bool // アダプタは ok だがエントリが 0 件(警告 TARGET_EMPTY。D-0166)
 }
 
 // IngestOut は取得の入口の出力。Material は ManifestID・Targets・エントリと鍵表のチャンク・統計。残り(RepoID・CreatedAt ほか)は cli が埋める。

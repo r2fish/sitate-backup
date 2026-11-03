@@ -47,6 +47,9 @@ func notifySet(d *Deps, ctx context.Context, c contract.Call) (contract.Reply, e
 	if ch == "webhook" && to != ref {
 		return contract.Reply{}, argErr("--secret-ref", "format")
 	}
+	if c.DryRun { // --dry-run は実行しない(spec 3.1.1)。秘密ファイルを置かない
+		return notImpl("notify-set.dry-run")
+	}
 	raw, ok := c.Secrets[ref]
 	if !ok {
 		return contract.Reply{}, argErr("--secrets-stdin", "missing")

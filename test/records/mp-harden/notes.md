@@ -30,3 +30,10 @@
     試験は標準入力を送らない形にした。未読の標準入力を抱えたまま早期に失敗する入口の終わり方(読み捨てるか)は仕様に無い。
 12. `propose notify-add`・`notify-change` の資格情報(`--secrets-stdin`)を核が秘密ファイルへ置く処理は無かった(試験通知が宛先に届かず、確認語を人が得られない)。
     cli の `proposeEntry` で、作成時に置き、提案を作れなければ消すようにした。仕様 3.1.2.9 の残り — 提案が applied 以外で終わったとき(取り消し・期限切れ)に消す、適用の後に使わなくなった旧い参照名の値を消す — は未実装。
+
+## D-0166 の裁定の反映(2026-11-03)
+- 10(source-change の適用の宛先)、3(ホスト鍵の取得)、5(0 件の世代)は D-0166 で裁定済み。実装: `admin_user`(approval/plans.go・apply_record.go・cli/applydefine.go)、
+  `Surveyor.FetchHostKey`(contract・acquire・cli/ssh.go の資格情報なしの固定値つき呼び出し)、`TARGET_EMPTY`(acquire/run_target.go・cli/backup.go・state/emit.go・contract)。
+- 付随: `backup.partial` は critical を取り得るので events の `Severities` を `warn, critical` にし、再送の列(`Resend`)を真にした(契約試験の規則: critical は再送)。
+- 付随: 第 1 段の台本(`world_test.go`)は seal 済みの状態で `Keys.Init` を呼んでいた。H2 で seal 後の init を拒むようにしたため、init と phrase verify を seal の前(候補の定義を返す状態)で通し、その後に seal 済みにした。
+- 未実装のまま: `plan.errors[]` に入れた `STORAGE_UNREACHABLE` の `reason: timeout` は SSH の継ぎ目が `timeout` を返したときだけ。`restore` 側の 11(標準入力)、12(秘密の後始末)は裁定なし。

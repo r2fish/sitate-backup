@@ -80,7 +80,10 @@ func holdActive(ctx context.Context, d *Deps) bool {
 	return err == nil && json.Unmarshal(v, &h) == nil && h.Active
 }
 
-func holdSetEntry(d *Deps, ctx context.Context, _ contract.Call) (contract.Reply, error) {
+func holdSetEntry(d *Deps, ctx context.Context, c contract.Call) (contract.Reply, error) {
+	if c.DryRun { // --dry-run は実行しない(spec 3.1.1)。削除停止も通知も journal も動かさない
+		return notImpl("hold-set.dry-run")
+	}
 	if d.Store == nil || d.State == nil {
 		return notImpl("hold-set")
 	}

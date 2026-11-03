@@ -34,6 +34,7 @@ func TestStage3MainPath(t *testing.T) {
 	}
 	w := newS2(t)
 	w.notifyTo = hookDest
+	w.dryRunsBeforeDefinition() // 手順 2・3(D-0165)。定義の前
 	w.setupNotify()
 	w.initAndStorage()
 	w.enrollSource()
@@ -53,6 +54,7 @@ func TestStage3MainPath(t *testing.T) {
 	w.passingRestoreTest(gens[len(gens)-1].ref)
 	w.restoreEachGeneration(gens)
 	w.afterSealDenied(gens)
+	w.afterSealKinds()
 	w.checkMlock()
 }
 

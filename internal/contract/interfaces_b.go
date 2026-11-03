@@ -117,6 +117,9 @@ type Surveyor interface {
 	Survey(ctx context.Context, scope string) (json.RawMessage, error) // scope: full | db_only。sitate.source-survey/v1
 	Judge(ctx context.Context, survey json.RawMessage, def []byte) (class json.RawMessage, err error)
 	SelectHostKey(ctx context.Context, in HostKeyChoiceInput) (HostKeyChoice, error)
+	// FetchHostKey は接続先のホスト鍵の指紋(SHA256:...)を、認証の前の鍵交換だけで取る(資格情報を使わず、何も実行しない。D-0166)。
+	// 届かないときは *SSHError。propose の dry-run が plan.host_key_fp に載せる。
+	FetchHostKey(ctx context.Context, host string, port int) (string, error)
 }
 
 // HostKeyChoiceInput は照らすホスト鍵の値の選択の入力。

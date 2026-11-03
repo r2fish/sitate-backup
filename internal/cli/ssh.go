@@ -27,17 +27,22 @@ var errHostKeyPinned = errors.New("host key mismatch")
 // Run は contract.SSH を満たす。1 接続・1 コマンド。Script は `sh -s`(Sudo が真なら `sudo -n sh -s`)の標準入力へ流す。
 func (c SSHClient) Run(ctx context.Context, req contract.SSHRequest) (contract.SSHResult, error) {
 	var res contract.SSHResult
-	if req.Cred == nil {
-		return res, &contract.SSHError{Reason: contract.SSHReasonKeyUnparsable}
-	}
-	signer, err := ssh.ParsePrivateKey(req.Cred.Reveal())
-	if err != nil {
+	// 資格情報なしで固定値を指定した呼び出しは、ホスト鍵の指紋の取得だけ(認証の前に切る。D-0166)。
+	var auth []ssh.AuthMethod
+	switch {
+	case req.Cred != nil:
+		signer, err := ssh.ParsePrivateKey(req.Cred.Reveal())
+		if err != nil {
+			return res, &contract.SSHError{Reason: contract.SSHReasonKeyUnparsable}
+		}
+		auth = []ssh.AuthMethod{ssh.PublicKeys(signer)}
+	case req.PinnedFP == "":
 		return res, &contract.SSHError{Reason: contract.SSHReasonKeyUnparsable}
 	}
 	var seen string
 	cfg := &ssh.ClientConfig{
 		User: req.Target.User,
-		Auth: []ssh.AuthMethod{ssh.PublicKeys(signer)},
+		Auth: auth,
 		HostKeyCallback: func(_ string, _ net.Addr, key ssh.PublicKey) error {
 			seen = ssh.FingerprintSHA256(key)
 			if req.PinnedFP != "" && seen != req.PinnedFP {

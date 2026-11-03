@@ -136,6 +136,7 @@ func withoutHostKey(sec json.RawMessage) json.RawMessage {
 		return sec
 	}
 	delete(m, "host_key_fp")
+	delete(m, "admin_user") // 再登録に使う管理用の利用者は定義に入れない(D-0166)
 	b, _ := json.Marshal(m)
 	return b
 }

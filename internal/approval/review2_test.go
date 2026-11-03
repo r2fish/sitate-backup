@@ -133,7 +133,7 @@ func TestSecretsOnlyForMatchingID(t *testing.T) {
 	e.a.Planner = func(ctxT, string, map[string]json.RawMessage) (map[string]json.RawMessage, map[string]json.RawMessage, error) {
 		return map[string]json.RawMessage{"host_key_fp": json.RawMessage(`"SHA256:Y"`)}, nil, nil
 	}
-	y := e.propose("source-change", map[string][]string{"source": {`{"host":"y"}`}})
+	y := e.propose("source-change", map[string][]string{"source": {`{"host":"y","admin_user":"deploy"}`}})
 	e.approveAndWait(y, 24)
 	if plan, err := e.apply(map[string][]string{"id": {y.ChangeID}, "source-admin-ref": {"ry"}}); err != nil || len(plan.Changes) != 1 {
 		t.Fatalf("%+v %v", plan, err)

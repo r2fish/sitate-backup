@@ -1,0 +1,280 @@
+[
+ {
+  "args": {
+   "definition": {
+    "approval_delay_hours": 8,
+    "notify": {
+     "to": [
+      "ops@example.invalid"
+     ]
+    },
+    "restore": {
+     "adapter": "ssh-host",
+     "dest": {
+      "at": "ssh://ops@dest.example.invalid:22",
+      "key_ref": "dest-key"
+     }
+    },
+    "source": {
+     "host": "app01.example.invalid",
+     "targets": [
+      {
+       "files": "/srv/app/data",
+       "id": "t1"
+      }
+     ]
+    },
+    "storage": [
+     {
+      "bucket": "bkt",
+      "endpoint": "https://s3.example.invalid",
+      "key_ref": "store-main"
+     }
+    ],
+    "version": 1
+   }
+  },
+  "canonical_hash": "sha256:38f1f5bfe496dd104fa135dbeedd25e31657105a4ba63bff08f7a95fdd0ee895",
+  "change_id": "c-20270301-0001",
+  "delay_hours": 0,
+  "expires_at": "2027-03-08T00:00:00Z",
+  "op": "seal",
+  "plan": {
+   "approval_key_fp": "SHA256:K1e2Y3f4P5k6F7p8A9b0C1d2E3f4G5h6I7j8K9l0M1n",
+   "conflicts": [],
+   "definition": {
+    "approval_delay_hours": 8,
+    "notify": {
+     "to": [
+      "ops@example.invalid"
+     ]
+    },
+    "restore": {
+     "adapter": "ssh-host",
+     "dest": {
+      "at": "ssh://ops@dest.example.invalid:22",
+      "key_ref": "dest-key"
+     }
+    },
+    "source": {
+     "host": "app01.example.invalid",
+     "targets": [
+      {
+       "files": "/srv/app/data",
+       "id": "t1"
+      }
+     ]
+    },
+    "storage": [
+     {
+      "bucket": "bkt",
+      "endpoint": "https://s3.example.invalid",
+      "key_ref": "store-main"
+     }
+    ],
+    "version": 1
+   },
+   "definition_from": null,
+   "errors": [],
+   "host_keys": [
+    {
+     "host": "app01.example.invalid",
+     "host_key_fp": "SHA256:A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8S9t0U1v",
+     "role": "source"
+    }
+   ],
+   "reversible": true,
+   "weaker_items": [
+    "/approval_delay_hours"
+   ]
+  },
+  "precondition_hash": "sha256:f3fd585baf17244c3b88c3694858b26ce51cf1396a15c335b822bc62d38f1ab5",
+  "proposed_at": "2027-03-01T00:00:00Z",
+  "target": null
+ },
+ {
+  "args": {
+   "source": {
+    "admin_user": "deploy",
+    "host": "attacker.example.invalid",
+    "host_key_fp": "SHA256:A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8S9t0U1v",
+    "targets": [
+     {
+      "files": "/srv/app/data",
+      "id": "t1"
+     }
+    ]
+   }
+  },
+  "canonical_hash": "sha256:1d586e89f6ac973d5273c6efbefbc8478438bf1df029ab570a1f0affe0470b7b",
+  "change_id": "c-20270301-0001",
+  "delay_hours": 24,
+  "expires_at": "2027-03-08T00:00:00Z",
+  "op": "source-change",
+  "plan": {
+   "admin_user": "deploy",
+   "after": {
+    "host": "attacker.example.invalid",
+    "targets": [
+     {
+      "files": "/srv/app/data",
+      "id": "t1"
+     }
+    ]
+   },
+   "before": {
+    "host": "app01.example.invalid",
+    "targets": [
+     {
+      "files": "/srv/app/data",
+      "id": "t1"
+     }
+    ]
+   },
+   "conflicts": [],
+   "errors": [],
+   "host_key_fp": "SHA256:A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8S9t0U1v",
+   "needs_secret": true,
+   "reversible": true
+  },
+  "precondition_hash": "sha256:8ec2a13d484cd651e8273fa7ad5d6d7185af635e28bd22f7827588342ddb255e",
+  "proposed_at": "2027-03-01T00:00:00Z",
+  "target": {
+   "section": "source",
+   "section_hash_before": "sha256:dfd888412b3b4d076a47c515f9056640f6de2d349e74b20bf10ede16cb040242"
+  }
+ },
+ {
+  "args": {
+   "restore": {
+    "adapter": "ssh-host",
+    "dest": {
+     "at": "ssh://ops@other.example.invalid:22",
+     "key_ref": "dest-key"
+    },
+    "host_key_fp": "SHA256:A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8S9t0U1v"
+   }
+  },
+  "canonical_hash": "sha256:878250910823b9a2b239d21eb9fa72ae36f0544d0b0f6979303be89a64f7d75d",
+  "change_id": "c-20270301-0002",
+  "delay_hours": 24,
+  "expires_at": "2027-03-08T00:00:00Z",
+  "op": "restore-change",
+  "plan": {
+   "after": {
+    "adapter": "ssh-host",
+    "dest": {
+     "at": "ssh://ops@other.example.invalid:22",
+     "key_ref": "dest-key"
+    }
+   },
+   "before": {
+    "adapter": "ssh-host",
+    "dest": {
+     "at": "ssh://ops@dest.example.invalid:22",
+     "key_ref": "dest-key"
+    }
+   },
+   "conflicts": [],
+   "errors": [],
+   "host_key_fp": "SHA256:A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8S9t0U1v",
+   "needs_secret": true,
+   "reversible": true
+  },
+  "precondition_hash": "sha256:73e6a6f9633ae65364709eae5aa22516c76bbf1be474a145241f900009ec1451",
+  "proposed_at": "2027-03-01T00:00:00Z",
+  "target": {
+   "section": "restore",
+   "section_hash_before": "sha256:70d23d01072410ae34868176604259d9dc491a5abd8fb17e67335a8419443ba4"
+  }
+ },
+ {
+  "args": {
+   "hours": 48
+  },
+  "canonical_hash": "sha256:a90382e477a0a721baa04621c74469ff0cd20fbdccc7fab7041aedb9af84359e",
+  "change_id": "c-20270301-0003",
+  "delay_hours": 24,
+  "expires_at": "2027-03-08T00:00:00Z",
+  "op": "delay-change",
+  "plan": {
+   "after": 48,
+   "applies_to": "later_proposals",
+   "before": 24,
+   "conflicts": [
+    "c-20270301-0001",
+    "c-20270301-0002"
+   ],
+   "errors": [],
+   "reversible": true
+  },
+  "precondition_hash": "sha256:d65a98d17ea6b7f244bbc272c3c66ed98608ba536cc66358bafe414a794bd1fd",
+  "proposed_at": "2027-03-01T00:00:00Z",
+  "target": null
+ },
+ {
+  "args": {
+   "definition": {
+    "approval_delay_hours": 24,
+    "cost_ceiling_yen": 20000,
+    "notify": {
+     "to": [
+      "ops@example.invalid"
+     ]
+    },
+    "restore": {
+     "adapter": "ssh-host",
+     "dest": {
+      "at": "ssh://ops@dest.example.invalid:22",
+      "key_ref": "dest-key"
+     }
+    },
+    "source": {
+     "host": "app01.example.invalid",
+     "targets": [
+      {
+       "files": "/srv/app/data",
+       "id": "t1"
+      }
+     ]
+    },
+    "storage": [
+     {
+      "bucket": "bkt",
+      "endpoint": "https://s3.example.invalid",
+      "key_ref": "store-main"
+     }
+    ],
+    "version": 1
+   }
+  },
+  "canonical_hash": "sha256:1fcc58f76f9885c7b266dcf0e92f39896797f5136fb9b24650fd8806c8a0a908",
+  "change_id": "c-20270301-0004",
+  "delay_hours": 0,
+  "expires_at": "2027-03-08T00:00:00Z",
+  "op": "def-change",
+  "plan": {
+   "conflicts": [
+    "c-20270301-0001",
+    "c-20270301-0002",
+    "c-20270301-0003"
+   ],
+   "cost_ceiling_yen": 20000,
+   "def_hash_after": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+   "diff": [
+    {
+     "after": 20000,
+     "before": null,
+     "pointer": "/cost_ceiling_yen"
+    }
+   ],
+   "errors": [],
+   "estimate_after_jpy": null,
+   "over_ceiling": null,
+   "reversible": true
+  },
+  "precondition_hash": "sha256:11904b83ec4bb7dc5898a3f8e5c16fe0ce7936f35951f37deec2b649c2a43c0d",
+  "proposed_at": "2027-03-01T00:00:00Z",
+  "target": null
+ }
+]

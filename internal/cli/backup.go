@@ -56,6 +56,9 @@ func intOf(v any) int { f, _ := v.(float64); return int(f) }
 // backupEntry は backup の入口。取得・保管の失敗はすべて backup.failed で知らせる(spec 4.8)。
 // 対象がすべて failed の ALL_TARGETS_FAILED は finishResult が発行済みなので重ねない。
 func backupEntry(d *Deps, ctx context.Context, c contract.Call) (contract.Reply, error) {
+	if c.DryRun { // --dry-run は実行しない(spec 3.1.1)。取得も保管も通知も行わない
+		return notImpl("backup.dry-run")
+	}
 	if rep, skip := d.skipTimerSetup(ctx, c); skip {
 		return rep, nil
 	}
@@ -162,6 +165,11 @@ func (d *Deps) backupIngest(ctx context.Context, c contract.Call) (contract.Repl
 		"uploaded_bytes": o.Material.BytesNew, "duration_s": int64(o.Duration.Seconds()), "chunk_keys_missing": o.Material.ChunkKeysMissing}
 	if len(o.Skipped) > 0 {
 		res["skipped_backups"] = o.Skipped
+	}
+	for _, oc := range o.Outcomes {
+		if oc.Empty { // 0 件の対象(全消去の後など)。対象は partial、世代は incomplete になっている
+			warns = append(warns, contract.Warning{Code: contract.CodeTargetEmpty, Detail: mustMarshal(map[string]any{"target": oc.ID}), Next: []contract.Next{}})
+		}
 	}
 	if o.Material.ChunkKeysMissing > 0 {
 		warns = append(warns, contract.Warning{Code: contract.CodeChunkKeyMissing, Detail: mustMarshal(map[string]any{"count": o.Material.ChunkKeysMissing}), Next: []contract.Next{}})

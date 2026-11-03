@@ -70,6 +70,9 @@ func (k *Keys) Init(ctx context.Context, c contract.Call) (contract.Reply, error
 	if err := errNeedDeps(k.State != nil, k.Codec != nil, k.Clock != nil, k.Dir != ""); err != nil {
 		return contract.Reply{}, err
 	}
+	if c.DryRun { // --dry-run は実行しない(spec 3.1.1)。plan は未実装なので状態もファイルも動かさずに NOT_IMPLEMENTED
+		return contract.Reply{}, contract.ErrNotImplemented("keys.Keys.Init.dry-run")
+	}
 	if argFlag(c, "adopt") {
 		return contract.Reply{}, contract.ErrNotImplemented("keys.Keys.Init --adopt")
 	}
@@ -80,6 +83,9 @@ func (k *Keys) Init(ctx context.Context, c contract.Call) (contract.Reply, error
 	blob, err := base64.StdEncoding.DecodeString(pub)
 	if err != nil || !validEd25519Blob(blob) || base64.StdEncoding.EncodeToString(blob) != pub {
 		return contract.Reply{}, errArg("--approval-pubkey", "format")
+	}
+	if err := k.initRerunAllowed(ctx, pub); err != nil {
+		return contract.Reply{}, err
 	}
 	if t, found, derr := k.storageTarget(ctx, c); derr != nil {
 		return contract.Reply{}, derr
@@ -96,6 +102,30 @@ func (k *Keys) Init(ctx context.Context, c contract.Call) (contract.Reply, error
 		return contract.Reply{}, err
 	}
 	return k.initCreate(ctx, now, pub, blob)
+}
+
+// initRerunAllowed は確定前の init の再実行が承認鍵を差し替えないことを確かめる(まとめレビュー H2)。
+// seal の後は拒否する(承認鍵は approval-key-change でしか変えない)。承認鍵が登録済みで指紋が違えば拒否する
+// (応答を失ったやり直しは同じ鍵で足りる。spec 3.1.2.1、3.1.4)。
+func (k *Keys) initRerunAllowed(ctx context.Context, pub string) error {
+	var sealed bool
+	if _, err := k.getItem(ctx, "sealed", &sealed); err != nil {
+		return err
+	}
+	if sealed {
+		return mkErr(contract.CodeAlreadyInitialized, empty{})
+	}
+	var ak struct {
+		KeyFP string `json:"key_fp"`
+	}
+	if _, err := k.getItem(ctx, "approval_key", &ak); err != nil {
+		return err
+	}
+	blob, _ := base64.StdEncoding.DecodeString(pub)
+	if ak.KeyFP != "" && ak.KeyFP != fingerprint(blob) {
+		return mkErr(contract.CodeAlreadyInitialized, empty{})
+	}
+	return nil
 }
 
 // newMaster は新しいマスター鍵(乱数 32 バイト、鍵 ID k1)を作り、keys/master.json の形と鍵そのものを返す。

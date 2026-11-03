@@ -82,7 +82,7 @@ func wireKeysRestore(d *Deps, stateDir string, write, read *dynStore, ver *keys.
 	dst := &restore.RestoreDestEnroller{Store: read, State: d.State, Adapters: d.Adapters, Codec: d.Codec, KeyS: d.KeyS, Crypto: d.Crypto, Recorder: d.Recorder,
 		Clock: d.Clock, Secrets: d.Secrets}
 	d.Approval = &approval.Approval{State: d.State, Enroller: kindEnroller{source: src, dest: dst}, Recorder: d.Recorder, Clock: approvalClock{d: d},
-		TestNotifier: d.TestNotifier, Dir: stateDir, Planner: d.Planner, ReadDefinition: d.ReadDefinition}
+		TestNotifier: d.TestNotifier, Dir: stateDir, Planner: d.Planner, ReadDefinition: d.ReadDefinition, Surveyor: &acquire.Surveyor{SSH: d.SSH}}
 }
 
 // kindEnroller は登録の種別(source / restore-dest)で実物を選ぶ(approval の Enroller は 1 つ)。

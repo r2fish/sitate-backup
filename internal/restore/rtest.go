@@ -78,6 +78,9 @@ func (r *Restore) RestoreTest(ctx context.Context, c contract.Call) (contract.Re
 	if err := r.coreMissing(); err != nil {
 		return contract.Reply{}, err
 	}
+	if c.DryRun { // --dry-run は実行しない(spec 3.1.1)。復元先も保管先の読み出しも記録も動かさない
+		return contract.Reply{}, contract.ErrNotImplemented("restore.Restore.RestoreTest.dry-run")
+	}
 	if c.RunID == "" {
 		return contract.Reply{}, internalErr("")
 	}

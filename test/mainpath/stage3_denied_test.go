@@ -43,6 +43,7 @@ func (w *s2) afterSealDenied(gens []genRec) {
 	if after := w.denyState(); after != before {
 		t.Errorf("拒否された操作の後で secrets/ または def/ が変わった")
 	}
+	w.restorePlantDenied()
 	w.deleteLockedVersions(gens[len(gens)-1].ref)
 }
 

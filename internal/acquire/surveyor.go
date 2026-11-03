@@ -28,6 +28,25 @@ type Surveyor struct {
 
 var _ contract.Surveyor = (*Surveyor)(nil)
 
+// FetchHostKey は contract.Surveyor を満たす。資格情報を使わず(Cred なし)、見えた指紋と違う固定値で接続して、認証の前に切られた接続の SeenFP を取る。
+func (s *Surveyor) FetchHostKey(ctx context.Context, host string, port int) (string, error) {
+	if s.SSH == nil {
+		return "", errInternal("")
+	}
+	conn := contract.SSHConn{Target: contract.SSHTarget{Host: host, Port: port, User: "sitate-hostkey"}, PinnedFP: sentinelFP}
+	r, err := s.SSH.Run(ctx, contract.SSHRequest{SSHConn: conn})
+	var hk *contract.SSHHostKeyError
+	switch {
+	case errors.As(err, &hk) && hk.Seen != "":
+		return hk.Seen, nil
+	case err == nil && r.SeenFP != "":
+		return r.SeenFP, nil
+	case err != nil:
+		return "", err
+	}
+	return "", &contract.SSHError{Reason: contract.SSHReasonConnect}
+}
+
 // SeenFP は直前の接続で見えたホスト鍵の指紋(接続できなければ空)。
 func (s *Surveyor) SeenFP() string { return s.seen }
 

@@ -1432,6 +1432,10 @@
       }
      ]
     },
+    "admin_user": {
+     "type": "string",
+     "pattern": "^[a-z_][a-z0-9_-]{0,31}$"
+    },
     "needs_secret": {
      "type": "boolean"
     },
@@ -1649,7 +1653,7 @@
     "definition": {
      "$ref": "https://sitate.invalid/schema/data/definition.json#/$defs/definition"
     },
-    "host_key_pins": {
+    "host_keys": {
      "type": "array",
      "items": {
       "$ref": "#/$defs/host_pin"
@@ -1658,7 +1662,7 @@
     "approval_key_fp": {
      "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/fp"
     },
-    "weak_items": {
+    "weaker_items": {
      "type": "array",
      "items": {
       "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/pointer"

@@ -34,6 +34,9 @@ func (r *Restore) RestoreDestEnroll(ctx context.Context, c contract.Call) (contr
 		e.Next = []contract.Next{{Argv: []string{"sitate", "propose", "restore-change"}, RequiresApproval: true}}
 		return contract.Reply{}, e
 	}
+	if c.DryRun && hasArg(c, "dest") { // 導入の手順 3: 定義を組み立てる前に引数から動く(dest_dryrun.go。D-0165)
+		return r.enrollDryRun(ctx, c)
+	}
 	d, _, err := r.readDef(ctx)
 	if err != nil {
 		return contract.Reply{}, err
@@ -42,15 +45,9 @@ func (r *Restore) RestoreDestEnroll(ctx context.Context, c contract.Call) (contr
 	if c.DryRun {
 		return reply(map[string]any{"host_key_fp": nil, "isolation": []isoItem{}, "replaced": false})
 	}
-	var admin *contract.Secret
-	if ref := arg(c, contract.ArgAdminRef); ref != "" {
-		if v, ok := c.Secrets[ref]; ok {
-			var s string
-			if json.Unmarshal(v, &s) == nil {
-				admin = contract.NewSecret([]byte(s))
-				defer admin.Wipe()
-			}
-		}
+	admin := adminOf(c)
+	if admin != nil {
+		defer admin.Wipe()
 	}
 	prev, err := pinnedFP(ctx, r.State, host)
 	if err != nil {
@@ -116,4 +113,15 @@ func enrollMismatchDetail(reason, osName, arch string) map[string]any {
 		o, a = osName, arch
 	}
 	return map[string]any{"reason": reason, "mismatches": []string{}, "prereq": []any{}, "needed_gb": nil, "free_gb": nil, "os": o, "arch": a}
+}
+
+// adminOf は --admin-ref の初期資格情報(JSON の文字列)。無ければ nil。
+func adminOf(c contract.Call) *contract.Secret {
+	if v, ok := c.Secrets[arg(c, contract.ArgAdminRef)]; ok {
+		var s string
+		if json.Unmarshal(v, &s) == nil {
+			return contract.NewSecret([]byte(s))
+		}
+	}
+	return nil
 }

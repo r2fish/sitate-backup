@@ -63,6 +63,11 @@ func (a *Approval) propose(ctx context.Context, kind string, in map[string][]str
 	if err := a.checkKind(ctx, kind, spec, in, args, plan); err != nil {
 		return out, err
 	}
+	if !dry { // 実行すれば失敗する理由(ホスト鍵を取れないなど)があれば提案を作らない。dry-run は plan.errors[] で返す
+		if perr := planFailure(plan); perr != nil {
+			return out, perr
+		}
+	}
 	pre, err := a.precondition(ctx, kind, args)
 	if err != nil {
 		return out, err
@@ -148,7 +153,9 @@ func (a *Approval) buildRecord(s *pstore, kind string, args, plan map[string]jso
 	if _, ok := plan["reversible"]; !ok {
 		plan["reversible"] = json.RawMessage(`true`)
 	}
-	plan["errors"] = json.RawMessage(`[]`)
+	if len(plan["errors"]) == 0 { // 種別の検査が plan.errors[] を足していればそのまま残す
+		plan["errors"] = json.RawMessage(`[]`)
+	}
 	argsB, _ := json.Marshal(args)
 	planB, _ := json.Marshal(plan)
 	rec := changeRec{changeBody: changeBody{
@@ -256,6 +263,9 @@ func (a *Approval) checkKind(ctx context.Context, kind string, spec kindSpec, in
 	if err != nil {
 		return err
 	}
+	if err := a.planDetails(ctx, kind, args, plan); err != nil {
+		return err
+	}
 	if a.Planner != nil {
 		extra, _, perr := a.Planner(ctx, kind, args)
 		if perr != nil {
@@ -266,9 +276,8 @@ func (a *Approval) checkKind(ctx context.Context, kind string, spec kindSpec, in
 				plan[k] = v
 			}
 		}
-		return pinHostKey(kind, args, plan)
 	}
-	return nil
+	return pinHostKey(kind, args, plan)
 }
 
 // pinHostKey は plan.host_key_fp(取得した指紋。カードに示す)を args の節にも入れ、適用で照合する指紋をカードの指紋と同じ値にする(3.1.2.9)。
@@ -290,4 +299,16 @@ func pinHostKey(kind string, args, plan map[string]json.RawMessage) error {
 	b, _ := json.Marshal(sec)
 	args[key], _ = contract.CanonicalJSON(b)
 	return nil
+}
+
+// planFailure は plan.errors[] の先頭を誤りにする(無ければ nil)。
+func planFailure(plan map[string]json.RawMessage) error {
+	var errs []struct {
+		Code   contract.Code  `json:"code"`
+		Detail map[string]any `json:"detail"`
+	}
+	if json.Unmarshal(plan["errors"], &errs) != nil || len(errs) == 0 {
+		return nil
+	}
+	return apiErr(errs[0].Code, errs[0].Detail)
 }

@@ -84,7 +84,10 @@
      "$ref": "https://sitate.invalid/schema/cli/common.json#/$defs/time"
     },
     "severity": {
-     "const": "warn"
+     "enum": [
+      "warn",
+      "critical"
+     ]
     },
     "type": {
      "const": "backup.partial"

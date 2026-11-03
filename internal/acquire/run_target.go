@@ -191,6 +191,10 @@ func (a *Acquire) collect(out TargetOutcome, ts *targetStream, raw json.RawMessa
 		out.ErrorCode = firstCode(res.Errors)
 		return out, nil, nil, nil
 	}
+	if out.Status == "ok" && out.Files == 0 && len(out.Dumps) == 0 {
+		// エントリが 0 件の対象は、アダプタが ok でも partial にする(全消去の後の世代を latest にしない。index/files も置き換えない)。
+		out.Status, out.Empty = "partial", true
+	}
 	return out, ents, chunks, nil
 }
 

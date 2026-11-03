@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -274,7 +275,13 @@ func (r *RunCleanup) Cleanup(context.Context, string, string) ([]contract.Resour
 }
 
 // Surveyor は contract.Surveyor の偽物。
-type Surveyor struct{ Survey_ json.RawMessage }
+type Surveyor struct {
+	Survey_ json.RawMessage
+	// FP は FetchHostKey が返す指紋。Err があればそれを返す。Fetched は呼ばれた (host, port)。
+	FP      string
+	Err     error
+	Fetched []string
+}
 
 // Survey は contract.Surveyor を満たす。
 func (s *Surveyor) Survey(context.Context, string) (json.RawMessage, error) { return s.Survey_, nil }
@@ -287,6 +294,18 @@ func (s *Surveyor) Judge(context.Context, json.RawMessage, []byte) (json.RawMess
 // SelectHostKey は contract.Surveyor を満たす。
 func (s *Surveyor) SelectHostKey(context.Context, contract.HostKeyChoiceInput) (contract.HostKeyChoice, error) {
 	return contract.HostKeyChoice{}, nil
+}
+
+// FetchHostKey は contract.Surveyor を満たす。
+func (s *Surveyor) FetchHostKey(_ context.Context, host string, port int) (string, error) {
+	s.Fetched = append(s.Fetched, fmt.Sprintf("%s:%d", host, port))
+	if s.Err != nil {
+		return "", s.Err
+	}
+	if s.FP == "" {
+		return "SHA256:fakeFetchedHostKey00000000000000000000000", nil
+	}
+	return s.FP, nil
 }
 
 var errFake = errors.New("fake: 台本が無い")

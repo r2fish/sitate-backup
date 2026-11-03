@@ -375,7 +375,8 @@ func (t *rtState) checkAgainstManifest() error {
 		files += x.Files + int64(len(x.Dumps))
 		bytes += x.Bytes
 	}
-	if t.remote.Files == files && t.remote.Bytes == bytes {
+	// 0 件の報告は、期待も 0 件でも合格にしない(空の世代・全消去の後の世代に合格の署名を付けない。spec 3.5)。
+	if t.remote.Files == files && t.remote.Bytes == bytes && t.remote.Files > 0 {
 		return nil
 	}
 	diff := files - t.remote.Files

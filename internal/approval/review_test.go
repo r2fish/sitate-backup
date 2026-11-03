@@ -148,22 +148,22 @@ func TestHostKeyPinning(t *testing.T) {
 	e.a.Planner = func(_ ctxT, op string, _ map[string]json.RawMessage) (map[string]json.RawMessage, map[string]json.RawMessage, error) {
 		return map[string]json.RawMessage{"host_key_fp": json.RawMessage(`"SHA256:CARD"`)}, nil, nil
 	}
-	p := e.propose("source-change", map[string][]string{"source": {`{"host":"ssh://u@h:22"}`}})
+	p := e.propose("source-change", map[string][]string{"source": {`{"host":"ssh://u@h:22","admin_user":"deploy"}`}})
 	e.approveAndWait(p, 24)
 	call := contract.Call{Words: []string{"apply"}, Args: map[string][]string{"id": {p.ChangeID}, "source-admin-ref": {"r"}}, Secrets: contract.SecretInput{"r": json.RawMessage(`"k"`)}}
 	plan, err := e.a.ApplyPlan(ctx, call, "i-1")
 	if err != nil || len(plan.Changes) != 1 {
 		t.Fatalf("%+v %v", plan, err)
 	}
-	if _, err := e.a.ApplyEnroll(ctx, p.ChangeID, 0); err != nil || len(enr.in) != 1 || enr.in[0].HostKeyFP != "SHA256:CARD" || enr.in[0].AdminRef != "r" || enr.in[0].Admin == nil || string(enr.in[0].Admin.Reveal()) != `"k"` {
+	if _, err := e.a.ApplyEnroll(ctx, p.ChangeID, 0); err != nil || len(enr.in) != 1 || enr.in[0].HostKeyFP != "SHA256:CARD" || enr.in[0].AdminRef != "r" || enr.in[0].Admin == nil || string(enr.in[0].Admin.Reveal()) != "k" {
 		t.Fatalf("カードの指紋が登録に届かない: %+v %v", enr.in, err)
 	}
 	// 節に別の指紋があれば提案を作らない。
-	want(t, "指紋の食い違い", proposeErr(e, "source-change", map[string][]string{"source": {`{"host":"x","host_key_fp":"SHA256:OTHER"}`}}), contract.CodeSourceHostkeyMismatch, "")
+	want(t, "指紋の食い違い", proposeErr(e, "source-change", map[string][]string{"source": {`{"host":"x","admin_user":"deploy","host_key_fp":"SHA256:OTHER"}`}}), contract.CodeSourceHostkeyMismatch, "")
 	// 指紋が無いまま登録へ進まない。
 	e2 := newEnv(t, true)
 	e2.a.Enroller = &recEnroller{}
-	q := e2.propose("source-change", map[string][]string{"source": {`{"host":"h"}`}})
+	q := e2.propose("source-change", map[string][]string{"source": {`{"host":"h","admin_user":"deploy"}`}})
 	e2.approveAndWait(q, 24)
 	if _, err := e2.apply(map[string][]string{"id": {q.ChangeID}, "source-admin-ref": {"r"}}); err != nil {
 		t.Fatal(err)

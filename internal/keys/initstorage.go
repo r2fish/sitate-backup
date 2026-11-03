@@ -62,10 +62,18 @@ func (k *Keys) InitStorage(ctx context.Context, c contract.Call) (contract.Reply
 	if _, err := k.getItem(ctx, "sealed", &sealed); err != nil {
 		return contract.Reply{}, err
 	}
-	if sealed {
+	fromApply := argFlag(c, ArgFromApply)
+	if sealed && fromApply { // 承認された storage-init の適用。保管先は承認済みの定義の storage[0] のままにする
+		if err := k.approvedStorageMatches(ctx, c); err != nil {
+			return contract.Reply{}, err
+		}
+	} else if sealed {
 		e := mkErr(contract.CodeApprovalRequired, map[string]any{"kind": "storage-init"})
 		e.Next = []contract.Next{{Argv: []string{"sitate", "propose", "storage-init"}, RequiresApproval: true}}
 		return contract.Reply{}, e
+	}
+	if c.DryRun { // 手順 2 の dry-run は候補を読まず引数から plan を作る(initstorage_dry.go。D-0165)
+		return k.initStorageDryRun(ctx, c)
 	}
 	t, found, err := k.storageTarget(ctx, c)
 	if err != nil {
@@ -97,6 +105,36 @@ func (k *Keys) InitStorage(ctx context.Context, c contract.Call) (contract.Reply
 		return contract.Reply{}, mkErr(contract.CodeSecretMissing, map[string]string{"ref": adminRef})
 	}
 	return k.initStorageIssue(ctx, ic, reissue)
+}
+
+// ArgFromApply は apply の run 要素(承認された storage-init の適用)が cli から付ける内部の印。コマンドラインの引数ではない
+// (引数の検査が未知の選択肢を拒むので、エージェントは付けられない)。
+const ArgFromApply = "from-apply"
+
+// approvedStorageMatches は適用の --endpoint・--bucket・--prefix が承認済みの定義の storage[0] と同じか(違えば ALREADY_INITIALIZED。
+// 保管先を替えるときは spec 3.1.2.1 の分岐 6)。人が入れた管理用鍵を別の保管先へ渡さない。
+func (k *Keys) approvedStorageMatches(ctx context.Context, c contract.Call) error {
+	def, _, err := k.State.ReadDef(ctx)
+	if err != nil {
+		return err
+	}
+	var d struct {
+		Storage []struct {
+			Endpoint string `json:"endpoint"`
+			Bucket   string `json:"bucket"`
+			Prefix   string `json:"prefix"`
+		} `json:"storage"`
+	}
+	if json.Unmarshal(def, &d) != nil || len(d.Storage) == 0 {
+		return mkErr(contract.CodeAlreadyInitialized, empty{})
+	}
+	s := d.Storage[0]
+	for name, want := range map[string]string{contract.ArgEndpoint: s.Endpoint, contract.ArgBucket: s.Bucket, contract.ArgPrefix: s.Prefix} {
+		if got, ok := argOne(c, name); ok && got != want {
+			return mkErr(contract.CodeAlreadyInitialized, empty{})
+		}
+	}
+	return nil
 }
 
 // existingKeys は秘密ファイルに書き込み鍵と読み取り鍵がそろっているか(key_id の列)。
