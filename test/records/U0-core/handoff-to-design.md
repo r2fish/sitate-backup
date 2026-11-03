@@ -373,3 +373,11 @@ A2 の測定 1 の 1 回目の手順 11 の原因(`test/records/A2/m1-pre.md`)�
 - 案 B: 要求のスキーマの `spec` を種別ごとに分け(postgresql は `path` 無し、`port` 任意)、`AcquireTarget.Spec.Path` を省略可にする。仕様 3.2.2 に DB の対象の要求の形を足す。
 - 製品の監督の考え: 案 B。直しは測定 1 が閉じた後に main に入れる。
 - あわせて: 対象ごとの失敗が `targets[]` に `error_code: INTERNAL` だけで、`detail` も `next` も無い。エージェントは原因を言えず「人の確認」と止まった。対象の結果に `detail`(component・reason)を出すか。
+
+## 42. 夜の洗い出しから(2026-11-03。急がない)
+
+詳細は `test/records/night-check/2026-11-03.md`。
+
+- (d) seal の後の `status.estimate` が `cost_ceiling_yen` 0、`monthly_jpy` null、`over_ceiling` null、警告なし。仕様 4.1 の `cost_ceiling_yen` の既定と、価格表に無い保管先のときの `PRICE_UNKNOWN` の警告の期待と食い違う疑い。
+- 偽の LLM の定義は DB の対象を含まず、`source.declined` も 5432 を固定で書くので、nocluster の変種で 5433 が残り手順 8 が通らない。試験の道具の限界で、直し 2 の後に偽の LLM の定義を変種に合わせる。
+- 予想: 2 回目(lo)は DB を対象にするので手順 11 で同じ `INTERNAL` で止まる見込み。3 回目(nocluster)も 5432 の DB を対象に入れれば同じ。
