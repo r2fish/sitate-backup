@@ -24,3 +24,10 @@
 - 直し `bda552a`: 規則ファイル `quote-check-forms.md` に問いの出し方の節(疑問符で終える、1 回に 1 つ、最後の文、手順の順、開始時の入力の前に道具を呼ばない)。システムプロンプトがこれを含む試験。ドライバは既存の記録を退避し、`question_not_last`・`multi_question`・`repeated_requests` を `a2_fields` に出す。`npm --prefix app test` は pass 295、fail 0。`make lint-install` 合格。偽の LLM の A2・A6 は終了コード 0(担当の実行)。
 - 製品の説明書には足していない(契約の試験が見出しを固定している)。
 - 用意: accept の worktree を `bda552a` に進め、試験ビルドを作り直し(写しの sha256 一致 `be4a0ece...`)、環境 `a2r1`(変種 add)を作り直して `prepare-a2` まで済ませた。朝に利用者が 1 回目を流す。
+
+## 測定 1 の 1 回目(2026-11-03 22:30、a2r1、add。不合格・手順 11)
+
+- ドライバの終了コード 1「進まない」。手順 1〜10(seal を含む)は合格(手順 10 は表示の文字の壊れでドライバが取りこぼした。設計の監督の読み)。問いは D-0171 の規則どおり(`question_not_last` 0、`multi_question` 0)。
+- 手順 11 の `backup` で DB の対象 t1〜t3 が `INTERNAL`、ファイルの対象 t4 は ok。原因は製品(核): `internal/acquire/run_target.go` の `targetSpec` が postgresql の対象の要求を `spec.path=""` で組み、要求の検証(`schema/adapter/acquire.json` の target.spec は `path` 必須、1 文字以上)で落ちる。アダプタは起動されない。主経路と偽の LLM の通しは DB のクラスタを `source.declined` にしていて、DB の取得を実物の核で通した試験が無かった。
+- D-0171 の裁定(2)により、測定 1 の 1 回目「不合格(手順 11)」として数え、測定 1 は打ち切らない。2 回目(lo)・3 回目(nocluster)を同じビルド(`bda552a`)で流してから直し 2 に入る。製品の直しは測定 1 が閉じるまで main に入れない。
+- 直しの案は申し送りの 41 節(裁定待ち)。試験 `test/mainpath/stage3_db_test.go`(wp/fix-db、未 commit)は今の main で赤。

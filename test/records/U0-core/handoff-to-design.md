@@ -364,3 +364,27 @@ D-0164 の 34.2 の問いの答え。詳細は `test/records/mainpath/stage3-mem
 - 案 B: 測定 1 を 1 回で打ち切り、往復の直し 1(規則ファイルとシステムプロンプトで「1 回の発話で問いは 1 つ、最後の文を疑問符で終える」を強める。手順の順を守る)を先に入れてから、測定 1 の 3 回を流し直す。
 - 製品の監督の考え: 案 B。直しは 5.19 の往復の直しの範囲(規則ファイル・製品の説明書・手順書。台本は変えない)。
 - あわせて確かめたい: 「教えてください」で終わる依頼を問いの終わり方の一覧に足すか(規則ファイルと仕様 3.7 の一覧)。足すとエージェントの文を変えずに通るが、仕様の「疑問符で終える」の指示は残る。
+
+## 41. DB の対象の取得の要求(2026-11-03。裁定の依頼。直し 2 の範囲)
+
+A2 の測定 1 の 1 回目の手順 11 の原因(`test/records/A2/m1-pre.md`)。核は postgresql の対象の取得の要求を `spec.path=""` で組み、要求のスキーマ(target.spec の `path` 必須・1 文字以上)で落ちて `INTERNAL`(`component: adapter`、`reason: request`)。仕様 3.2.2 の要求の例は files だけで、DB の対象の `spec` の形が無い。
+
+- 案 A: 核が postgresql の対象にも空でない `path`(例: 対象 id)を入れる。契約を変えない。意味の無い値を送る。
+- 案 B: 要求のスキーマの `spec` を種別ごとに分け(postgresql は `path` 無し、`port` 任意)、`AcquireTarget.Spec.Path` を省略可にする。仕様 3.2.2 に DB の対象の要求の形を足す。
+- 製品の監督の考え: 案 B。直しは測定 1 が閉じた後に main に入れる。
+- あわせて: 対象ごとの失敗が `targets[]` に `error_code: INTERNAL` だけで、`detail` も `next` も無い。エージェントは原因を言えず「人の確認」と止まった。対象の結果に `detail`(component・reason)を出すか。
+
+## 42. 夜の洗い出しから(2026-11-03。急がない)
+
+詳細は `test/records/night-check/2026-11-03.md`。
+
+- (d) seal の後の `status.estimate` が `cost_ceiling_yen` 0、`monthly_jpy` null、`over_ceiling` null、警告なし。仕様 4.1 の `cost_ceiling_yen` の既定と、価格表に無い保管先のときの `PRICE_UNKNOWN` の警告の期待と食い違う疑い。
+- 偽の LLM の定義は DB の対象を含まず、`source.declined` も 5432 を固定で書くので、nocluster の変種で 5433 が残り手順 8 が通らない。試験の道具の限界で、直し 2 の後に偽の LLM の定義を変種に合わせる。
+- 予想: 2 回目(lo)は DB を対象にするので手順 11 で同じ `INTERNAL` で止まる見込み。3 回目(nocluster)も 5432 の DB を対象に入れれば同じ。
+
+## 43. 直し 2(D-0172)の実装から(2026-11-03。急がない)
+
+`wp/fix-db` に用意した(測定 1 の後に統合)。DB の対象 t2・t3 が実物の環境で ok、復元先にダンプが届く(`TestStage3DB`)。
+
+- 仕様 3.7 の送る欄の `next/<i>/op`: `next` の要素は `argv`・`requires_human`・`requires_approval`・`why` で、`op` が無い。今は書かれたとおり足したので実質モデルに届かない。`argv` など既存の欄にするか。
+- 対象の失敗の `next`: アダプタ由来の失敗(STORAGE_UNREACHABLE など)に、3.1.3 の例(`sitate doctor` の再実行など)を出すか。今は空配列。
