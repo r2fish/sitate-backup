@@ -293,3 +293,27 @@ U1f-1 の途中から: `--snapshot-key-stdin` の標準入力の終わりの `RU
 - G3: `ssh-host` が作業ディレクトリを作れない失敗が `SESSION_EXISTS` と報告される。
 - G4: 復元で symlink の `mtime_ns` を戻さない(仕様 3.1.2.4 のとおり)。
 - G5: `seal` の後の `notify-add`・`notify-change` の試験通知は `facts.change_id` に提案の id を載せるはずだが、核は null を送る(未検証の経路)。
+
+## 35. アプリのまとめレビューから(2026-11-03。裁定の依頼)
+
+レビューの全文の要点。アプリと実物の核をつないだ記録が無く、つなぐと止まる箇所が少なくとも 14 ある。実装の誤りは担当が直す。次の 3 件は手順の順や道具の定義に関わるので裁定を求める。
+
+### 35.1 手順 2・3 の dry-run(仕様 3.8 の順と同じなので手順書だけでは直せない)
+
+手順 2 の `init-storage --dry-run` は定義の前に呼ぶので `DEF_INVALID`(`internal/keys/initstorage.go:74`)。手順 3 の `restore-dest enroll --dry-run` も先に定義を読む(`internal/restore/dest_cmd.go`)。どちらの結果にも期待する `/result/plan/errors` が無い。なお、`init-storage --dry-run` が定義の後で実際に作成してしまう点は担当が今直す(実行しない形。計画の中身はこの裁定を待つ)。
+
+- 案 A: 手順 2・3 の dry-run を定義の無い状態で動かす。引数(`--endpoint`、`--bucket`、`--dest`)から `plan.errors` を返す。
+- 案 B: 手順の順を変える。先に候補の定義を置いてから dry-run する(定義には手順 2・3 で確かめる値が要る)。
+
+### 35.2 手順 4 の順
+
+`def validate` → `notify set` の順では、`@` の無い `notify.to` が `unresolved_ref` で止まる(`internal/state/validate_sections.go:137`、`internal/cli/defcmd.go:89`)。イテレーション 1 の通知先は Webhook(参照名)だけ。主経路の第 3 段は `notify set` を先に呼んで通している。
+
+- 案 A: 手順 4 を `notify set` → `def validate` → `notify test` にする(`notify set` は定義より前に動くことを第 3 段で確かめた)。
+- 案 B: `pending_refs[]` に `notify.to` を足す。
+
+### 35.3 `sitate_init` の承認鍵と `--secret-fd`(境界)
+
+道具の定義に `approval_pubkey` があり、エージェントの入力のまま核へ渡る。乗っ取られたエージェントが自分の鍵を登録でき、アプリの承認はすべて署名の不一致になる。エージェントは正しい値を知る手段も無い。`--secret-fd` も誰も付けないので `SECRET_FD_REQUIRED` で止まる。仕様 3.7 は「必要なものは主プロセスが付ける」。
+
+- 監督の案: 主プロセスが `--approval-pubkey <承認鍵>` と `--secret-fd 3` を必ず付け、`approval_pubkey` を道具の定義から外す。契約試験の引数の照合に例外を置く。担当はこの形で進める。違えば知らせてほしい。
