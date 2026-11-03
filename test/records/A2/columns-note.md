@@ -1,0 +1,3 @@
+# A2 の記録の欄の書き方の注記(回ごとの欄の導き方。D-0177)
+
+回ごとの欄のうち核の `sitate version`(version・build・signing_key_fp)と M-20・M-22 のアプリの記録は、`a2_fields` の `core_version` と `app_record` を持つドライバの回ではその値をそのまま写す(`app_record` の `runs_elapsed_ms_total` が M-20 の所要時間、`input_tokens`・`output_tokens`・`cache_read_input_tokens`・`models` がトークン数と使用したモデル名、`request_elapsed_ms` の件数・最小・中央値・90 パーセンタイル・最大が M-22 の分布。`core_version` は回の終わりに backup の核で実行した結果で、取れなければ `error` を持つ)。この欄を足す前の回(測定 1)は `record.jsonl` から導ける欄だけを導き、導けなければ推測で埋めず「記録なし」と書く。導けるのは、道具の呼び出しの数(`summary` の `counts.tool_call`)と、所要時間のうちドライバが見た経過(`summary` の `elapsed_ms`。出どころは「ドライバの記録」と書き、M-20 のアプリの記録とは区別する)だけで、核の `sitate version` は同じ回の記録の頭(`header`)に書き写されていなければ「記録なし」、トークン数・使用したモデル名・要求ごとの応答時間は使い捨ての置き場と一緒に消えているので「記録なし」。これらの欄は判定に使わない。
