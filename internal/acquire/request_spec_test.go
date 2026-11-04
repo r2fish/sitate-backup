@@ -58,7 +58,7 @@ func TestFailedTargetCarriesDetailAndNext(t *testing.T) {
 		t.Fatal(err)
 	}
 	tg := r.Targets[0]
-	if tg.ErrorCode != "STORAGE_UNREACHABLE" || string(tg.Detail) != `{"target":"source","reason":"connect"}` || tg.Next == nil {
+	if tg.ErrorCode != "STORAGE_UNREACHABLE" || string(tg.Detail) != `{"target":"source","reason":"connect"}` || len(tg.Next) != 1 {
 		t.Errorf("アダプタの error の detail が載らない: %+v", tg)
 	}
 
@@ -77,7 +77,7 @@ func TestFailedTargetCarriesDetailAndNext(t *testing.T) {
 	r, _ = e.run(t)
 	d.Component, d.Reason = "", ""
 	_ = json.Unmarshal(r.Targets[0].Detail, &d)
-	if r.Targets[0].ErrorCode != "INTERNAL" || d.Component != "adapter" || d.Reason != "output" || r.Targets[0].Next == nil {
+	if r.Targets[0].ErrorCode != "INTERNAL" || d.Component != "adapter" || d.Reason != "output" || r.Targets[0].Next == nil || len(r.Targets[0].Next) != 0 {
 		t.Errorf("契約違反の detail: %+v", r.Targets[0])
 	}
 }

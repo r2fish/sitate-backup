@@ -22,20 +22,22 @@ def split_row(row):
 def expand(cell):
     """セルを展開し (Pointer の集合, path_ref に置き換える Pointer の集合) を返す。
 
-    `/a/b`・`c` は /a/c、<i> は * にする。
+    `/a/b`・`c` は /a/c、`/a/b`・`c/d`・`e` は /a/c/e(`/` の無い欄は直前に解いた欄の兄弟、`/` のある欄は直前の絶対の欄の親から)、<i> は * にする。
     """
     pointers = set()
     refs = set()
     # 丸括弧の中は注記で欄を増やさない。path_ref の注記だけ直前の欄の印として読む
     marked = re.sub(r"\(([^)]*)\)", lambda m: "\0" if "path_ref" in m.group(1) else "", cell)
     for part in marked.split("、"):
-        parent = None
+        parent = None  # 直前の絶対の欄の親(`/` を含む相対の欄はここから)
+        last = None  # 直前に解いた欄の親(`/` を含まない欄はその兄弟)
         for token, mark in re.findall(r"`([^`]+)`(\0?)", part):
             if token.startswith("/"):
                 pointer = token
-                parent = token.rsplit("/", 1)[0]
+                parent = last = token.rsplit("/", 1)[0]
             elif parent is not None and not token.startswith("-"):
-                pointer = parent + "/" + token
+                pointer = (parent if "/" in token else last) + "/" + token
+                last = pointer.rsplit("/", 1)[0]
             else:
                 continue
             pointer = re.sub(r"<[a-z]+>", "*", pointer)

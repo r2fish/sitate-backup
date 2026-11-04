@@ -170,17 +170,36 @@ func violationOutcome(out TargetOutcome) TargetOutcome {
 // アダプタの終了 1 は error の detail をそのまま使い、核が作った誤りはその detail・next を使う。
 func failDetail(err error, kind string) (json.RawMessage, []contract.Next) {
 	var ce *contract.Error
-	if !errors.As(err, &ce) {
-		return violationOutcome(TargetOutcome{Kind: kind}).Detail, []contract.Next{}
+	if !errors.As(err, &ce) { // 型の無い誤り: INTERNAL の component・reason は分からないので null(3.1.3)
+		b, _ := json.Marshal(map[string]any{"component": nil, "http_status": nil, "kind": nil, "name": nil, "reason": nil})
+		return b, []contract.Next{}
 	}
 	if ce.Code == contract.CodeAdapterError && ce.Adapter != nil && len(ce.Adapter.Detail) > 0 && failCode(err) == ce.Adapter.Code {
 		return ce.Adapter.Detail, []contract.Next{}
+	}
+	if failCode(err) == string(contract.CodeAdapterError) { // 閉じた形: kind・name・adapter_code(3.1.3)
+		b, _ := json.Marshal(map[string]any{"kind": "acquire", "name": kind, "adapter_code": adapterCodeOf(ce)})
+		return b, []contract.Next{}
 	}
 	next := ce.Next
 	if next == nil {
 		next = []contract.Next{}
 	}
 	return ce.Detail, next
+}
+
+// adapterCodeOf はアダプタが返した error.code(Error.Adapter の code、無ければ detail.adapter_code)。
+func adapterCodeOf(ce *contract.Error) string {
+	if ce.Adapter != nil {
+		return ce.Adapter.Code
+	}
+	var d struct {
+		AdapterCode string `json:"adapter_code"`
+	}
+	if json.Unmarshal(ce.Detail, &d) == nil {
+		return d.AdapterCode
+	}
+	return ""
 }
 
 // failCode は取得アダプタの誤りから対象の error_code を決める。アダプタの終了 1 は ADAPTER_ERROR で、error の全体は Error.Adapter にある
@@ -191,18 +210,7 @@ func failCode(err error) string {
 		return string(contract.CodeInternal)
 	}
 	if ce.Code == contract.CodeAdapterError {
-		code := ""
-		if ce.Adapter != nil {
-			code = ce.Adapter.Code
-		} else {
-			var d struct {
-				AdapterCode string `json:"adapter_code"`
-			}
-			if json.Unmarshal(ce.Detail, &d) == nil {
-				code = d.AdapterCode
-			}
-		}
-		switch code {
+		switch code := adapterCodeOf(ce); code {
 		case string(contract.CodeStorageUnreachable), string(contract.CodeReceiverTargetsMismatch), string(contract.CodeInternal):
 			return code
 		}

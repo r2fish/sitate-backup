@@ -186,6 +186,7 @@ Q1〜Q4 と手順 2・3 の値から、次の形の JSON を作って `sitate_de
 - `notify.to` は通知先の参照名(手順 4 の `notify set` で先に登録した名前)。メールアドレスの通知先はイテレーション 1 の範囲の外。
 - `server_monthly_yen` は価格表に当たるプランが分からなければ書かない(0 のまま)。
 - `DEF_INVALID` が返ったら、`detail` の `pointer` と `reason` の場所だけを直して出し直す。
+- `/etc/sitate/sitate.yaml` は適用の出力で、直接直しても承認済みの定義は変わらない。直すときは `sitate propose def-change --file` を使う。
 
 ## 手順のやり直し
 

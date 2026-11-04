@@ -129,7 +129,7 @@ func (a *Acquire) ingest(ctx context.Context, c contract.Call, rawDef []byte) (I
 	chunks := map[string]chunkOut{}
 	for _, t := range def.Targets {
 		if mism[t.ID] { // 受け口の許可リストと定義が違う対象は取らず failed にする(何も取らない。spec 3.3)
-			res.Targets = append(res.Targets, mismatchOutcome(t))
+			res.Targets = append(res.Targets, a.withNext(ctx, mismatchOutcome(t)))
 			res.TargetsMismatch = append(res.TargetsMismatch, t.ID)
 			continue
 		}
@@ -137,7 +137,7 @@ func (a *Acquire) ingest(ctx context.Context, c contract.Call, rawDef []byte) (I
 		if err != nil {
 			return res, err
 		}
-		res.Targets = append(res.Targets, out)
+		res.Targets = append(res.Targets, a.withNext(ctx, out))
 		if out.Status != "failed" {
 			byTarget[t.ID] = ents
 			entries = append(entries, ents...)

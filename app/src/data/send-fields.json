@@ -1153,7 +1153,16 @@
      "pointer": "/result/targets/*/detail/reason"
     },
     {
-     "pointer": "/result/targets/*/next/*/op"
+     "pointer": "/result/targets/*/next/*/argv"
+    },
+    {
+     "pointer": "/result/targets/*/next/*/requires_human"
+    },
+    {
+     "pointer": "/result/targets/*/next/*/requires_approval"
+    },
+    {
+     "pointer": "/result/targets/*/next/*/why"
     },
     {
      "pointer": "/result/checks/*/name"
