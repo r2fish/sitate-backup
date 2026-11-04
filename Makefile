@@ -8,7 +8,7 @@ LINUX := bash test/env/bin/in-linux.sh
 NAME ?=
 export NAME
 
-.PHONY: shell-linux test test-app test-contract contract-status test-adapters lint-install lint-size \
+.PHONY: shell-linux test test-app test-contract contract-status test-adapters test-adapters-root lint-install lint-size \
 	build build-test build-app build-app-test sign-test sign sign-installer sign-test-installer \
 	test-app-real test-app-e2e test-b2-preflight test-env-up test-env-down test-e2e test-mainpath _test _test-contract _test-adapters _build _contract-status
 
@@ -72,6 +72,9 @@ _contract-status:
 
 test-adapters:
 	@$(LINUX) 'make _test-adapters ADAPTER=$(ADAPTER)'
+# 受け口の root と PostgreSQL を要る試験(make test では SKIP になるもの)。test/env/dev-root/ のイメージで流す。
+test-adapters-root:
+	@bash test/env/bin/in-linux-root.sh
 _test-adapters:
 	@go test ./adapters/$(if $(ADAPTER),$(ADAPTER)/,...)
 
