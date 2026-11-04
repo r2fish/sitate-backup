@@ -63,15 +63,18 @@ export function candidatesFrom(messages: readonly unknown[]): Candidate[] {
   return [];
 }
 
-export function sourceTargets(survey: Survey | undefined, added: readonly Candidate[] = []): { targets: Record<string, unknown>[]; declined: Record<string, unknown>[] } {
-  const targets: Record<string, unknown>[] = [{ id: "t1", files: "/srv/shopapp" }];
-  const declined: Record<string, unknown>[] = [];
+/** 筋「/srv を断る」(D-0189): `/srv` の下を選ばず、`source.declined` に `mount: /srv` を書く(spec 3.8 の Q4 の補足の「`parent` のマウントの下で対象を選ばなかったとき」)。 */
+export const DECLINED_SRV_MOUNT = "/srv";
+
+export function sourceTargets(survey: Survey | undefined, added: readonly Candidate[] = [], declineSrv = false): { targets: Record<string, unknown>[]; declined: Record<string, unknown>[] } {
+  const targets: Record<string, unknown>[] = declineSrv ? [] : [{ id: "t1", files: "/srv/shopapp" }];
+  const declined: Record<string, unknown>[] = declineSrv ? [{ id: "d1", mount: DECLINED_SRV_MOUNT }] : [];
   const addExtra = (): void => added.forEach((c) => targets.push({ id: `t${targets.length + 1}`, ...(c.kind === "mount" ? { files: c.path } : { postgresql: c.path, ...(c.port != null ? { port: c.port } : {}) }) }));
   if (survey === undefined) { addExtra(); return { targets, declined }; }
   const ports = survey.clusters.map((c) => c.port).sort((x, y) => x - y);
   const primary = ports[0];
-  survey.databases.filter((d) => d.port === primary).forEach((d, i) => targets.push({ id: `t${i + 2}`, postgresql: d.name, port: d.port }));
-  ports.slice(1).forEach((p, i) => declined.push({ id: `d${i + 1}`, postgresql_cluster: p }));
+  survey.databases.filter((d) => d.port === primary).forEach((d, i) => targets.push({ id: `t${targets.length + 1}`, postgresql: d.name, port: d.port }));
+  ports.slice(1).forEach((p, i) => declined.push({ id: `d${declined.length + 1}`, postgresql_cluster: p }));
   addExtra(); // 手順 8 で足す分(手順 4 の調査の後に現れた候補)
   return { targets, declined };
 }

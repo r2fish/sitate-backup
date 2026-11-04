@@ -109,6 +109,20 @@ export function locationMessage(a: Answers): string {
   return `バックアップサーバー: ${a.backupHost}(SSH 22 番)、管理アカウント: ${a.adminUser}。\n元サーバー: ${a.sourceHost}(SSH 22 番)、管理アカウント: ${a.adminUser}。管理アカウントの秘密鍵は、秘密の入力ボックスに入れます。`;
 }
 
+/**
+ * 開始時の入力(元サーバーとバックアップサーバーの所在・管理アカウント)を求め直す問いか(D-0188)。
+ * 最後の文が元サーバー・バックアップサーバーなどを指して所在(接続先・ホスト名・IP アドレス・管理アカウント)を求め、復元先(Q3)を指さず、台本の Q4 などの語にも当たらないもの。
+ * Q3 の語「ホスト」だけに当たる問いは、これに含める。
+ */
+export function isStartInputReask(reply: string, s: A2Script): boolean {
+  const q = lastSentence(reply);
+  if (q === "" || q.includes("復元先")) return false;
+  if (!["元サーバー", "バックアップサーバー", "接続先", "所在", "管理アカウント"].some((w) => q.includes(w))) return false;
+  if (!["接続先", "所在", "管理アカウント", "ホスト名", "IPアドレス"].some((w) => q.includes(w))) return false; // 所在を求める語。元サーバーの PostgreSQL の確認などは含めない
+  const id = matchQuestion(reply, s);
+  return id === null || id === "Q3";
+}
+
 const SENTENCE_SPLIT = /(?<=[。.!！?？\n])/;
 const sentencesOf = (reply: string): string[] => reply.trim().split(SENTENCE_SPLIT).map((x) => x.trim()).filter((x) => x !== "");
 const endsAsQuestion = (sentence: string, endings: readonly string[]): boolean => {

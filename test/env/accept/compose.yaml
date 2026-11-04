@@ -14,6 +14,9 @@ services:
     build: {context: ., dockerfile: Dockerfile, target: source, args: {BASE_IMAGE: "${BASE_IMAGE}"}}
     container_name: sitate-acc-${ACC_NAME}-source
     hostname: source
+    # /srv の下の合成データは名前つきの volume に置く(コンテナの根の overlay は spec 3.3 の candidate でなく、調査が全部 supported: false にするため。D-0185)。down -v で消える。
+    volumes:
+      - srv:/srv
     networks: {acc: {aliases: [source]}}
   backup:
     <<: *host
@@ -45,6 +48,8 @@ services:
       - ${ACC_RUN}/hook-data:/var/lib/hook
       - ${ACC_RUN}/certs:/etc/hook/tls:ro
     networks: {acc: {aliases: [hook]}, test: {}}
+volumes:
+  srv: {name: "sitate-acc-${ACC_NAME}-source-srv"}
 networks:
   acc: {name: "sitate-acc-${ACC_NAME}"}
   test: {name: sitate-test, external: true}

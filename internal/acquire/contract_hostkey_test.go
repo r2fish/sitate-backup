@@ -87,6 +87,10 @@ func checkChoice(t *testing.T, got contract.HostKeyChoice, want hkWant, fp strin
 		if len(d.Issues) != 1 || d.Issues[0].Pointer != "/source/host" || d.Issues[0].Reason != "invalid_value" {
 			t.Errorf("issues は /source/host の invalid_value 1 件: %s", got.Err.Detail)
 		}
+		// D-0189: next は空。
+		if n := got.Err.Next; len(n) != 0 {
+			t.Errorf("next は空: %+v", n)
+		}
 	case hkNoRecord:
 		if got.Compare || got.Err == nil {
 			t.Fatalf("SOURCE_HOSTKEY_MISMATCH を期待: %+v", got)

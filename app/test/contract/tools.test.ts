@@ -307,3 +307,13 @@ test("tools: [5.14] sitate_init_storage mentions --adapter b2 in its top-level d
   needTools();
   assert.ok(String(load("sitate_init_storage").description).includes("`--adapter b2`"));
 });
+
+test("tools: [D-0188] sitate_def_validate and sitate_propose descriptions say source.host is a bare host name (no URI, user or port)", () => {
+  needTools();
+  for (const n of ["sitate_def_validate", "sitate_propose"]) {
+    const d = String(load(n).description);
+    assert.ok(d.includes("source.host は裸のホスト名"), n);
+    assert.ok(d.includes("ssh://<user>@<host>:<port> の <host>"), n);
+    assert.ok(d.includes("URI・ユーザー・ポートを書かない"), n);
+  }
+});

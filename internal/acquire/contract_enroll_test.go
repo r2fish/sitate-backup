@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/r2fish/sitate-backup/internal/contract"
+	"github.com/r2fish/sitate-backup/internal/contract/fake"
 	"github.com/r2fish/sitate-backup/internal/contract/harness"
 )
 
@@ -169,5 +170,24 @@ func TestContractAcquireSourceEnrollRootForbidden(t *testing.T) {
 	}
 	if len(st.Items["host_keys"]) != 0 || len(st.Items["source_clusters"]) != 0 {
 		t.Error("合格しなければ host_keys・source_clusters を書かない")
+	}
+}
+
+// D-0189: --host の <host> は IPv6 の [...] を外して source.host と比べる。ssh://u@[fe80::1]:22 と source.host fe80::1 は一致し
+// (host の食い違いの DEF_INVALID にならず、記録が無いので SOURCE_HOSTKEY_MISMATCH に進む)、括弧付きの source.host は食い違う。
+func TestContractAcquireSourceEnrollIPv6BracketsStripped(t *testing.T) {
+	for _, c := range []struct {
+		defHost string
+		want    contract.Code
+	}{{"fe80::1", contract.CodeSourceHostkeyMismatch}, {"[fe80::1]", contract.CodeDefInvalid}} {
+		src := startSource(t, nil)
+		a, _ := newSrcAcquire(enrollItems(nil))
+		def := []byte(`{"version":1,"source":{"host":"` + c.defHost + `","targets":[{"id":"t1","files":"/srv/app"}]}}`)
+		a.State = &srcState{StateFiles: &fake.StateFiles{Def: def, Items: enrollItems(nil)}, cand: def}
+		_, err := a.SourceEnroll(ctx, sourceCall(enrollWords, "ssh://root@[fe80::1]:22", newAdminKey(t)))
+		harness.ExpectCode(t, err, c.want)
+		if len(src.Execs()) != 0 {
+			t.Error("何も流さない")
+		}
 	}
 }

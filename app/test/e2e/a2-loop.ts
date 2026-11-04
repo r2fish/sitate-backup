@@ -10,7 +10,7 @@ import { Human } from "./human.ts";
 import type { HumanDeps, Outcome } from "./human.ts";
 import type { Port } from "./port.ts";
 import type { Recorder } from "./record.ts";
-import { isQuestion, lastSentence, locationMessage, matchQuestion, questionForm } from "./script.ts";
+import { isQuestion, isStartInputReask, lastSentence, locationMessage, matchQuestion, questionForm } from "./script.ts";
 import type { A2Script, Answers, QId } from "./script.ts";
 import type { TestEvent } from "../../src/testing/driver-server.ts";
 
@@ -23,6 +23,8 @@ const RATE_WAIT_MS = 60000;
 const RATE_RETRY_MAX = 5;
 const LAST_STEP = 13;
 /** 続行の介入の直前の応答の最後の文が同じなら、この回数目で「同じ依頼の繰り返し」の印を付ける(D-0171)。 */
+/** 開始時の入力の求め直しを問いに数えない回数の上限(同じ回。D-0189)。超えた分は台本に無い問いにも数える。 */
+const START_REASK_MAX = 2;
 const REPEAT_MARK = 3;
 /** 手順の合格の行の見分け。先頭の語(「手順」)に頼らず、番号と「が合格しました」で見る。 */
 const STEP_PASSED_LINE = /(\d+) が合格しました/;
@@ -50,7 +52,7 @@ export class A2Loop {
   readonly #human: Human;
   readonly stepsPassed = new Set<number>();
   readonly marks: Mark[] = [];
-  readonly counts = { questions: 0, unscripted: 0, continues: 0, turnLimit: 0, toolCalls: 0, withheld: 0, rateRetries: 0, questionNotLast: 0, multiQuestion: 0, repeatedRequests: 0 };
+  readonly counts = { questions: 0, unscripted: 0, continues: 0, turnLimit: 0, toolCalls: 0, withheld: 0, rateRetries: 0, questionNotLast: 0, multiQuestion: 0, repeatedRequests: 0, startReasked: 0 };
   readonly #repeats = new Map<string, number[]>();
   #stall: Outcome | null = null;
   status: ReturnType<typeof judgeStatus> | null = null;
@@ -64,6 +66,8 @@ export class A2Loop {
   #lastRun: TestEvent | null = null;
   #lastQ: QId | null = null;
   #q4: "none" | "wished" | "accepted" = "none";
+  /** Q4 の希望を聞く問いが案の前に出たか(D-0185)。Q4 を答えるまでは null。案の確認が先に来て Q4 として照合したときは false。 */
+  q4WishAsked: boolean | null = null;
   #surveyed = false;
   #lastAgent = "";
   /** 「始める」を押した後、エージェントの最初の応答(所在と管理アカウントの問い)を待っている。 */
@@ -242,8 +246,17 @@ export class A2Loop {
 
   async #answer(reply: string): Promise<Outcome | null> {
     const s = this.#d.script;
+    if (isStartInputReask(reply, s)) { // D-0188: 開始時の入力の求め直し。Q3 などと照合せず、開始時の入力と同じ内容を答える。問いに数えない
+      this.counts.startReasked += 1;
+      if (this.counts.startReasked > START_REASK_MAX) { this.counts.unscripted += 1; this.counts.questions += 1; this.marks.push("intervene"); } // 2 回を超えた分は台本に無い問いにも数える(往復が終わらない道を断つ)
+      return this.#say("start_input_reasked", locationMessage(this.#d.answers), undefined, { count: this.counts.startReasked });
+    }
     let q = matchQuestion(reply, s);
     if (q === null && this.#lastQ === "Q4" && this.#q4 !== "none") q = "Q4";
+    // D-0185: Q4 の希望が未回答のまま、調査の後に定義の案の確認が来たら、それを Q4 として照合し、台本の希望を答える(問いの数え方は変えない)。
+    const proposalFirst = q === null && this.#q4 === "none" && this.#surveyed && lastSentence(reply).includes("案");
+    if (proposalFirst) q = "Q4";
+    if (q === "Q4" && this.q4WishAsked === null) { this.q4WishAsked = !proposalFirst; this.#d.rec.write("q4_wish", { asked_before_proposal: this.q4WishAsked }); }
     const continued = q !== null && q === this.#lastQ;
     if (q === null) { this.counts.unscripted += 1; this.counts.questions += 1; this.marks.push("intervene"); return this.#say("question", s.unscripted_question_answer, undefined, { q: null, continued: false }); }
     if (!continued) this.counts.questions += 1;

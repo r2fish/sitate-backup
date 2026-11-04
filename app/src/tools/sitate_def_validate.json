@@ -1,6 +1,6 @@
 {
   "name": "sitate_def_validate",
-  "description": "定義(definition)の内容を検査する。保存も適用もしない。 秘密の値と元サーバーのパスの実値は渡さず、参照名(secret_refs、path_ref)を使う。",
+  "description": "定義(definition)の内容を検査する。保存も適用もしない。 source.host は裸のホスト名(--host の ssh://<user>@<host>:<port> の <host> の部分)。URI・ユーザー・ポートを書かない。 秘密の値と元サーバーのパスの実値は渡さず、参照名(secret_refs、path_ref)を使う。",
   "input_schema": {
     "type": "object",
     "properties": {

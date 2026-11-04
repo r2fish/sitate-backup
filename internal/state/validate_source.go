@@ -5,7 +5,27 @@ package state
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
+	"strings"
 )
+
+// sourceHostPattern は契約の host の形(internal/contract/schema/cli/common.json の $defs/host の pattern)。
+// 値が契約と一致することは validate_source_host_test.go が契約のファイルと照らす。
+const sourceHostPattern = `^[A-Za-z0-9][A-Za-z0-9._:-]{0,254}$`
+
+var sourceHostRe = regexp.MustCompile(sourceHostPattern)
+
+// validSourceHost は source.host(裸のホスト名。spec 4.1。D-0188)の形。契約の host の形に合い、
+// かつ「名前:ポート」の形(コロンがちょうど 1 つ)でないこと。コロンが 2 つ以上のものは IPv6 リテラルとして許す。
+func validSourceHost(h string) bool {
+	if !sourceHostRe.MatchString(h) {
+		return false
+	}
+	if strings.Count(h, ":") == 1 {
+		return false
+	}
+	return true
+}
 
 func (v *validator) source(m map[string]any) {
 	x, ok := m["source"]
@@ -17,7 +37,9 @@ func (v *validator) source(m map[string]any) {
 	if sm == nil {
 		return
 	}
-	v.str("/source", sm, "host", true)
+	if h, ok := v.str("/source", sm, "host", true); ok && !validSourceHost(h) {
+		v.add("/source/host", rInvalid)
+	}
 	roots := v.targets(sm)
 	v.declined(sm, roots)
 }
