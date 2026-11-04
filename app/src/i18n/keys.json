@@ -1510,5 +1510,11 @@
  },
  "chat.wait.label": {
   "args": {}
+ },
+ "status.progress.heading": {
+  "args": {}
+ },
+ "status.progress.next": {
+  "args": {}
  }
 }

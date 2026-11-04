@@ -489,5 +489,7 @@
  "status.progress.step.12": "[tmp] status.progress.step.12",
  "status.progress.step.13": "[tmp] status.progress.step.13",
  "chat.tool.group.heading": "[tmp] chat.tool.group.heading {count, number}",
- "chat.wait.label": "[tmp] chat.wait.label"
+ "chat.wait.label": "[tmp] chat.wait.label",
+ "status.progress.heading": "[tmp] status.progress.heading",
+ "status.progress.next": "[tmp] status.progress.next"
 }
