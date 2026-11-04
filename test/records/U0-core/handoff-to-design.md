@@ -424,3 +424,13 @@ A2 の測定 1 の 1 回目の手順 11 の原因(`test/records/A2/m1-pre.md`)�
 - (a) カタログのキー `chat.manual.unanswerable`(「この製品の資料にはありません。」)はコードから参照されない。固定文は規則ファイルと説明書の指示でモデルが返す設計で、アプリが強制するのは節番号の存在と核の値との一致だけ(仕様 3.7)。設計の監督の返事: モデルに任せる設計で可。キーは同じ出どころの検査に使うなら残し、使わないなら外してよい。今は残す。
 - (b) U3a#4: 事業者の管理用鍵は常に保存しないモードで受けるので、「保存したときは削除」の経路は空。設計の監督の返事: 仕様 2.3・3.7・3.8 の基本は保存しないモードで、空で可。対応表は緑のまま。
 - (記録) A7 の道具の担当が検証の途中で、偽の環境の使い捨ての値(合成の SSH 鍵、偽の Webhook の URL、MinIO の鍵)を自分の文脈に出した(zsh の多重の出力先)。値は環境の down で無効。利用者の鍵ではなく、ファイルとログに残っていない。
+
+## 48. D-0183 の受け取り(2026-11-04。裁定済みの記録)
+
+- (1・2・4) `next[].argv` の先頭の `sitate`、対象の `STORAGE_UNREACHABLE` の next(`["sitate","backup"]`・`["sitate","doctor"]`)、`result/targets/<i>/next` の path_ref の置き換え、9 サブコマンドの道具から `dry_run` を外すことは、統合の branch から分けた branch で直しを進める。直しを今夜の測定 2 のビルドに入れるかは、試験の結果で決める(commit の id は後で知らせる)。
+- (3) 測定 1 の記録(1 回目・`1-driver-defect`・`aborted-1`)で、モデルが `dry_run: true` で呼んだ道具は `sitate_init_storage` と `sitate_restore_dest_enroll` だけ(3 つの回で合わせて 8 回)。`sitate_backup`・`sitate_restore_test` など後へ送った 9 つを dry-run で呼んだ回は無く、道具の結果の `code` に `NOT_IMPLEMENTED` は 1 件も無い(数え方: 記録の `llm_request` の `tool_use` の `input.dry_run`、`tool_call` の `code`)。
+- (5a) D-0177 の「Electron の Node は `--allow-net` を持たない」の出典の版: Electron 45.2.1(`app/package-lock.json`)、同梱の Node 24.22.1(`ELECTRON_RUN_AS_NODE=1` で `process.versions` を読んだ値)。コードの注記は `app/src/main/agent-host.ts:89`、試験は `app/test/u3a/egress-runtime.test.ts`。
+- (5b) A6 の通知本文の静的検査は既にある試験が当たる。どちらも `app/test/u3a/n1-static.test.ts` にあり、スキーマの側も契約のスキーマ(`internal/contract/schema/data/event.json`)を読むアプリの試験で、U0 の Go の契約試験には無い。
+  - スキーマ: `[N1] 通知のイベントのスキーマ: 最上位の欄は固定の 9 つで、人向けの文・ファイル名・パスの欄が無い`、`[N1] facts の全種類で…閉じた形である`、`[N1] facts の文字列の欄はすべて形式を持ち、自由な文字列は notify.test の確認語だけ`、`[N1] 注入文…はどの文字列の欄の形式にも合わない`。
+  - アプリ: `[N1] アプリのカタログ: …置換変数を持たない固定文`、`[N1] アプリのソースは通知のイベントの facts を読まない`。OS の通知を出す呼び出しは `app/src/main/failure-report.ts:30`(`s.t(...)` の結果だけ)と `app/src/main/status-view.ts:85`(カタログのキー)の 2 か所。
+  - 置き場を U0 の契約試験に移す必要があれば裁定を求める。今は移さない。
