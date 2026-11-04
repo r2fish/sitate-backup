@@ -4,7 +4,7 @@
 
 ## 撮ったビルド
 
-- 基の commit: `184241b`(branch `wp/u3c`)に、この WP の未 commit の差分(`app/src/testing/shots.ts`・`driver-server.ts`・`attach.ts` の画面写しの口と `app/test/shots/cli.ts`)を載せた作業ツリー。
+- commit `bb43fd2`(branch `wp/u3c`)と同じ中身の作業ツリー(撮ったときは commit の前。製品のコードは `184241b` と同じで、足したのは試験ビルドだけの画面写しの口と `app/test/shots/cli.ts`)。
 - ビルド: `make build-test sign-test build-app-test`(画面写しの口を入れた後に作り直したもの)。
 
 ## 画面の一覧
