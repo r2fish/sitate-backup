@@ -10,10 +10,6 @@
       },
       "force": {
         "type": "boolean"
-      },
-      "dry_run": {
-        "type": "boolean",
-        "description": "true なら何も変えずに計画だけ返す。"
       }
     },
     "additionalProperties": false

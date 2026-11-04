@@ -58,7 +58,7 @@ function leaf(v: unknown, refs: PathRefTable, tf: Field["transform"]): unknown {
   return v;
 }
 
-/** 表の欄だけを残した封筒。`error.next[].argv` と `warnings[].next` の元サーバー由来のパスも path_ref に置き換える(argv の絶対パスを参照名へ)。 */
+/** 表の欄だけを残した封筒。`error.next[].argv`・`warnings[].next`・`result.targets[].next` の元サーバー由来のパスも path_ref に置き換える(argv の絶対パスを参照名へ)。 */
 export function shapeEnvelope(env: Record<string, unknown>, refs: PathRefTable): Record<string, unknown> {
   const command = Array.isArray(env.command) ? env.command.join(" ") : "";
   const out: Record<string, unknown> = {};
@@ -70,11 +70,13 @@ export function shapeEnvelope(env: Record<string, unknown>, refs: PathRefTable):
   return out;
 }
 
-/** `error.next[].argv` と `warnings[].next[].argv` の絶対パス(元サーバー由来)を参照名にする。 */
+/** `error.next[].argv`・`warnings[].next[].argv`・`result.targets[].next[].argv`(D-0183)の絶対パス(元サーバー由来)を参照名にする。 */
 function hidePathsInNext(out: Record<string, unknown>, refs: PathRefTable): void {
   const nexts: unknown[] = [];
   if (isRec(out.error) && Array.isArray(out.error.next)) nexts.push(...out.error.next);
   if (Array.isArray(out.warnings)) for (const w of out.warnings) if (isRec(w) && Array.isArray(w.next)) nexts.push(...w.next);
+  const targets = isRec(out.result) && Array.isArray(out.result.targets) ? out.result.targets : [];
+  for (const t of targets) if (isRec(t) && Array.isArray(t.next)) nexts.push(...t.next);
   for (const n of nexts) {
     if (isRec(n) && Array.isArray(n.argv)) n.argv = n.argv.map((a: unknown) => (typeof a === "string" && a.startsWith("/") ? refs.refFor(a) : a));
   }

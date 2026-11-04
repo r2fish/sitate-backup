@@ -13,6 +13,9 @@ const gate = readJson(join(contractSchemaDir, "..", "gatedata", "allowlist.json"
 const toolFiles = listFiles(join(appRoot, "src/tools"), ".json");
 const toolName = (c: string[]) => "sitate_" + c.join("_").replace(/-/g, "_");
 const provided = subs.filter((s) => s.public === "tool" && !s.later);
+/** 仕様 8.2 でイテレーション 3 へ送った --dry-run(D-0183): subcommands.json の dry_run の列が true でも、道具の定義には dry_run を出さない 9 サブコマンド。 */
+const DRY_RUN_DEFERRED = ["backup", "hold set", "notify set", "extend", "prune", "init", "source enroll", "restore", "restore-test"];
+const offersDryRun = (s: Sub) => s.dry_run === true && !DRY_RUN_DEFERRED.includes(s.command.join(" "));
 const NOT_OFFERED = ["secrets-stdin", "phrase-stdin", "snapshot-key-stdin", "notify-proof-stdin", "secret-fd", "file", "invoked-by", "approval-pubkey"]; // approval-pubkey は init だけ(主プロセスが付ける。spec 3.7「道具に出さない選択肢」、D-0165)
 const snake = (s: string) => s.replace(/-/g, "_");
 
@@ -85,7 +88,7 @@ test("tools: argument sets equal the CLI options minus the withheld ones plus ki
     if (g.flags.some((x: any) => x.name === "file")) want.add("definition");
     got.delete("secret_refs"); // secret_refs は --secrets-stdin を受けるどのサブコマンドにも付けてよい
     got.delete("dry_run"); // dry_run は subcommands.json の dry_run の列から別に照らす(dryRunProblems)
-    assert.deepEqual(dryRunProblems(name, input(name), s.dry_run === true), []);
+    assert.deepEqual(dryRunProblems(name, input(name), offersDryRun(s)), []);
     assert.deepEqual([...got].sort(), [...want].sort(), name);
     for (const n of NOT_OFFERED) assert.ok(!got.has(snake(n)), `${name}: 道具に出さない選択肢 ${n}`);
   }
@@ -96,7 +99,7 @@ test("tools: argument types follow the gate value kinds (flag -> boolean, json, 
   for (const s of provided) {
     if (["bootstrap", "bootstrap-restore"].includes(s.command.join(" "))) continue;
     const flags: GateFlag[] = gateOf(s).flags.filter((x: any) => !NOT_OFFERED.includes(x.name));
-    assert.deepEqual(typeProblems(toolName(s.command), input(toolName(s.command)), flags, s.dry_run === true ? ["dry-run"] : []), []);
+    assert.deepEqual(typeProblems(toolName(s.command), input(toolName(s.command)), flags, offersDryRun(s) ? ["dry-run"] : []), []);
   }
 });
 
@@ -217,6 +220,18 @@ test("tools: dry_run follows the dry_run column of subcommands.json (every subco
   assert.ok(subs.some((s) => s.dry_run === true) && subs.some((s) => s.dry_run === false));
 });
 
+test("tools: the 9 subcommands deferred to iteration 3 (spec 8.2, D-0183) have no dry_run although their column is true; the other true tools have it", () => {
+  needTools();
+  for (const w of DRY_RUN_DEFERRED) {
+    const s = subs.find((x) => x.command.join(" ") === w);
+    assert.ok(s && s.dry_run === true, `${w}: 列が true の例外`);
+    assert.equal(argNames(input(toolName(s.command))).has("dry_run"), false, `${w}: 道具に dry_run がある`);
+  }
+  const kept = provided.filter((s) => s.dry_run === true && !DRY_RUN_DEFERRED.includes(s.command.join(" ")));
+  for (const n of ["init-storage", "restore-dest enroll", "propose"]) assert.ok(kept.some((s) => s.command.join(" ") === n), n);
+  for (const s of kept) assert.equal(argNames(input(toolName(s.command))).has("dry_run"), true, `${s.command.join(" ")}: dry_run が無い`);
+});
+
 test("tools: the dry_run check rejects a missing definition where the column is true and a present one where it is false", () => {
   const withDry = { type: "object", properties: { dry_run: { type: "boolean" }, run_id: { type: "string" } } };
   const withoutDry = { type: "object", properties: { run_id: { type: "string" } } };
@@ -286,4 +301,9 @@ test("attest: the step classes in the schema match the three unsigned steps (ui-
   assert.deepEqual([...defs.attest_step_unsigned.enum].sort(), ["admin_access_closed", "admin_access_opened", "dest_disposed"]);
   assert.deepEqual(defs.attest_step_signed.anyOf[0].enum, ["R3", "R7"]);
   for (const u of defs.attest_step_unsigned.enum) assert.doesNotMatch(u, new RegExp(defs.attest_step_signed.anyOf[1].pattern));
+});
+
+test("tools: [5.14] sitate_init_storage mentions --adapter b2 in its top-level description", () => {
+  needTools();
+  assert.ok(String(load("sitate_init_storage").description).includes("`--adapter b2`"));
 });
