@@ -21,12 +21,12 @@ func (a *Acquire) withNext(ctx context.Context, out TargetOutcome) TargetOutcome
 	code := contract.Code(out.ErrorCode)
 	switch code {
 	case contract.CodeStorageUnreachable:
-		out.Next = []contract.Next{nextOf(code, false, "sitate", "doctor")}
+		out.Next = []contract.Next{nextOf(code, false, "doctor")}
 	case contract.CodeReceiverTargetsMismatch: // seal の前: source enroll、seal の後: propose source-change
 		if sealed, _ := getBool(ctx, a.State, "sealed"); sealed {
-			out.Next = []contract.Next{nextOf(code, false, "sitate", "propose", "source-change")}
+			out.Next = []contract.Next{nextOf(code, false, "propose", "source-change")}
 		} else {
-			out.Next = []contract.Next{nextOf(code, false, "sitate", "source", "enroll")}
+			out.Next = []contract.Next{nextOf(code, false, "source", "enroll")}
 		}
 	case contract.CodeInternal: // component が adapter のときは [](アダプタの提供元の案内を確かめる。アプリのカタログの文)
 		var d struct {
@@ -34,7 +34,7 @@ func (a *Acquire) withNext(ctx context.Context, out TargetOutcome) TargetOutcome
 		}
 		_ = json.Unmarshal(out.Detail, &d)
 		if d.Component != "adapter" {
-			out.Next = []contract.Next{nextOf(code, false, "sitate", "status")}
+			out.Next = []contract.Next{nextOf(code, false, "status")}
 		}
 	}
 	return out
