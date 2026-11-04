@@ -23,10 +23,10 @@ func TestTargetNextByCause(t *testing.T) {
 		out  TargetOutcome
 		want []contract.Next
 	}{
-		{"STORAGE_UNREACHABLE", a, TargetOutcome{Status: "failed", ErrorCode: "STORAGE_UNREACHABLE"}, []contract.Next{nx("STORAGE_UNREACHABLE", "sitate", "doctor")}},
-		{"MISMATCH seal 後", a, TargetOutcome{Status: "failed", ErrorCode: "RECEIVER_TARGETS_MISMATCH"}, []contract.Next{nx("RECEIVER_TARGETS_MISMATCH", "sitate", "propose", "source-change")}},
-		{"MISMATCH seal 前", pre, TargetOutcome{Status: "failed", ErrorCode: "RECEIVER_TARGETS_MISMATCH"}, []contract.Next{nx("RECEIVER_TARGETS_MISMATCH", "sitate", "source", "enroll")}},
-		{"INTERNAL acquire", a, TargetOutcome{Status: "failed", ErrorCode: "INTERNAL", FailInfo: FailInfo{Detail: json.RawMessage(`{"component":"acquire"}`)}}, []contract.Next{nx("INTERNAL", "sitate", "status")}},
+		{"STORAGE_UNREACHABLE", a, TargetOutcome{Status: "failed", ErrorCode: "STORAGE_UNREACHABLE"}, []contract.Next{nx("STORAGE_UNREACHABLE", "doctor")}},
+		{"MISMATCH seal 後", a, TargetOutcome{Status: "failed", ErrorCode: "RECEIVER_TARGETS_MISMATCH"}, []contract.Next{nx("RECEIVER_TARGETS_MISMATCH", "propose", "source-change")}},
+		{"MISMATCH seal 前", pre, TargetOutcome{Status: "failed", ErrorCode: "RECEIVER_TARGETS_MISMATCH"}, []contract.Next{nx("RECEIVER_TARGETS_MISMATCH", "source", "enroll")}},
+		{"INTERNAL acquire", a, TargetOutcome{Status: "failed", ErrorCode: "INTERNAL", FailInfo: FailInfo{Detail: json.RawMessage(`{"component":"acquire"}`)}}, []contract.Next{nx("INTERNAL", "status")}},
 		{"INTERNAL adapter", a, TargetOutcome{Status: "failed", ErrorCode: "INTERNAL", FailInfo: FailInfo{Detail: json.RawMessage(`{"component":"adapter"}`)}}, empty},
 		{"ADAPTER_ERROR", a, TargetOutcome{Status: "failed", ErrorCode: "ADAPTER_ERROR"}, empty},
 		{"NOT_FOUND", a, TargetOutcome{Status: "failed", ErrorCode: "NOT_FOUND"}, empty},
