@@ -6,6 +6,7 @@ package acquire
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/r2fish/sitate-backup/internal/contract"
@@ -86,6 +87,10 @@ func checkChoice(t *testing.T, got contract.HostKeyChoice, want hkWant, fp strin
 		_ = json.Unmarshal(got.Err.Detail, &d)
 		if len(d.Issues) != 1 || d.Issues[0].Pointer != "/source/host" || d.Issues[0].Reason != "invalid_value" {
 			t.Errorf("issues は /source/host の invalid_value 1 件: %s", got.Err.Detail)
+		}
+		// D-0188: next は ["sitate","def","show"](人を要さない)。
+		if n := got.Err.Next; len(n) != 1 || strings.Join(n[0].Argv, " ") != "sitate def show" || n[0].RequiresHuman {
+			t.Errorf("next は sitate def show 1 件(requires_human false): %+v", n)
 		}
 	case hkNoRecord:
 		if got.Compare || got.Err == nil {

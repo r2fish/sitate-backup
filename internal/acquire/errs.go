@@ -40,6 +40,13 @@ func errDefInvalid(pointer, reason string) *contract.Error {
 	return mkErr(contract.CodeDefInvalid, map[string]any{"issues": []map[string]string{{"pointer": pointer, "reason": reason}}})
 }
 
+// errHostMismatch は source enroll の --host の <host> が定義の source.host と違うときの DEF_INVALID。
+// next は定義を読み直す `sitate def show`(spec 3.1.3。D-0188)。
+func errHostMismatch() *contract.Error {
+	return mkErr(contract.CodeDefInvalid, map[string]any{"issues": []map[string]string{{"pointer": "/source/host", "reason": "invalid_value"}}},
+		nextOf(contract.CodeDefInvalid, false, "sitate", "def", "show"))
+}
+
 func errUnreachable() *contract.Error {
 	return mkErr(contract.CodeStorageUnreachable, map[string]any{"target": "source", "reason": "connect", "http_status": nil})
 }

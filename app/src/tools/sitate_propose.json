@@ -1,6 +1,6 @@
 {
   "name": "sitate_propose",
-  "description": "危険な変更を提案する(承認は人がアプリの承認カードで行う)。kind で種類を選び、その種類の引数だけを渡す。 秘密の値と元サーバーのパスの実値は渡さず、参照名(secret_refs、path_ref)を使う。",
+  "description": "危険な変更を提案する(承認は人がアプリの承認カードで行う)。kind で種類を選び、その種類の引数だけを渡す。 source.host は裸のホスト名(--host の ssh://<user>@<host>:<port> の <host> の部分)。URI・ユーザー・ポートを書かない。 秘密の値と元サーバーのパスの実値は渡さず、参照名(secret_refs、path_ref)を使う。",
   "input_schema": {
     "type": "object",
     "properties": {

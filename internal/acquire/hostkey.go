@@ -70,7 +70,7 @@ func choose(in contract.HostKeyChoiceInput) contract.HostKeyChoice {
 		return contract.HostKeyChoice{}
 	case TimingEnroll:
 		if in.Host != in.DefHost {
-			return contract.HostKeyChoice{Err: errDefInvalid("/source/host", "invalid_value")}
+			return contract.HostKeyChoice{Err: errHostMismatch()}
 		}
 		if fp := first(in.SourceSeen); fp != "" {
 			return contract.HostKeyChoice{Compare: true, FP: fp}

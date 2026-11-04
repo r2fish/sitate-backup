@@ -181,6 +181,7 @@ Q1〜Q4 と手順 2・3 の値から、次の形の JSON を作って `sitate_de
 }
 ```
 
+- `source.host` は裸のホスト名(`--host` の `ssh://<user>@<host>:<port>` の `<host>` の部分)。URI・ユーザー・ポートを書かない(書くと `DEF_INVALID` の `/source/host`、`invalid_value`)。復元先の `restore.dest.at` は `ssh://<ユーザー>@<ホスト>:22` の形のまま。
 - 対象 `targets` の `id` は `t1`、`t2` の形(`t` と 1〜9999)。種別のキーは `files` か `postgresql` のどちらか 1 つ。除外 `declined` の `id` は `d1`、`d2` の形で、種別は `mount` か `postgresql_cluster`。
 - `files` の根は絶対パスで、`/`、`/etc`、`/var`、`/home`、`/srv`、`/opt` そのものと、`/proc` などのシステムの場所は置けない(`DEF_INVALID` の `root_forbidden`)。
 - `notify.to` は通知先の参照名(手順 4 の `notify set` で先に登録した名前)。メールアドレスの通知先はイテレーション 1 の範囲の外。
