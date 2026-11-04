@@ -36,6 +36,19 @@
 - (決着)インストーラー: D-0205 で案 A(配らない)。
 - 製品ビルドのアプリが受入試験の環境に届かない見込み(コードを読んだ所見。実行での確かめは日 6): 受入試験の環境のコンテナは SSH の口を作業端末に公開していない(`app/test/e2e/bridge.ts` の冒頭)。試験ビルドでは、ドライバが `docker exec` で橋を作り、試験ビルドだけの `SITATE_TEST_HOST_MAP`(`app/src/testing/host-map.ts`、`attach.ts`)で管理用 SSH の接続先を読み替えている。製品ビルドにはこの読み替えが無いので、開始時の入力の `backup`・`source`・`dest` に作業端末から届かない。設計の監督に問う。
 
+## 動画の環境の実行の後(down する前)の A7(D-0200 の追記 2 の後の設計の指示)
+
+核のログ・CLI の標準エラー・通知の記録は、測定 4 のビルドでも測定 3 のビルドでも検索していない(`test/records/A7/m4-2026-11-05.md`)。動画用の環境の実行の後、環境を down する前に次を行い、`Docs:` の commit で記録に足す。
+
+1. 監督: 環境 `<NAME>` から、バックアップサーバーの状態ディレクトリ(`secrets/` を除く。鍵の置き場そのものは検索の対象にしない)と、通知の受け手の記録(`test/env/.run/accept-<NAME>/hook-data/`)を、リポジトリの外の空のディレクトリ `<A7DIR>` へ写す(`docker cp sitate-acc-<NAME>-backup:/var/lib/sitate <A7DIR>/state` の後に `<A7DIR>/state/secrets` を消す)。中身は読まない。
+2. 利用者(自分のターミナル): `(printf '%s\n' "$LLM" "$KID" "$KEY"; bash test/tools/a7_env_secrets.sh <NAME>) | python3 test/tools/check_a7.py secrets --records <A7DIR> test/acceptance/records/<動画の記録>/` を流し、`files=` の行と `A7-1` の行を貼る。
+3. 一致があれば、どのファイルの種類か(件数とパスの種類だけ)を監督が確かめ、鍵の置き場(暗号化した鍵束など、値を持つのが役目のもの)か漏れかを分けて記録する。
+4. 監督が `<A7DIR>` を消す。
+
+## 動画の撮り方(設計の指示)
+
+- ドライバは変えない(速さを落とす引数は無い。待ちは固定)。動画は普通の速さで録り、編集で止め絵とゆっくり再生にする。語りは止め絵に重ねる。
+
 ## 予行(2026-11-05、監督。HEAD 1a11cb0)
 
 - `make test`: 終了 0、`ok` のパッケージ 73。`make test-app`: 終了 0、`ℹ pass 372`・`ℹ fail 0`・`ℹ skipped 0`。`make contract-status`: 終了 0、全 WP で未実装 0・その他 0(skip は U1e 1・U1f-1 2・U1g 3)。
