@@ -18,8 +18,9 @@ import { runBootstrap } from "./bootstrap/bootstrap.ts";
 import type { BootstrapInput, BundleReader } from "./bootstrap/bootstrap.ts";
 import { reportFailure } from "./failure-report.ts";
 import { CHANNEL } from "./ipc-channels.ts";
-import type { UiMessage } from "./ipc-channels.ts";
+import type { UiMessage, UiSteps } from "./ipc-channels.ts";
 import { ADMIN_KEY_ACCOUNT, APPROVAL_ACCOUNT, MacKeychain, SERVICE_PRE_ADMIN, SERVICE_PRE_LLM, serviceFor } from "./keychain.ts";
+import { chatMessage } from "./chat-view.ts";
 import { PathRefTable } from "./path-ref.ts";
 import { LLM_ACCOUNT, SECRET_LABEL, SecretBox } from "./secret-box.ts";
 import { Session } from "./session.ts";
@@ -115,14 +116,15 @@ async function compose(res: string, locale: string, keys: TrustedKey[], b: Extra
   const targetUi = new TargetActions({ targets, typedFp, label: t, onChange: () => { renderStatus(); renderChat(); } });
   const status = new StatusView({ t, now: () => new Date(), agentRunning: () => host.running, notify: osNotify });
   status.setLocale(locale);
+  const stepsView = (): UiSteps | null => { const rows = session.progress(); return rows === null ? null : { heading: t("status.progress.heading"), nextLabel: t("status.progress.next"), rows }; };
   const renderStatus = (): void => {
     const v = status.view();
-    ui({ surface: "status", heading: t("status.panel.heading"), rows: [...notices.map((n) => ({ label: n, value: "" })), ...v.rows, ...v.appInfo], askAi: v.askAi, target: targetUi.view(), survey: survey.current });
+    ui({ surface: "status", heading: t("status.panel.heading"), rows: [...notices.map((n) => ({ label: n, value: "" })), ...v.rows, ...v.appInfo], askAi: v.askAi, target: targetUi.view(), survey: survey.current, steps: stepsView() });
   };
   // 最初の一歩(D-0169): 接続先の記録(ssh-target.json)も人の発話も無いときだけ、固定の案内と「始める」を出す。案内は LLM を呼ばない。
   const startOffer = (): { guide: string; label: string } | null =>
     targets.read() === null && !chat.some((l) => l.role === "human") ? { guide: t("chat.start.guide"), label: t("chat.start.label") } : null;
-  const renderChat = (): void => ui({ surface: "chat", lines: chat, sendLabel: t("chat.send.label"), start: startOffer() });
+  const renderChat = (): void => ui(chatMessage(chat, t, startOffer(), session.waiting));
   const box = new SecretBox({ keychain, service: () => serviceFor("repo"), show: (r) => { if (r !== null) ui({ surface: "secret-box", mode: r.mode, ref: r.ref, label: t(r.label), submitLabel: t("chat.secret.submit.label") }); } });
   const failure = (code: string): void => reportFailure(code, {
     t, showNotice: (x) => { notices.push(x); renderStatus(); }, chat: (x) => { chat.push({ role: "notice", text: x }); renderChat(); }, osNotify,
@@ -131,7 +133,7 @@ async function compose(res: string, locale: string, keys: TrustedKey[], b: Extra
   const host = new AgentHost((entry, o) => utilityProcess.fork(entry, [...o.args], { env: { ...o.env }, serviceName: o.serviceName, execArgv: [...o.execArgv] }) as never, join(res, "agent.js"), {
     onReady: (model, first) => { status.setModel(model, first); renderStatus(); },
     onReply: (id, text) => { recorder.runEnd(id); session.onReply(text); },
-    onFailure: (id, code) => { if (id !== null) recorder.runEnd(id); if (code === "LLM_MODEL_NOT_FOUND") status.setModel(null, false); failure(code); },
+    onFailure: (id, code) => { if (id !== null) recorder.runEnd(id); if (code === "LLM_MODEL_NOT_FOUND") status.setModel(null, false); failure(code); session.onAgentFailure(id); },
     onUsage: (u) => recorder.request(u),
     onToolCall: async (name, input) => { const content = await session.onToolCall(name, input); return { content, stepPassed: session.consumeStepPassed() }; },
   });
@@ -144,7 +146,7 @@ async function compose(res: string, locale: string, keys: TrustedKey[], b: Extra
     canStart: () => targets.read() === null,
     registry, refs: new PathRefTable(), keychain, service: () => serviceFor("repo"), t, approvalKey: await approvalKeyOf(keychain), runner,
     now: () => signedAtOf(new Date()), sendToAgent: (id, text) => { recorder.runStart(id); host.send(id, text); },
-    onChat: (l) => { chat.push(l); renderChat(); },
+    onChat: (l) => { chat.push(l); renderChat(); }, onWait: () => renderChat(),
     onCard: (card) => { const decision = cardGate.open(card.changeId); ui({ surface: "approval-card", card }); return decision; },
     onPanel: (panel) => phrase.setPanel(panel),
     onSurvey: (r) => { survey.current = buildSurveyView(r, t, locale); renderStatus(); },
@@ -196,6 +198,7 @@ async function startAgent(ctx: Ctx, replace: boolean): Promise<void> {
   if (apiKey === null) return;
   const b = ctx.bundle;
   const agentBundle = { manual: b.byPath("manual.md"), procedure: b.byPath("install.md"), rules: b.paths("rules/").map(b.byPath).join("\n\n"), tools: ctx.registry.definitions(), models: (JSON.parse(b.byPath("models.json")) as { models: string[] }).models };
+  ctx.session.onAgentRestart();
   ctx.host.start(apiKey, agentBundle, ctx.locale, new Date().toISOString().slice(0, 10));
 }
 

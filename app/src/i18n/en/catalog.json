@@ -474,5 +474,22 @@
  "status.target.port": "Port number",
  "status.target.register": "Register",
  "status.target.remove": "Remove",
- "status.unreachable.fixed": "[tmp] status.unreachable.fixed"
+ "status.unreachable.fixed": "[tmp] status.unreachable.fixed",
+ "status.progress.step.1": "[tmp] status.progress.step.1",
+ "status.progress.step.2": "[tmp] status.progress.step.2",
+ "status.progress.step.3": "[tmp] status.progress.step.3",
+ "status.progress.step.4": "[tmp] status.progress.step.4",
+ "status.progress.step.5": "[tmp] status.progress.step.5",
+ "status.progress.step.6": "[tmp] status.progress.step.6",
+ "status.progress.step.7": "[tmp] status.progress.step.7",
+ "status.progress.step.8": "[tmp] status.progress.step.8",
+ "status.progress.step.9": "[tmp] status.progress.step.9",
+ "status.progress.step.10": "[tmp] status.progress.step.10",
+ "status.progress.step.11": "[tmp] status.progress.step.11",
+ "status.progress.step.12": "[tmp] status.progress.step.12",
+ "status.progress.step.13": "[tmp] status.progress.step.13",
+ "chat.tool.group.heading": "[tmp] chat.tool.group.heading {count, number}",
+ "chat.wait.label": "[tmp] chat.wait.label",
+ "status.progress.heading": "[tmp] status.progress.heading",
+ "status.progress.next": "[tmp] status.progress.next"
 }

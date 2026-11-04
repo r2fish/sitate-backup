@@ -3,6 +3,8 @@
 import { createServer } from "node:net";
 import { StringDecoder } from "node:string_decoder";
 import type { Server } from "node:net";
+import { handleShot, isShotCommand } from "./shots.ts";
+import type { ShotCommand, ShotControl } from "./shots.ts";
 
 /** 画面の操作の差し込み口(実体は webContents.executeJavaScript)。 */
 export interface PageControl {
@@ -20,7 +22,9 @@ export type DriverCommand =
   /** 開いている人の操作の面(秘密の入力ボックス、承認カード、フレーズのパネル)の今の状態。 */
   | { readonly op: "pending" }
   /** 主プロセスの出来事(道具の呼び出し・実行の始まりと終わり)を、前回の取り出しの後の分だけ取り出す。 */
-  | { readonly op: "events" };
+  | { readonly op: "events" }
+  /** 画面写し(shots.ts。試験ビルドだけ)。 */
+  | ShotCommand;
 
 /** 主プロセスの出来事(attach.ts が積む)。kind: tool_call | run_start | run_end。 */
 export type TestEvent = { readonly at: string; readonly kind: string } & Record<string, unknown>;
@@ -39,13 +43,13 @@ export function scriptFor(c: DriverCommand): string {
     case "click": return `(()=>{const b=document.querySelector('[data-surface=${q(c.surface)}] [data-action=${q(c.action)}]');if(!b||b.disabled)return false;b.click();return true})()`;
     case "fill": return `(()=>{const i=document.querySelector('[data-surface=${q(c.surface)}] [data-proof=${q(c.target)}], [data-surface=${q(c.surface)}] input, [data-surface=${q(c.surface)}] textarea');if(!i)return false;i.value=${q(c.value)};return true})()`;
     case "read": return `(()=>{const s=document.querySelector('[data-surface=${q(c.surface)}]');return s?s.innerText:null})()`;
-    case "lang": case "events": return "true";
-    case "lines": return `[...document.querySelectorAll('#chat-lines li')].map((li)=>({role:li.getAttribute('data-role'),text:li.textContent}))`;
+    case "lang": case "events": case "capture": case "theme": case "mask": return "true";
+    case "lines": return `[...document.querySelectorAll('#chat-lines > li[data-text]')].map((li)=>({role:li.getAttribute('data-role'),text:li.getAttribute('data-text')}))`;
     case "pending": return PENDING_SCRIPT;
   }
 }
 
-export function startDriverServer(socketPath: string, page: PageControl, setLang: (l: "ja" | "en") => void, drainEvents: () => TestEvent[] = () => []): Server {
+export function startDriverServer(socketPath: string, page: PageControl, setLang: (l: "ja" | "en") => void, drainEvents: () => TestEvent[] = () => [], shots?: Omit<ShotControl, "eval">): Server {
   const server = createServer((sock) => {
     let buf = "";
     const dec = new StringDecoder("utf8"); // チャンクの境目で多バイト文字を割らない
@@ -62,6 +66,10 @@ export function startDriverServer(socketPath: string, page: PageControl, setLang
     const c = JSON.parse(line) as DriverCommand;
     if (c.op === "lang") { setLang(c.lang); return true; }
     if (c.op === "events") return drainEvents();
+    if (isShotCommand(c)) {
+      if (shots === undefined) throw new Error("画面写しの口が無い");
+      return handleShot(c, { eval: (s) => page.eval(s), ...shots });
+    }
     return page.eval(scriptFor(c));
   }
   server.listen(socketPath);

@@ -9,8 +9,8 @@
 </head>
 <body>
 <main>
-  <section data-surface="status" aria-label="status"><h1 id="status-heading"></h1><ul id="status-rows"></ul><div id="status-ask-ai"></div><div id="target-area"></div><div id="survey-area"></div></section>
-  <section data-surface="chat" aria-label="chat"><ol id="chat-lines"></ol><div id="chat-start"></div><form id="chat-form"><input id="chat-input" autocomplete="off"><button type="submit" id="chat-send"></button></form></section>
+  <section data-surface="chat" aria-label="chat"><div id="chat-scroll"><div id="chat-column"><ol id="chat-lines"></ol><div id="chat-wait" role="status" hidden><span class="wait-dot"></span><span id="chat-wait-label"></span></div><div id="chat-start"></div></div></div><form id="chat-form"><input id="chat-input" autocomplete="off"><button type="submit" id="chat-send"></button></form></section>
+  <section data-surface="status" aria-label="status"><div id="status-progress" hidden><h2 id="status-steps-heading"></h2><ol id="status-steps" hidden></ol></div><h1 id="status-heading"></h1><ul id="status-rows"></ul><div id="status-ask-ai"></div><div id="survey-area"></div><div id="target-area"></div></section>
 </main>
 <dialog data-surface="approval-card" id="approval-card"><div id="card-body"></div><div id="card-proofs"></div><div id="card-actions"></div></dialog>
 <dialog data-surface="secret-box" id="secret-box"><label id="secret-label"></label><textarea id="secret-input" rows="6" autocomplete="off" spellcheck="false" autocapitalize="off"></textarea><button id="secret-submit" data-action="secret-submit"></button></dialog>

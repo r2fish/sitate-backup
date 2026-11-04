@@ -1,6 +1,9 @@
 // 画面のプロセス(5 面の描画)。主プロセスが描画済みのモデルを送り、ここは DOM に置くだけ。ボタンは固定文を持たず、主プロセスが文を送る。
 // エージェントのプロセスへの経路は無い(preload の窓口だけ)。textContent だけで描き、HTML として解釈しない。
 import type { CardDecision, PhraseAction, UiMessage } from "../main/ipc-channels.ts";
+import { renderChatLines } from "./chat.ts";
+import type { FoldState } from "./chat.ts";
+import { fieldRow, renderSteps, surveyRow } from "./status.ts";
 
 interface Api {
   sendChat(text: string): Promise<void>;
@@ -16,6 +19,7 @@ interface Api {
 }
 declare const sitate: Api;
 
+const folds: FoldState = new Map();
 const $ = (id: string): HTMLElement => document.getElementById(id)!;
 const el = (tag: string, text: string, attrs: Record<string, string> = {}): HTMLElement => {
   const e = document.createElement(tag);
@@ -33,7 +37,7 @@ interface CardView { changeId: string; approveEnabled: boolean; updatePrompt: st
 
 function renderCard(card: CardView): void {
   const body = $("card-body");
-  body.replaceChildren(...card.sections.flatMap((s) => [el("h3", s.title, { "data-section": String(s.no) }), ...s.rows.map((r) => el("p", `${r.label} ${r.value}`.trim())), ...s.lines.map((l) => el("p", l))]));
+  body.replaceChildren(...card.sections.flatMap((s) => [el("h3", s.title, { "data-section": String(s.no) }), ...s.rows.map((r) => fieldRow(document, "p", r.label, r.value, { "data-card-row": "1" })), ...s.lines.map((l) => el("p", l))]));
   if (card.updatePrompt !== null) body.append(el("p", card.updatePrompt, { "data-update-prompt": "1" }));
   const proofs = $("card-proofs");
   proofs.replaceChildren(...card.proofRecipients.map((r) => { const l = el("label", card.proofLabels[r] ?? ""); l.append(el("input", "", { "data-proof": r, autocomplete: "off" })); return l; }));
@@ -77,7 +81,13 @@ sitate.onRender((m) => {
   switch (m.surface) {
     case "chat":
       $("chat-send").textContent = m.sendLabel;
-      $("chat-lines").replaceChildren(...m.lines.map((l) => el("li", l.text, { "data-role": l.role })));
+      $("chat-send").setAttribute("aria-label", m.sendLabel);
+      renderChatLines(document, $("chat-lines"), m.lines, folds);
+      // 応答の待ち: 一覧の外の最後に印と固定の文(文は主プロセスが送る)。
+      $("chat-wait").hidden = m.wait === null;
+      $("chat-wait-label").textContent = m.wait ?? "";
+      const scroll = $("chat-scroll");
+      scroll.scrollTop = scroll.scrollHeight;
       // 最初の一歩(D-0169): 固定の案内と「始める」。文は主プロセスが送る(ここに固定文を持たない)。
       $("chat-start").replaceChildren(...(m.start === null ? [] : [el("p", m.start.guide, { "data-start-guide": "1" }), button(m.start.label, "chat-start", () => void sitate.startChat())]));
       return;
@@ -105,10 +115,11 @@ sitate.onRender((m) => {
     }
     case "status":
       $("status-heading").textContent = m.heading;
-      $("status-rows").replaceChildren(...m.rows.map((r) => el("li", `${r.label} ${r.value}`.trim())));
+      renderSteps(document, $("status-progress"), $("status-steps-heading"), $("status-steps"), m.steps);
+      $("status-rows").replaceChildren(...m.rows.map((r) => fieldRow(document, "li", r.label, r.value)));
       $("status-ask-ai").replaceChildren(...m.askAi.map((a) => button(a.label, `ask-ai:${a.kind}`, () => void sitate.statusAction(a.kind))));
       renderTarget(m.target);
-      $("survey-area").replaceChildren(...(m.survey === null ? [] : [el("h2", m.survey.heading), ...m.survey.rows.map((r) => el("p", `${r.name} / ${r.kind} / ${r.size} / ${r.v1}`, { "data-survey-row": "1" }))]));
+      $("survey-area").replaceChildren(...(m.survey === null ? [] : [el("h2", m.survey.heading), ...m.survey.rows.map((r) => surveyRow(document, r))]));
   }
 });
 

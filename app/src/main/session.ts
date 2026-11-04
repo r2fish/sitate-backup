@@ -1,7 +1,9 @@
 // 会話の制御(主プロセス。spec 3.7、完了条件 5・8・22・26・31)。入力の送信前の検出、表示しなかった応答の区画、道具の呼び出しの検査と実行、
 // 承認カードの操作待ち、道具の呼び出しの 1 行の表示。モデルへ出る文字列は shape-envelope を通ったものと人の入力だけ。
-import { appErrorEnvelope } from "./app-envelope.ts";
 import type { AppErrorCode } from "./app-envelope.ts";
+import { appErrorSection, appSection } from "./app-section.ts";
+import { renderAgentText } from "./agent-text.ts";
+import type { Span } from "./agent-text.ts";
 import { buildCard } from "./approval-card.ts";
 import type { CardModel, Translate } from "./approval-card.ts";
 import { SoftwareApprovalKey } from "./approval-sign.ts";
@@ -20,16 +22,29 @@ import type { Keychain } from "./keychain.ts";
 import { SERVICE_PRE_ADMIN } from "./keychain.ts";
 import { PathRefTable } from "./path-ref.ts";
 import { QuoteRejections, checkQuotes } from "./quote-check.ts";
-import { renderMarks } from "./quote-render.ts";
 import { shapeEnvelope, toDataSection } from "./shape-envelope.ts";
 import type { StreamEnd } from "./stdout-records.ts";
-import { authorizeToolCall, buildStdin } from "./tool-gate.ts";
+import { authorizeToolCall, buildStdin, subcommandOf } from "./tool-gate.ts";
 import type { ToolPlan } from "./tool-gate.ts";
 import type { ToolRegistry } from "./tool-registry.ts";
 
 export interface CoreRunner { run(argv: readonly string[], stdin: string): Promise<{ stdout: string; end: StreamEnd }> }
 type RunOutcome = { envelope: Record<string, unknown> } | { discarded: true; text: string; code: string };
-export type ChatLine = { readonly role: "human" | "agent" | "tool" | "notice"; readonly text: string };
+export type ChatLine = {
+  readonly role: "human" | "agent" | "tool" | "notice";
+  readonly text: string;
+  /** エージェントの文に入れた値(参照名から戻した名前と引用の印の値)の範囲。画面は書式の対象にしない。 */
+  readonly spans?: readonly Span[];
+  /** 手順の合格の行(道具の行の畳みの件数に数えない)。 */
+  readonly step?: true;
+  /** 道具の行の結果の種別(成功・失敗。手順の合格の行は step)。画面は種別ごとに印を描き分ける。 */
+  readonly outcome?: "ok" | "fail";
+};
+
+/** 手順の骨格(spec 3.8 の手順 1〜13)。 */
+export const STEP_NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] as const;
+export type StepState = "passed" | "next" | "todo";
+export interface ProgressRow { readonly n: number; readonly label: string; readonly state: StepState }
 
 export interface SessionDeps {
   readonly registry: ToolRegistry;
@@ -62,6 +77,8 @@ export interface SessionDeps {
   readonly onSurvey?: (result: Record<string, unknown>) => void;
   /** 引用した手順書・説明書の本文(引用の照合で、これに出る値を引いた文は表示してよい。spec 3.7 の例外)。 */
   readonly citedBodies?: () => readonly string[];
+  /** 応答の待ちの数が変わったとき(描画を促す)。 */
+  readonly onWait?: (n: number) => void;
 }
 
 /** 元サーバーの管理用資格情報が通らなかったとき、その参照名の値をキーチェーンから消す(spec 3.7)。 */
@@ -74,6 +91,8 @@ const APP_KEY: Record<string, string> = { BOOTSTRAP_SIGNATURE_INVALID: "app.boot
 export class Session {
   readonly #d: SessionDeps;
   readonly #quotes = new QuoteRejections();
+  /** エージェントへ渡してまだ結果を受けていない入力の数(spec 3.7「応答の待ち」)。 */
+  #waiting = 0;
   readonly #results = new Map<string, unknown>();
   readonly #humanTexts: string[] = [];
   /** この呼び出しで開いたフレーズのパネルの待ち。 */
@@ -101,19 +120,65 @@ export class Session {
     if (this.#started || this.#humanTexts.length > 0 || this.#d.canStart?.() === false) return;
     this.#started = true;
     this.#deliver(this.#d.t("chat.start.instruction"));
+    this.#d.onStatus?.();
+  }
+
+  /** 応答の待ちの数。 */
+  get waiting(): number {
+    return this.#waiting;
+  }
+
+  #setWaiting(n: number): void {
+    const next = Math.max(0, n);
+    if (next === this.#waiting) return;
+    this.#waiting = next;
+    this.#d.onWait?.(next);
+  }
+
+  /** 入力 1 つの結果を受けた(表示した文・表示しなかった応答・失敗の固定文・固定文を出さない中断)。 */
+  #settled(): void {
+    this.#setWaiting(this.#waiting - 1);
+  }
+
+  /** エージェントの失敗。入力の id があればその入力の結果、無ければ(どの入力か分からない失敗・プロセスの終了)待ちを 0 に戻す。 */
+  onAgentFailure(id: string | null): void {
+    if (id === null) this.#setWaiting(0);
+    else this.#settled();
+  }
+
+  /** エージェントの作り直し(LLM API キーの差し替えを含む)。待ちを 0 に戻す。 */
+  onAgentRestart(): void {
+    this.#setWaiting(0);
+  }
+
+  /** 会話を捨てる。手順の合格・導入の一覧・応答の待ちを捨てる(アプリの再起動の後の会話には出さない)。 */
+  discardConversation(): void {
+    this.#started = false;
+    this.#d.judge?.reset();
+    this.#setWaiting(0);
+    this.#d.onStatus?.();
+  }
+
+  /** 導入の進み具合(手順 1〜13)。「始める」を押した会話の間だけ。合格していない最小の番号が「次」。 */
+  progress(): readonly ProgressRow[] | null {
+    if (!this.#started || this.#d.judge === undefined) return null;
+    const judge = this.#d.judge;
+    const next = STEP_NUMBERS.find((n) => !judge.isPassed(String(n)));
+    return STEP_NUMBERS.map((n) => ({ n, label: this.#d.t(`status.progress.step.${n}`), state: judge.isPassed(String(n)) ? "passed" as const : n === next ? "next" as const : "todo" as const }));
   }
 
   #deliver(text: string): void {
     this.#humanTexts.push(text);
     this.#d.onChat({ role: "human", text });
-    const block = this.#quotes.take();
+    const block = this.#quotes.take(this.#d.refs);
+    this.#setWaiting(this.#waiting + 1);
     this.#d.sendToAgent(`i${this.#seq++}`, block === null ? text : `${block}\n${text}`);
   }
 
   /** `status` を読み直す(起動時・面を開いたとき・状態を変える操作の後)。届かなければ最後の値を古い印つきで残す。 */
   async refreshStatus(): Promise<void> {
     if (this.#d.status === undefined) return;
-    const r = await this.#run(["status"], "");
+    const r = await this.#run(["status"], ["status"], "");
     this.#d.status.ingest("envelope" in r && r.envelope.ok === true ? r.envelope : null);
     this.#d.onStatus?.();
   }
@@ -127,9 +192,14 @@ export class Session {
   }
 
   onReply(text: string): void {
+    this.#showReply(text);
+    this.#settled(); // 表示してから減らす(待ちの印が文より先に消えない)
+  }
+
+  #showReply(text: string): void {
     const v = checkQuotes({ text, results: this.#results, humanTexts: this.#humanTexts, citedBodies: this.#d.citedBodies?.() ?? [] });
     // 引用の照合は参照名のままの文で行い、画面にはエージェントの文の参照名を実名に置き換えて描く(完了条件 33。モデルへ戻らない)。
-    if (v.ok) return this.#d.onChat({ role: "agent", text: this.#d.refs.renderText(renderMarks(text, (k) => this.#d.t(k))) });
+    if (v.ok) { const r = renderAgentText(text, (k) => this.#d.t(k), this.#d.refs); return this.#d.onChat({ role: "agent", text: r.text, spans: r.spans }); }
     this.#quotes.record(v);
     this.#d.onChat({ role: "notice", text: this.#d.t("chat.quote.rejected_guide") });
   }
@@ -162,23 +232,23 @@ export class Session {
     }
     const wait = this.#panelWait;
     this.#panelWait = null;
-    if (wait !== null && (await wait) === "cancelled") return toDataSection(appErrorEnvelope("HUMAN_CANCELLED", ["app", "tool"]) as unknown as Record<string, unknown>);
+    if (wait !== null && (await wait) === "cancelled") return appErrorSection("HUMAN_CANCELLED", subcommandOf(name), this.#d.refs);
     return out;
   }
 
   /** 想定外の例外(版違いの核・不正な出力など)で会話を止めない。固定文の封筒だけをモデルへ返す。 */
   #internalFailure(name: string): string {
-    return this.#finish(name, toDataSection(appErrorEnvelope("ENVELOPE_INVALID", ["app", "tool"]) as unknown as Record<string, unknown>), "ENVELOPE_INVALID");
+    return this.#finish(name, appErrorSection("ENVELOPE_INVALID", subcommandOf(name), this.#d.refs), "ENVELOPE_INVALID");
   }
 
   async #toolCall(name: string, input: unknown): Promise<string> {
     const auth = authorizeToolCall(this.#d.registry, { id: "", name, input }, this.#d.refs, { approvalPubkey: this.#d.approvalKey.sshPublicKeyBase64() });
-    if (!auth.ok) return this.#finish(name, toDataSection(auth.envelope as unknown as Record<string, unknown>), auth.envelope.error.code);
+    if (!auth.ok) return this.#finish(name, appSection(auth.envelope, this.#d.refs), auth.envelope.error.code);
     const plan = this.#withRunId(auth.plan);
     if (plan.tool === "sitate_bootstrap") return this.#bootstrap(plan);
     const secrets = await collectSecrets({ keychain: this.#d.keychain, service: this.#d.service, secretBox: this.#d.secretBox }, plan);
     if (secrets === null) return this.#cancelled(name);
-    const first = await this.#run(plan.argv, buildStdin(plan, secrets));
+    const first = await this.#run(plan.subcommand, plan.argv, buildStdin(plan, secrets));
     if ("discarded" in first) return this.#finish(name, first.text, first.code);
     let env = first.envelope;
     if (name === "sitate_apply" && codeOf(env) === "HUMAN_SECRET_REQUIRED") {
@@ -203,7 +273,7 @@ export class Session {
   }
 
   #cancelled(name: string): string {
-    return this.#finish(name, toDataSection(appErrorEnvelope("HUMAN_CANCELLED", ["app", "tool"]) as unknown as Record<string, unknown>), "HUMAN_CANCELLED");
+    return this.#finish(name, appErrorSection("HUMAN_CANCELLED", subcommandOf(name), this.#d.refs), "HUMAN_CANCELLED");
   }
 
   async #applyWithBusinessKey(plan: ToolPlan): Promise<RunOutcome | null> {
@@ -212,7 +282,7 @@ export class Session {
     const v = await askSecret({ keychain: this.#d.keychain, service: this.#d.service, secretBox: this.#d.secretBox }, plan.tool, "admin_ref", ref, "no-save");
     if (v === null) return null;
     const argv = plan.argv.includes("--secrets-stdin") ? plan.argv : [...plan.argv, "--secrets-stdin"];
-    return this.#run(argv, JSON.stringify({ [ref]: v }) + "\n");
+    return this.#run(plan.subcommand, argv, JSON.stringify({ [ref]: v }) + "\n");
   }
 
   /** 結果に応じた秘密の後始末: 事業者の管理用鍵の寿命、元サーバーの資格情報の失敗。 */
@@ -247,7 +317,8 @@ export class Session {
     return this.#finish(plan.tool, this.#shape(env), codeOf(env));
   }
 
-  async #run(argv: readonly string[], stdin: string): Promise<RunOutcome> {
+  /** command は道具に当たるサブコマンドの語(引数・旗を含めない)。アプリが作る封筒の command になる。 */
+  async #run(command: readonly string[], argv: readonly string[], stdin: string): Promise<RunOutcome> {
     let out: Awaited<ReturnType<CoreRunner["run"]>>;
     try {
       out = await this.#d.runner.run(argv, stdin);
@@ -255,11 +326,10 @@ export class Session {
       const code = e instanceof SshError ? e.failure.code : e instanceof UnsendableArgvError ? "TOOL_ARG_INVALID" : null;
       if (code === null) throw e;
       const detail = e instanceof SshError && e.failure.code === "SSH_UNREACHABLE" ? { reason: e.failure.reason } : {};
-      const env = appErrorEnvelope(code, argv.slice(0, 2), detail) as unknown as Record<string, unknown>;
-      return { discarded: true, text: toDataSection(shapeEnvelope(env, this.#d.refs)), code };
+      return { discarded: true, text: appErrorSection(code, command, this.#d.refs, detail), code };
     }
-    const r = ingestCoreOutput(out.stdout, argv.slice(0, 2), out.end);
-    if (r.kind === "discarded") return { discarded: true, text: toDataSection(r.envelope as unknown as Record<string, unknown>), code: r.envelope.error.code };
+    const r = ingestCoreOutput(out.stdout, command, out.end);
+    if (r.kind === "discarded") return { discarded: true, text: appSection(r.envelope, this.#d.refs), code: r.envelope.error.code };
     if (r.panel !== null) this.#panelWait = this.#d.onPanel(r.panel);
     return { envelope: r.envelope as Record<string, unknown> };
   }
@@ -268,7 +338,7 @@ export class Session {
     const result = proposeEnv.result as { change_id?: unknown } | null;
     const id = typeof result?.change_id === "string" ? result.change_id : null;
     if (id === null) return this.#finish(name, this.#shape(proposeEnv), codeOf(proposeEnv));
-    const pending = await this.#run(["pending", "--id", id], "");
+    const pending = await this.#run(["pending"], ["pending", "--id", id], "");
     const record = "envelope" in pending ? firstChange(pending.envelope) : null;
     if (record === null) return this.#finish(name, this.#shape(proposeEnv), codeOf(proposeEnv));
     const card = buildCard(record, { t: this.#d.t });
@@ -277,13 +347,13 @@ export class Session {
     const decision: CardDecision = raw.kind === "approve" && !card.approveEnabled ? { kind: "close" } : raw;
     if (decision.kind === "close") return this.#finish(name, this.#shape(proposeEnv), null);
     if (decision.kind === "cancel") {
-      await this.#run(["cancel", "--id", id], "");
-      return this.#finish(name, toDataSection(appErrorEnvelope("HUMAN_CANCELLED", ["app", "tool"]) as unknown as Record<string, unknown>), "HUMAN_CANCELLED");
+      await this.#run(["cancel"], ["cancel", "--id", id], "");
+      return this.#finish(name, appErrorSection("HUMAN_CANCELLED", subcommandOf(name), this.#d.refs), "HUMAN_CANCELLED");
     }
     const a = this.#d.approvalKey.signRecord(record, this.#d.now());
     const proofs = Object.values(decision.proofs);
     const argv = ["approve", "--id", id, "--signature", a.signature, "--signed-at", a.signedAt, ...(proofs.length > 0 ? ["--notify-proof-stdin"] : [])];
-    const done = await this.#run(argv, proofs.length > 0 ? JSON.stringify(decision.proofs) + "\n" : "");
+    const done = await this.#run(["approve"], argv, proofs.length > 0 ? JSON.stringify(decision.proofs) + "\n" : "");
     if ("discarded" in done) return this.#finish(name, done.text, done.code);
     return this.#finish(name, this.#shape(done.envelope), codeOf(done.envelope));
   }
@@ -300,9 +370,9 @@ export class Session {
     const t = this.#d.t;
     const result = code === null ? t("chat.tool.display.result_ok") : APP_CODES.has(code) ? t(APP_KEY[code]!) : safe(() => t(`core.code.${code}`), t(APP_KEY["ENVELOPE_INVALID"]!));
     const toolName = safe(() => t(`chat.tool.display.name.${tool}`), tool);
-    this.#d.onChat({ role: "tool", text: t("chat.tool.display.call_format", { tool_name: toolName, result }) });
-    for (const step of this.#newSteps) this.#d.onChat({ role: "tool", text: t("chat.tool.display.step_passed", { step }) });
-    if (this.#newSteps.length > 0) this.#stepPassed = true;
+    this.#d.onChat({ role: "tool", text: t("chat.tool.display.call_format", { tool_name: toolName, result }), outcome: code === null ? "ok" : "fail" });
+    for (const step of this.#newSteps) this.#d.onChat({ role: "tool", text: t("chat.tool.display.step_passed", { step }), step: true });
+    if (this.#newSteps.length > 0) { this.#stepPassed = true; this.#d.onStatus?.(); }
     this.#newSteps = [];
     return text;
   }

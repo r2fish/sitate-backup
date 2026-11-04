@@ -6,6 +6,7 @@ import { guardOutgoing } from "../../src/main/chat-guard.ts";
 import { ingestCoreOutput } from "../../src/main/core-output.ts";
 import { advancePanel } from "../../src/main/phrase-panel.ts";
 import { QuoteRejections, checkQuotes } from "../../src/main/quote-check.ts";
+import { PathRefTable } from "../../src/main/path-ref.ts";
 import type { KitFields } from "../../src/kit/types.ts";
 
 const WORDS = JSON.parse(readFileSync(new URL("../../src/data/bip39-english.json", import.meta.url), "utf8")) as string[];
@@ -113,16 +114,16 @@ test("restore の dumps[] がある報告では dumps[].loaded の印が必須",
 
 test("表示しなかった応答の区画は次の入力の前に 1 つだけ置かれ、取り出した時点で消費される", () => {
   const q = new QuoteRejections();
-  assert.equal(q.take(), null);
+  assert.equal(q.take(new PathRefTable()), null);
   for (const t of ["[[status:/result/uncovered_count=9]]", "[[status:/result/last_backup/ok=false]]"]) {
     const v = checkQuotes({ text: t, results });
     if (!v.ok) q.record(v);
   }
-  const block = q.take()!;
+  const block = q.take(new PathRefTable())!;
   assert.ok(block.startsWith('<sitate-data command="app quote-check">'));
   const env = JSON.parse(block.split("\n")[1]!) as { ok: boolean; error: { code: string; detail: { rejected: string[] } } };
   assert.equal(env.ok, false);
   assert.equal(env.error.code, "QUOTE_REJECTED");
   assert.deepEqual(env.error.detail.rejected, ["status:/result/uncovered_count", "status:/result/last_backup/ok"]);
-  assert.equal(q.take(), null);
+  assert.equal(q.take(new PathRefTable()), null);
 });

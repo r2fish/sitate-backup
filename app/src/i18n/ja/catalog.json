@@ -474,5 +474,22 @@
   "status.target.port": "ポート番号",
   "status.target.register": "登録する",
   "status.target.remove": "削除する",
-  "status.unreachable.fixed": "サーバーに接続できないため、最後に確認した情報を表示しています。"
+  "status.unreachable.fixed": "サーバーに接続できないため、最後に確認した情報を表示しています。",
+  "status.progress.step.1": "サーバーの導入と点検",
+  "status.progress.step.2": "保管先と通知先",
+  "status.progress.step.3": "復元先の資格情報",
+  "status.progress.step.4": "守るものと月額",
+  "status.progress.step.5": "保管先の準備",
+  "status.progress.step.6": "保管庫の初期化",
+  "status.progress.step.7": "復旧フレーズの保管",
+  "status.progress.step.8": "元サーバーの登録",
+  "status.progress.step.9": "復元先の登録",
+  "status.progress.step.10": "定義の確定",
+  "status.progress.step.11": "最初のバックアップ",
+  "status.progress.step.12": "復元テスト",
+  "status.progress.step.13": "定期実行の確認",
+  "chat.tool.group.heading": "道具を {count, number} 回実行しました",
+  "chat.wait.label": "応答を待っています",
+  "status.progress.heading": "導入の進み具合",
+  "status.progress.next": "次"
 }

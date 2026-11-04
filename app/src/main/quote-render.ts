@@ -23,3 +23,16 @@ function formatOne(pointer: string, value: string, t: (k: string) => string, tim
 export function renderMarks(text: string, t: (key: string) => string, timeZone?: string): string {
   return text.replace(MARK, (_m, _sub: string, pointer: string, value: string) => formatOne(pointer, value, t, timeZone));
 }
+
+/** renderMarks と同じ置き換えを、文の断片の列で返す(value が真の断片は置き換えた値。画面の書式の対象にしない範囲)。 */
+export function renderMarksParts(text: string, t: (key: string) => string, timeZone?: string): { text: string; value: boolean }[] {
+  const parts: { text: string; value: boolean }[] = [];
+  let at = 0;
+  for (const m of text.matchAll(MARK)) {
+    if (m.index > at) parts.push({ text: text.slice(at, m.index), value: false });
+    parts.push({ text: formatOne(m[2]!, m[3]!, t, timeZone), value: true });
+    at = m.index + m[0].length;
+  }
+  if (at < text.length) parts.push({ text: text.slice(at), value: false });
+  return parts;
+}

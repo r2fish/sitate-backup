@@ -3,6 +3,7 @@
 //  - 主プロセスの出来事(エージェントの準備、実行の始まりと終わり、道具の呼び出しと封筒)の記録 → ドライバの `events`
 //  - LLM API の口の差し替え(SITATE_TEST_LLM_BASE_URL。エージェントの init の baseUrl。製品のビルドでは効かない)
 //  - 受入試験の環境のコンテナへ届く口の写像(SITATE_TEST_HOST_MAP。管理用 SSH の接続先だけを読み替える)
+import { BrowserWindow, nativeTheme } from "electron";
 import ssh2 from "ssh2";
 import { AgentHost } from "../main/agent-host.ts";
 import { startDriverServer } from "./driver-server.ts";
@@ -51,5 +52,8 @@ export function attachDriver(evalInPage: (script: string) => Promise<unknown>): 
   const base = process.env.SITATE_TEST_LLM_BASE_URL;
   patchSsh(process.env.SITATE_TEST_HOST_MAP);
   patchHost(emit, base === undefined || base === "" ? undefined : base);
-  startDriverServer(sock, { eval: evalInPage }, () => undefined, () => events.splice(0, events.length));
+  startDriverServer(sock, { eval: evalInPage }, () => undefined, () => events.splice(0, events.length), {
+    setTheme: (t) => { nativeTheme.themeSource = t; },
+    png: async () => new Uint8Array((await BrowserWindow.getAllWindows()[0]!.webContents.capturePage()).toPNG()),
+  });
 }

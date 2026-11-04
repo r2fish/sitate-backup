@@ -85,6 +85,6 @@ function hidePathsInNext(out: Record<string, unknown>, refs: PathRefTable): void
 /** モデルへ渡す文字列: データの区画(開始の行の command は封筒の command の語を空白 1 つでつないだもの)。 */
 export function toDataSection(shaped: Record<string, unknown>): string {
   const command = Array.isArray(shaped.command) ? shaped.command.map(String).join(" ") : "";
-  const body = JSON.stringify(shaped).replace(/<\/?sitate-data[^>]*>/gi, " ");
+  const body = JSON.stringify(shaped).replace(/</g, "\\u003c");
   return `<sitate-data command="${command.replace(/[^a-z -]/g, "")}">\n${body}\n</sitate-data>`;
 }
