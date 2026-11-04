@@ -137,7 +137,7 @@ func (w *s2) kindSourceChange() {
 	// host_key_fp は省く: 核が propose で資格情報なしに取得して plan に載せる(D-0166)。admin_user は再登録に使う管理用の利用者。
 	src := map[string]any{"host": accEnv(t, "SITATE_ACCEPT_SOURCE_HOST"), "admin_user": adminUser(t),
 		"targets":  []any{map[string]any{"id": "t1", "files": "/srv/shopapp"}, map[string]any{"id": "t2", "files": "/srv/shopapp/public"}},
-		"declined": []any{map[string]any{"id": "d1", "postgresql_cluster": 5432}}} // 対象を足す = 受け口の再設置(再登録)を伴う変更
+		"declined": []any{map[string]any{"id": "d1", "postgresql_cluster": 5432}, map[string]any{"id": "d2", "mount": "/home"}}} // 対象を足す = 受け口の再設置(再登録)を伴う変更
 	id := w.proposeKind("propose source-change", "", "source-change", "--source", compact(src))
 	p := w.planOf(id)
 	if p["host_key_fp"] != fp || p["admin_user"] != adminUser(t) || p["needs_secret"] != true || !strings.Contains(compact(p["after"]), accEnv(t, "SITATE_ACCEPT_SOURCE_HOST")) {
