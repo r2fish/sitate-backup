@@ -447,3 +447,14 @@ A2 の測定 1 の 1 回目の手順 11 の原因(`test/records/A2/m1-pre.md`)�
   - 案 B: そのままにして、A2 のファイルの対象は 1 回目のように選ばれた回だけ通すと記録に書く。
   - 監督は案 A を推す(約束の「守りたいデータを選び」がファイルを含むため)。ただし推奨の検証にはまだ通していない。
 - (3) 夜の洗い出しの (a)〜(c)(bucket check の `NOT_INITIALIZED` 2 回、init_storage の dry_run の `ARG_INVALID`、source enroll の `DEF_INVALID` と `ARG_INVALID` で 4 回)は 3 回目でも出た。測定 2 の記録を見てから、まとめて案を出す。
+
+## 50. D-0185 の (2) の volume で手順 8 に mount_parent が出る(2026-11-04。裁定の依頼)
+
+- 実装は `wp/r2-vol`(wip の commit。測定 2 の後に入れる分)。source の `/home`・`/srv` を名前つきの volume に置いた。元サーバーの中で実測した fs は ext4(mountinfo の種類 `ext4`。`stat -f` は `ext2/ext3` と出るが同じ magic)で、candidate の種類。記録は wp/r2-vol の `test/records/U0-env/volume-2026-11-04.md`。
+- 主経路の新しい検査(dirs[] の home・srv が supported: true の candidate)は、volume の無い今の main の環境で赤(overlay で 5 件)、volume を置くと緑。STAGE=3・STAGE=DB・`make test` は緑。
+- 新しく起きたこと: `/home` が別のマウントになり、仕様 3.3 の判定で `/home` が parent になった。下にファイルの対象の根が無いので、`source check` が `actionable` に `mount_parent`(`/home`)を返し、手順 8 の完了確認(`actionable` = `[]`)を満たさない。偽の LLM の通しは add・lo・nocluster とも手順 8 で止まる。主経路の Go の試験は、定義に `source.declined` の `{"mount":"/home"}`(人が断った形)を足して通した。
+- 実際の LLM の A2 でも、この環境では手順 8 で `/home` の下の候補を Q4 の続きとして人に聞く往復が 1 回増える見込み。案は 3 つ。
+  - 案 A: このまま(仕様 6.2.2 の手順 8 の mount_parent の道を、実機の別マウントの `/home` と同じ形で試せる)。偽の LLM(`app/test/e2e/fake-definition.ts`)に mount_parent を declined に書く対応を足す。A2 の問いと人の作業の数え方への影響は設計で確かめる。
+  - 案 B: `/srv` だけを volume にし、`/home` はコンテナの根に残す(`/home` は今と同じく数えない)。手順 8 は今と同じ。
+  - 案 C: `/home` に対象の根を持たせる(合成データの置き方を変える。バックアップの中身の件数が変わる)。
+- 監督の見方: ファイルの対象を A2 で選べるようにするという D-0185 (2) の狙いは、案 B でも満たせる(`/srv` の合成データ)。推奨の検証は通していない。
