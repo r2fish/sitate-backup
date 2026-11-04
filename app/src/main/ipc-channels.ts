@@ -35,7 +35,9 @@ export type UiMessage =
   | { readonly surface: "approval-card"; readonly card: unknown }
   | { readonly surface: "secret-box"; readonly mode: SecretMode; readonly ref: string; readonly label: string; readonly submitLabel: string }
   | { readonly surface: "phrase-panel"; readonly open: boolean; readonly words: readonly { readonly n: number; readonly word: string }[] | null; readonly canProceed: boolean; readonly actions: readonly { readonly action: PhraseAction; readonly label: string }[]; readonly notice: string | null; readonly cautions: readonly string[] }
-  | { readonly surface: "status"; readonly heading: string; readonly rows: readonly { readonly label: string; readonly value: string }[]; readonly askAi: readonly { readonly kind: string; readonly label: string }[]; readonly target: TargetView; readonly survey: SurveyView | null; readonly steps: readonly UiStep[] | null };
+  | { readonly surface: "status"; readonly heading: string; readonly rows: readonly { readonly label: string; readonly value: string }[]; readonly askAi: readonly { readonly kind: string; readonly label: string }[]; readonly target: TargetView; readonly survey: SurveyView | null; readonly steps: UiSteps | null };
 
 /** 導入の進み具合の 1 行(手順の番号・短い見出し・合格か「次」か未着手か)。 */
+/** 導入の進み具合の一覧(見出しと「次」の札の文は主プロセスが送る)。 */
+export interface UiSteps { readonly heading: string; readonly nextLabel: string; readonly rows: readonly UiStep[] }
 export interface UiStep { readonly n: number; readonly label: string; readonly state: "passed" | "next" | "todo" }

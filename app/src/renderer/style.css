@@ -36,7 +36,9 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) 300px; height: 100vh
 #chat-lines > li[data-role="notice"] { border-left: 3px solid var(--warn); padding: 2px 0 2px 12px; font-size: 13px; color: var(--sub); }
 #chat-lines > li[data-role="tool"] { font-size: 13.5px; color: var(--sub); margin-top: -8px; }
 #chat-lines > li[data-role="tool"] > .line-body { display: flex; gap: 8px; }
-#chat-lines > li[data-role="tool"] > .line-body::before { content: "✓"; color: var(--ok); font-weight: 600; }
+#chat-lines > li[data-role="tool"] > .line-body::before { font-weight: 600; }
+#chat-lines > li[data-role="tool"][data-outcome="ok"] > .line-body::before, #chat-lines > li[data-role="tool"][data-outcome="step"] > .line-body::before { content: "✓"; color: var(--ok); }
+#chat-lines > li[data-role="tool"][data-outcome="fail"] > .line-body::before { content: "✗"; color: var(--ng); }
 .fold-head { display: block; background: none; border: 0; padding: 0 0 4px; color: var(--sub); font-size: 13.5px; }
 .fold-head:hover { color: var(--text); }
 #chat-wait { display: flex; align-items: center; gap: 10px; margin-top: 18px; color: var(--sub); font-size: 13.5px; }
@@ -58,13 +60,16 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) 300px; height: 100vh
 [data-surface="status"] { grid-column: 2; grid-row: 1; background: var(--panel); border-left: 1px solid var(--line); padding: 20px 18px; overflow-y: auto; font-size: 13px; }
 #status-heading { font-size: 13px; font-weight: 600; margin: 0 0 8px; }
 [data-surface="status"] h2 { font-size: 13px; font-weight: 600; margin: 18px 0 6px; }
-#status-steps { list-style: none; margin: 0 0 18px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--bg); }
+#status-progress { margin: 0 0 18px; }
+#status-progress h2 { margin: 0 0 6px; }
+#status-steps { list-style: none; margin: 0; padding: 8px 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--bg); }
 #status-steps[hidden] { display: none; }
 #status-steps li { display: flex; align-items: center; gap: 10px; padding: 3px 0; color: var(--sub); }
 #status-steps .step-mark { flex: none; width: 18px; height: 18px; border-radius: 50%; border: 1.5px dashed var(--faint); display: inline-flex; align-items: center; justify-content: center; font-size: 11px; line-height: 1; }
 #status-steps li[data-state="passed"] .step-mark { background: var(--ok); border: 0; color: #fff; }
 #status-steps li[data-state="next"] { color: var(--text); font-weight: 600; }
 #status-steps li[data-state="next"] .step-mark { border: 0; background: var(--accent); color: #fff; }
+.step-tag { margin-left: auto; font-size: 11px; font-weight: 600; color: var(--accent); border: 1px solid var(--accent); border-radius: 6px; padding: 0 6px; line-height: 1.5; }
 #status-rows { list-style: none; margin: 0; padding: 0; }
 #status-rows li, [data-card-row] { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; border-bottom: 1px solid var(--line); }
 .f-value { color: var(--sub); text-align: right; overflow-wrap: anywhere; }

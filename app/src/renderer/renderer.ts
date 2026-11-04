@@ -115,7 +115,7 @@ sitate.onRender((m) => {
     }
     case "status":
       $("status-heading").textContent = m.heading;
-      renderSteps(document, $("status-steps"), m.steps);
+      renderSteps(document, $("status-progress"), $("status-steps-heading"), $("status-steps"), m.steps);
       $("status-rows").replaceChildren(...m.rows.map((r) => fieldRow(document, "li", r.label, r.value)));
       $("status-ask-ai").replaceChildren(...m.askAi.map((a) => button(a.label, `ask-ai:${a.kind}`, () => void sitate.statusAction(a.kind))));
       renderTarget(m.target);

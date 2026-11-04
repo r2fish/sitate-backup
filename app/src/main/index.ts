@@ -18,7 +18,7 @@ import { runBootstrap } from "./bootstrap/bootstrap.ts";
 import type { BootstrapInput, BundleReader } from "./bootstrap/bootstrap.ts";
 import { reportFailure } from "./failure-report.ts";
 import { CHANNEL } from "./ipc-channels.ts";
-import type { UiMessage } from "./ipc-channels.ts";
+import type { UiMessage, UiSteps } from "./ipc-channels.ts";
 import { ADMIN_KEY_ACCOUNT, APPROVAL_ACCOUNT, MacKeychain, SERVICE_PRE_ADMIN, SERVICE_PRE_LLM, serviceFor } from "./keychain.ts";
 import { chatMessage } from "./chat-view.ts";
 import { PathRefTable } from "./path-ref.ts";
@@ -116,9 +116,10 @@ async function compose(res: string, locale: string, keys: TrustedKey[], b: Extra
   const targetUi = new TargetActions({ targets, typedFp, label: t, onChange: () => { renderStatus(); renderChat(); } });
   const status = new StatusView({ t, now: () => new Date(), agentRunning: () => host.running, notify: osNotify });
   status.setLocale(locale);
+  const stepsView = (): UiSteps | null => { const rows = session.progress(); return rows === null ? null : { heading: t("status.progress.heading"), nextLabel: t("status.progress.next"), rows }; };
   const renderStatus = (): void => {
     const v = status.view();
-    ui({ surface: "status", heading: t("status.panel.heading"), rows: [...notices.map((n) => ({ label: n, value: "" })), ...v.rows, ...v.appInfo], askAi: v.askAi, target: targetUi.view(), survey: survey.current, steps: session.progress() });
+    ui({ surface: "status", heading: t("status.panel.heading"), rows: [...notices.map((n) => ({ label: n, value: "" })), ...v.rows, ...v.appInfo], askAi: v.askAi, target: targetUi.view(), survey: survey.current, steps: stepsView() });
   };
   // 最初の一歩(D-0169): 接続先の記録(ssh-target.json)も人の発話も無いときだけ、固定の案内と「始める」を出す。案内は LLM を呼ばない。
   const startOffer = (): { guide: string; label: string } | null =>

@@ -125,7 +125,8 @@ test("[U3c-5] 配線(静的): 失敗・作り直しは Session へ渡り、待�
   assert.match(src, /chatMessage\(chat, t, startOffer\(\), session\.waiting\)/);
   const view = readFileSync(join(import.meta.dirname, "..", "..", "src", "main", "chat-view.ts"), "utf8");
   assert.match(view, /wait: waiting >= 1 \? t\("chat\.wait\.label"\) : null/);
-  assert.match(src, /steps: session\.progress\(\)/);
+  assert.match(src, /steps: stepsView\(\)/);
+  assert.match(src, /t\("status\.progress\.heading"\)[^;]*t\("status\.progress\.next"\)/);
 });
 
 // ---- 6: アプリが作る封筒の整形 ----

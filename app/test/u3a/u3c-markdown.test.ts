@@ -78,3 +78,19 @@ test("[U3c-2] 引用の印の値も範囲に入る: 印 [[…=値]] の値に **
   assert.deepEqual(r.spans, [[4, 9]]);
   assert.ok(!all(md(r.text, r.spans)).some((e) => e.tag === "strong"));
 });
+
+test("[U3c-2] 番号付きの箇条書きは元の番号を保つ: 「3. a\\n4. b」は 3・4", () => {
+  const ol = md("3. a\n4. b")[0]!;
+  assert.equal(ol.tag, "ol");
+  assert.equal(ol.getAttribute("start"), "3");
+  assert.deepEqual(ol.children.map((c) => (c as FakeEl).getAttribute("value")), ["3", "4"]);
+});
+
+test("[U3c-2] 空行を挟んだ同じ種類の項目は 1 つのリストにつなぐ: 「1. a\\n\\n2. b」の 2 つ目は 2", () => {
+  const out = md("1. a\n\n2. b");
+  assert.equal(out.length, 1, "リストは 1 つ");
+  const ol = out[0]!;
+  assert.deepEqual(ol.children.map((c) => (c as FakeEl).getAttribute("value")), ["1", "2"]);
+  assert.equal(md("- a\n\n- b").length, 1);
+  assert.equal(md("- a\n\n1. b").length, 2, "種類が違えば分ける");
+});

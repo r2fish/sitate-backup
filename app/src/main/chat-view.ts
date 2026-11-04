@@ -10,6 +10,8 @@ export type UiChatLine = {
   readonly spans?: ChatLine["spans"];
   /** 並びの最初の行だけ。見出しの文(並びの行が 2 つ以上のとき)。 */
   readonly fold?: string;
+  /** 道具の行の結果の種別。 */
+  readonly outcome?: "ok" | "fail" | "step";
 };
 
 export function uiChatLines(lines: readonly ChatLine[], heading: (count: number) => string): UiChatLine[] {
@@ -22,7 +24,7 @@ export function uiChatLines(lines: readonly ChatLine[], heading: (count: number)
     while (j < lines.length && lines[j]!.role === "tool") j++;
     const run = lines.slice(i, j);
     const calls = run.filter((x) => x.step !== true).length;
-    run.forEach((x, k) => out.push({ role: "tool", text: x.text, ...(k === 0 && run.length >= 2 ? { fold: heading(calls > 0 ? calls : run.length) } : {}) }));
+    run.forEach((x, k) => out.push({ role: "tool", text: x.text, outcome: x.step === true ? "step" : x.outcome ?? "ok", ...(k === 0 && run.length >= 2 ? { fold: heading(calls > 0 ? calls : run.length) } : {}) }));
     i = j;
   }
   return out;

@@ -134,10 +134,15 @@ test("[U3c-4] 導入の進み具合: 手順の一覧に合格の印と「次」�
   m.render(status(null));
   assert.equal(m.doc.getElementById("status-steps")!.hidden, true);
   assert.equal(m.doc.querySelectorAll("#status-steps li").length, 0);
-  m.render(status([{ n: 1, label: "導入", state: "passed" }, { n: 2, label: "保管先", state: "next" }, { n: 3, label: "資格情報", state: "todo" }]));
+  assert.equal(m.doc.getElementById("status-progress")!.hidden, true);
+  m.render(status({ heading: "導入の進み具合", nextLabel: "次", rows: [{ n: 1, label: "導入", state: "passed" }, { n: 2, label: "保管先", state: "next" }, { n: 3, label: "資格情報", state: "todo" }] }));
   assert.equal(m.doc.getElementById("status-steps")!.hidden, false);
+  assert.equal(m.doc.getElementById("status-steps-heading")!.textContent, "導入の進み具合", "一覧の上の見出し");
+  assert.deepEqual(m.doc.querySelectorAll("#status-steps .step-tag").map((e) => e.textContent), ["次"], "「次」は文字の札(次の手順だけ)");
+  assert.equal(m.doc.querySelectorAll("#status-steps li")[1]!.getAttribute("data-state"), "next");
   assert.deepEqual(m.doc.querySelectorAll("#status-steps li").map((l) => l.getAttribute("data-state")), ["passed", "next", "todo"]);
   assert.equal(m.doc.querySelectorAll("#status-steps li")[0]!.textContent, "✓導入");
+  assert.equal(m.doc.querySelectorAll("#status-steps li")[1]!.textContent, "→保管先次");
   m.render(status(null));
   assert.equal(m.doc.querySelectorAll("#status-steps li").length, 0, "会話を捨てると消える");
 });
@@ -170,4 +175,19 @@ test("[U3c-2] 静的検査: app/src/renderer/ に innerHTML・outerHTML・insert
     const src = readFileSync(join(dir, f), "utf8").replace(/\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "");
     assert.doesNotMatch(src, /innerHTML|outerHTML|insertAdjacentHTML|document\.write|createContextualFragment|DOMParser|\beval\s*\(|new\s+Function/, f);
   }
+});
+
+test("[U3c-3] 道具の行の印は結果の種別ごと: 失敗の行に成功の印(✓)が付かない。data-text と行の数は変わらない", async () => {
+  const m = await mount(NEW_RENDERER, NEW_HTML);
+  const src: ChatLine[] = [L("tool", "ok 行", { outcome: "ok" }), L("tool", "失敗の行", { outcome: "fail" }), L("tool", "合格", { step: true })];
+  m.render(chatMsg(src));
+  const lis = m.doc.getElementById("chat-lines")!.children as import("./fake-dom.ts").FakeEl[];
+  assert.deepEqual(lis.map((l) => l.getAttribute("data-outcome")), ["ok", "fail", "step"]);
+  assert.deepEqual(m.run(scriptFor({ op: "lines" })), src.map((l) => ({ role: "tool", text: l.text })));
+  const css = readFileSync(join(appRoot, "src/renderer/style.css"), "utf8");
+  const marks = [...css.matchAll(/([^{}]*)\{[^}]*content:\s*"([✓✗])"/g)].map((x) => [x[1]!.trim(), x[2]!] as const);
+  const okSel = marks.filter(([, c]) => c === "✓").map(([s]) => s).join(" ");
+  assert.ok(okSel.includes('data-outcome="ok"') && okSel.includes('data-outcome="step"') && !okSel.includes('data-outcome="fail"'), "✓ は成功と手順の合格の行だけ");
+  assert.ok(marks.every(([s]) => s.includes("data-outcome")), "種別を問わず付く印が無い");
+  assert.ok(marks.some(([s, c]) => c === "✗" && s.includes('data-outcome="fail"')));
 });

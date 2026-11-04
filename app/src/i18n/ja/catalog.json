@@ -489,5 +489,7 @@
   "status.progress.step.12": "復元テスト",
   "status.progress.step.13": "定期実行の確認",
   "chat.tool.group.heading": "道具を {count, number} 回実行しました",
-  "chat.wait.label": "応答を待っています"
+  "chat.wait.label": "応答を待っています",
+  "status.progress.heading": "導入の進み具合",
+  "status.progress.next": "次"
 }

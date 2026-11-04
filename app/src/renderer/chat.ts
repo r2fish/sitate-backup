@@ -3,7 +3,7 @@
 import { renderMarkdown } from "./markdown.ts";
 import type { MdDoc, MdNode } from "./markdown.ts";
 
-export interface ChatLineView { readonly role: "human" | "agent" | "tool" | "notice"; readonly text: string; readonly spans?: readonly (readonly [number, number])[]; readonly fold?: string }
+export interface ChatLineView { readonly role: "human" | "agent" | "tool" | "notice"; readonly text: string; readonly spans?: readonly (readonly [number, number])[]; readonly fold?: string; readonly outcome?: "ok" | "fail" | "step" }
 
 /** 人が開閉した並び(並びの最初の行の番号 → 開いているか)。描き直しをまたいで持つ。 */
 export type FoldState = Map<number, boolean>;
@@ -17,6 +17,7 @@ export function renderChatLines(doc: Document, list: HTMLElement, lines: readonl
     const li = doc.createElement("li");
     li.setAttribute("data-role", l.role);
     li.setAttribute("data-text", l.text);
+    if (l.role === "tool") li.setAttribute("data-outcome", l.outcome ?? "ok");
     const body = doc.createElement("div");
     body.setAttribute("class", "line-body");
     if (l.role === "agent") body.append(...(renderMarkdown(doc as unknown as MdDoc, l.text, l.spans ?? []) as unknown as Node[]));

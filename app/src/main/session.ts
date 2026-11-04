@@ -37,6 +37,8 @@ export type ChatLine = {
   readonly spans?: readonly Span[];
   /** 手順の合格の行(道具の行の畳みの件数に数えない)。 */
   readonly step?: true;
+  /** 道具の行の結果の種別(成功・失敗。手順の合格の行は step)。画面は種別ごとに印を描き分ける。 */
+  readonly outcome?: "ok" | "fail";
 };
 
 /** 手順の骨格(spec 3.8 の手順 1〜13)。 */
@@ -368,7 +370,7 @@ export class Session {
     const t = this.#d.t;
     const result = code === null ? t("chat.tool.display.result_ok") : APP_CODES.has(code) ? t(APP_KEY[code]!) : safe(() => t(`core.code.${code}`), t(APP_KEY["ENVELOPE_INVALID"]!));
     const toolName = safe(() => t(`chat.tool.display.name.${tool}`), tool);
-    this.#d.onChat({ role: "tool", text: t("chat.tool.display.call_format", { tool_name: toolName, result }) });
+    this.#d.onChat({ role: "tool", text: t("chat.tool.display.call_format", { tool_name: toolName, result }), outcome: code === null ? "ok" : "fail" });
     for (const step of this.#newSteps) this.#d.onChat({ role: "tool", text: t("chat.tool.display.step_passed", { step }), step: true });
     if (this.#newSteps.length > 0) { this.#stepPassed = true; this.#d.onStatus?.(); }
     this.#newSteps = [];

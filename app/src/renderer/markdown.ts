@@ -57,62 +57,81 @@ const BULLET = /^([-*]) /;
 const ORDERED = /^\d+\. /;
 const HEADING = /^(#{1,3}) /;
 
+interface Cur { readonly doc: MdDoc; readonly lines: Line[]; readonly prot: (i: number) => boolean; k: number }
+const marker = (c: Cur, l: Line, re: RegExp): RegExpExecArray | null => (c.prot(l.at) ? null : re.exec(l.text));
+const isFence = (c: Cur, l: Line): boolean => !c.prot(l.at) && l.text.startsWith("```");
+
+function codeBlock(c: Cur): MdNode {
+  const body: string[] = [];
+  c.k++;
+  while (c.k < c.lines.length && !isFence(c, c.lines[c.k]!)) { body.push(c.lines[c.k]!.text); c.k++; }
+  c.k++; // 閉じの ```(無ければ最後まで)
+  const pre = c.doc.createElement("pre");
+  pre.append(el(c.doc, "code", body.join("\n")));
+  return pre;
+}
+
+function heading(c: Cur, l: Line, h: RegExpExecArray): MdNode {
+  const p = el(c.doc, "p", undefined, { "data-md": "heading" });
+  const strong = c.doc.createElement("strong");
+  strong.append(...inline(c.doc, l.text.slice(h[0].length), l.at + h[0].length, c.prot));
+  p.append(strong);
+  c.k++;
+  return p;
+}
+
+function list(c: Cur, ordered: boolean): MdNode {
+  const ul = c.doc.createElement(ordered ? "ol" : "ul");
+  let firstNo: string | null = null;
+  while (c.k < c.lines.length) {
+    // 空行を挟んだ同じ種類の項目は 1 つのリストにつなぐ。
+    let j = c.k;
+    while (j < c.lines.length && c.lines[j]!.text.trim() === "") j++;
+    const m = j < c.lines.length ? marker(c, c.lines[j]!, ordered ? ORDERED : BULLET) : null;
+    if (m === null) break;
+    c.k = j;
+    const li = c.doc.createElement("li");
+    if (ordered) {
+      // 元の番号を保つ(最初の数を ol の start に、各項目の数を li の value に入れる)。
+      const no = /^\d+/.exec(m[0])![0];
+      if (firstNo === null) { firstNo = no; ul.setAttribute("start", no); }
+      li.setAttribute("value", no);
+    }
+    const l = c.lines[c.k]!;
+    li.append(...inline(c.doc, l.text.slice(m[0].length), l.at + m[0].length, c.prot));
+    ul.append(li);
+    c.k++;
+  }
+  return ul;
+}
+
+/** 段落: 空行・ブロックの始まりまで。行は改行のまま保つ(br)。 */
+function paragraph(c: Cur): MdNode {
+  const p = c.doc.createElement("p");
+  let first = true;
+  while (c.k < c.lines.length) {
+    const l = c.lines[c.k]!;
+    const blockStart = marker(c, l, HEADING) !== null || marker(c, l, BULLET) !== null || marker(c, l, ORDERED) !== null || isFence(c, l);
+    if (l.text.trim() === "" || (!first && blockStart)) break;
+    if (!first) p.append(c.doc.createElement("br"));
+    p.append(...inline(c.doc, l.text, l.at, c.prot));
+    first = false;
+    c.k++;
+  }
+  return p;
+}
+
 export function renderMarkdown(doc: MdDoc, text: string, spans: readonly Span[] = []): MdNode[] {
-  const prot = (i: number): boolean => spans.some(([a, b]) => i >= a && i < b);
-  const lines = splitLines(text);
+  const c: Cur = { doc, lines: splitLines(text), prot: (i) => spans.some(([a, b]) => i >= a && i < b), k: 0 };
   const out: MdNode[] = [];
-  let k = 0;
-  const startsMarker = (l: Line, re: RegExp): RegExpExecArray | null => (prot(l.at) ? null : re.exec(l.text));
-  while (k < lines.length) {
-    const l = lines[k]!;
-    if (l.text.trim() === "") { k++; continue; }
-    if (!prot(l.at) && l.text.startsWith("```")) {
-      const body: string[] = [];
-      k++;
-      while (k < lines.length && !(!prot(lines[k]!.at) && lines[k]!.text.startsWith("```"))) { body.push(lines[k]!.text); k++; }
-      k++; // 閉じの ```(無ければ最後まで)
-      const pre = doc.createElement("pre");
-      pre.append(el(doc, "code", body.join("\n")));
-      out.push(pre);
-      continue;
-    }
-    const h = startsMarker(l, HEADING);
-    if (h !== null) {
-      const p = el(doc, "p", undefined, { "data-md": "heading" });
-      const strong = doc.createElement("strong");
-      strong.append(...inline(doc, l.text.slice(h[0].length), l.at + h[0].length, prot));
-      p.append(strong);
-      out.push(p);
-      k++;
-      continue;
-    }
-    const first = startsMarker(l, BULLET) ?? startsMarker(l, ORDERED);
-    if (first !== null) {
-      const ordered = ORDERED.test(l.text);
-      const list = doc.createElement(ordered ? "ol" : "ul");
-      while (k < lines.length) {
-        const m = startsMarker(lines[k]!, ordered ? ORDERED : BULLET);
-        if (m === null) break;
-        const li = doc.createElement("li");
-        li.append(...inline(doc, lines[k]!.text.slice(m[0].length), lines[k]!.at + m[0].length, prot));
-        list.append(li);
-        k++;
-      }
-      out.push(list);
-      continue;
-    }
-    // 段落: 空行・ブロックの始まりまで。行は改行のまま保つ(CSS の white-space)。
-    const p = doc.createElement("p");
-    let first_ = true;
-    while (k < lines.length) {
-      const c = lines[k]!;
-      if (c.text.trim() === "" || (!first_ && (startsMarker(c, HEADING) !== null || startsMarker(c, BULLET) !== null || startsMarker(c, ORDERED) !== null || (!prot(c.at) && c.text.startsWith("```"))))) break;
-      if (!first_) p.append(doc.createElement("br"));
-      p.append(...inline(doc, c.text, c.at, prot));
-      first_ = false;
-      k++;
-    }
-    out.push(p);
+  while (c.k < c.lines.length) {
+    const l = c.lines[c.k]!;
+    if (l.text.trim() === "") { c.k++; continue; }
+    const h = marker(c, l, HEADING);
+    if (isFence(c, l)) out.push(codeBlock(c));
+    else if (h !== null) out.push(heading(c, l, h));
+    else if (marker(c, l, BULLET) !== null || marker(c, l, ORDERED) !== null) out.push(list(c, ORDERED.test(l.text)));
+    else out.push(paragraph(c));
   }
   return out;
 }

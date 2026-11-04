@@ -18,14 +18,18 @@ export function fieldRow(doc: Document, tag: string, label: string, value: strin
   return r;
 }
 
-export function renderSteps(doc: Document, root: HTMLElement, steps: readonly StepView[] | null): void {
+export interface StepsView { readonly heading: string; readonly nextLabel: string; readonly rows: readonly StepView[] }
+
+export function renderSteps(doc: Document, box: HTMLElement, head: HTMLElement, root: HTMLElement, steps: StepsView | null): void {
+  box.hidden = steps === null;
   root.hidden = steps === null;
-  root.replaceChildren(...(steps ?? []).map((s) => {
+  head.textContent = steps?.heading ?? "";
+  root.replaceChildren(...(steps?.rows ?? []).map((s) => {
     const li = doc.createElement("li");
     li.setAttribute("data-step", String(s.n));
     li.setAttribute("data-state", s.state);
     li.setAttribute("value", String(s.n));
-    li.append(span(doc, "step-mark", s.state === "passed" ? "✓" : s.state === "next" ? "→" : ""), span(doc, "step-label", s.label));
+    li.append(span(doc, "step-mark", s.state === "passed" ? "✓" : s.state === "next" ? "→" : ""), span(doc, "step-label", s.label), ...(s.state === "next" ? [span(doc, "step-tag", steps!.nextLabel)] : []));
     return li;
   }));
 }
