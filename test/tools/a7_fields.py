@@ -150,7 +150,8 @@ def check_fields(paths, table_path, names_path):
                 for p, val in leaf_pointers(env):
                     if not is_allowed(p, allowed, val):
                         out["violations"].append((cmd, p))
-                    if p in refs and not (isinstance(val, str) and PATH_REF.match(val)):
+                    # null は値の無い欄(ラージオブジェクトの要素の path など。仕様どおり)で、path_ref の形の外れに数えない
+                    if p in refs and val is not None and not (isinstance(val, str) and PATH_REF.match(val)):
                         out["path_ref_bad"].append((cmd, p))
     out["name_hits"] = sorted((n, len(v)) for n, v in name_found.items())
     out["names_checked"] = len(names)
