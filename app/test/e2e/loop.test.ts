@@ -11,8 +11,9 @@ import { A2Loop } from "./a2-loop.ts";
 import { Driver } from "./driver.ts";
 import { FakeApp, envelope, toolCall } from "./fake-app.ts";
 import type { AgentTurn } from "./fake-app.ts";
+import { Q4_PROPOSAL_FIRST, planOf } from "./fake-agent.ts";
 import { Recorder } from "./record.ts";
-import { B2_ENDPOINT_RE, isQuestion, matchQuestion, readJson } from "./script.ts";
+import { B2_ENDPOINT_RE, isQuestion, isStartInputReask, locationMessage, matchQuestion, readJson } from "./script.ts";
 import type { A2Script, Answers } from "./script.ts";
 
 const repo = join(import.meta.dirname, "..", "..", "..");
@@ -257,4 +258,110 @@ test("[fix-drv] 再生: 記録 1 回目の末尾の型(説明に保管先の語�
   assert.match(r.out.reason, /人の作業で止まった/);
   assert.ok(r.app.chats.length < 10, `早く終わる(入力 ${r.app.chats.length} 回)`);
   cleanup(r);
+});
+
+test("[D-0185] Q4 の希望を聞かずに案の確認が来たら、Q4 として照合して台本の希望を答える(q4_wish_asked は false。問いは 1 つ)", async () => {
+  const plan = planOf(answers, async () => undefined, { proposalFirst: true });
+  const normal = planOf(answers, async () => undefined);
+  const say = (steps: ReturnType<typeof planOf>[number]): string => String((steps.at(-1)!.make("") as { text?: string }).text);
+  assert.equal(say(plan[3]!), Q4_PROPOSAL_FIRST, "筋「案が先」は調査の後に案の確認を出す");
+  assert.ok(!say(normal[3]!).includes("指定が無いので") && say(normal[3]!).endsWith("何を守りたいですか?"), "通常の筋は希望を聞く");
+  const proposalFirst = Q4_PROPOSAL_FIRST;
+  assert.equal(matchQuestion(proposalFirst, script), null, "台本の Q4 の語には当たらない");
+  const r = await drive([
+    { events: [toolCall("sitate_source_survey", {})], lines: agent(proposalFirst) },
+    { lines: agent("案を直しました。この案でよろしいでしょうか?") },
+    END_FAIL,
+  ], "lo");
+  assert.equal(r.app.chats[1], script.questions.Q4.answers!.large_object, "変種 lo の希望を答える");
+  assert.equal(r.app.chats[2], script.questions.Q4.accept_proposal);
+  assert.equal(r.loop.counts.unscripted, 0, "台本に無い問いに数えない");
+  assert.equal(r.loop.counts.questions, 1);
+  assert.equal(r.loop.q4WishAsked, false);
+  cleanup(r);
+});
+
+test("[D-0185] 通常の筋(希望を先に聞く)では q4_wish_asked は true", async () => {
+  const r = await drive([
+    { events: [toolCall("sitate_source_survey", {})], lines: agent("何を守りたいですか?") },
+    { lines: agent("この案でよろしいでしょうか?") },
+    END_FAIL,
+  ]);
+  assert.equal(r.loop.q4WishAsked, true);
+  cleanup(r);
+});
+
+test("[D-0185] 調査の前の案の確認は Q4 にしない(台本に無い問いのまま)", async () => {
+  const r = await drive([{ lines: agent("この案でよろしいでしょうか?") }, END_FAIL]);
+  assert.equal(r.loop.counts.unscripted, 1);
+  assert.equal(r.loop.q4WishAsked, null);
+  cleanup(r);
+});
+
+// 測定 2 の 1 回目の記録で、ドライバが Q3 と照合し Q3 の答えを返した、元サーバーの接続先を求め直す問い(最後の文。合成の別名に置き換えた)。
+const REASKED = [
+  "元サーバーには、`source` 以外の接続先(正式なホスト名か IP アドレス)がありますか?",
+  "正式なホスト名か IP アドレスがありますか。ない場合は、次のことを教えてもらえますか。`source` は、このバックアップサーバーから名前で引けるホスト名ですか?",
+  "元サーバーを、`source` 以外のホスト名か IP アドレスで指定できますか?",
+  "元サーバーの接続先として、`source` 以外のホスト名か IP アドレスを教えてもらえますか?",
+];
+
+test("[D-0188] 開始時の入力の求め直しは Q3 と照合せず、開始時の入力を答え、問いに数えない", async () => {
+  for (const t of REASKED) {
+    assert.equal(matchQuestion(t, script) === "Q3" || matchQuestion(t, script) === null, true, "記録では Q3 に当たっていた(旧の照合)");
+    assert.equal(isStartInputReask(t, script), true, t);
+  }
+  const r = await drive([{ lines: agent(`接続先が不正でした。${REASKED[0]}`) }, { lines: agent(REASKED[3]!) }, END_FAIL]);
+  assert.equal(r.app.chats[1], locationMessage(answers));
+  assert.equal(r.app.chats[2], locationMessage(answers));
+  assert.equal(r.loop.counts.questions, 0);
+  assert.equal(r.loop.counts.unscripted, 0);
+  assert.equal(r.loop.counts.startReasked, 2);
+  assert.match(readFileSync(r.file, "utf8"), /"kind":"start_input_reasked"/);
+  cleanup(r);
+});
+
+test("[D-0188] Q3 の本来の問い(復元先)は今までどおり Q3 に当たる", async () => {
+  const t = "復元先のホストを教えてください。何のために聞くか: 別のサーバーで試すためです。教えていただけますか?";
+  assert.equal(isStartInputReask("次に復元先を決めます。復元先のホストと管理アカウントを教えていただけますか?", script), false);
+  assert.equal(isStartInputReask(t, script), false);
+  assert.equal(matchQuestion("復元先のホストを教えてください", script), "Q3");
+  const r = await drive([{ lines: agent("復元先のホストと管理アカウントを教えてもらえますか?") }, END_FAIL]);
+  assert.match(r.app.chats[1]!, /^復元先は dest/);
+  assert.equal(r.loop.counts.questions, 1);
+  assert.equal(r.loop.counts.startReasked, 0);
+  cleanup(r);
+});
+
+test("[D-0189] 偽の LLM の筋「/srv を断る」: 定義は /srv の下を対象にせず declined に mount: /srv を書き、その導入で手順 8 の合格を経て終了コード 0", async () => {
+  const defOf = (declineSrv: boolean): { source: { targets: unknown[]; declined: unknown[] } } => {
+    const step = planOf(answers, async () => undefined, { declineSrv })[4]!.find((_, i) => i === 1)!; // 手順 4 の後半: sitate_def_validate
+    return ((step.make("") as { toolUses: { input: { definition: { source: { targets: unknown[]; declined: unknown[] } } } }[] }).toolUses[0]!.input.definition);
+  };
+  const srv = defOf(true).source;
+  assert.deepEqual(srv.declined, [{ id: "d1", mount: "/srv" }]);
+  assert.equal(JSON.stringify(srv.targets).includes("/srv"), false);
+  assert.ok(JSON.stringify(defOf(false).source.targets).includes("/srv/shopapp"), "既定の筋は /srv/shopapp を対象にする");
+  const status = toolCall("sitate_status", { result: { last_backup: { ok: true }, last_restore_test: { ok: true }, notify: { proof_confirmed: true } } }, true);
+  const r = await drive([
+    { events: [toolCall("sitate_source_survey", {})], lines: agent("調べました。何を守りたいですか?") },
+    { events: [status], lines: [...stepLines(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13), ...agent("導入が完了しました。")] },
+  ]);
+  assert.equal(r.out.exit, 0, r.out.reason);
+  assert.ok(r.loop.stepsPassed.has(8));
+  assert.equal(r.loop.q4WishAsked, true);
+  cleanup(r);
+});
+
+test("[D-0189] 開始時の入力の求め直しは、台本の Q の語に当たる文でも先に照らす。チャットに鍵を入れない。2 回を超えた分は台本に無い問いにも数える", async () => {
+  const t = "元サーバーの接続先と管理アカウントを教えてもらえますか?"; // 「管理アカウント」だけでなく Q の語を含む形でも先に当たる
+  const r = await drive([{ lines: agent(t) }, { lines: agent(t) }, { lines: agent(t) }, { lines: agent(t) }, END_FAIL]);
+  assert.deepEqual(r.app.chats.slice(1, 5), [1, 2, 3, 4].map(() => locationMessage(answers)));
+  assert.ok(r.app.chats.every((c) => !c.includes("BEGIN OPENSSH") && !c.includes("fakeid")), "チャットに鍵を入れない");
+  assert.equal(r.loop.counts.startReasked, 4);
+  assert.equal(r.loop.counts.unscripted, 2, "3 回目と 4 回目が台本に無い問いにも数える");
+  assert.equal(r.loop.counts.questions, 2);
+  cleanup(r);
+  const q1 = "保管先の所在と接続先のエンドポイントとバケット名を教えてもらえますか?";
+  assert.equal(isStartInputReask(q1, script), false, "Q1 の語に当たる問いは求め直しにしない");
 });
