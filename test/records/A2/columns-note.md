@@ -9,3 +9,7 @@
 ## 欄 `start_input_reasked`(D-0188)
 
 `a2_fields` の `start_input_reasked`: エージェントが開始時の入力(元サーバーとバックアップサーバーの所在・管理アカウント)を求め直し、ドライバが台本の Q と照合せずに開始時の入力と同じ内容を答えた回数。`record.jsonl` には `kind: "start_input_reasked"` の行(`count` 付き)が出る。問い(`questions`・`unscripted_questions`)に数えない。この欄を足す前の回は「記録なし」と書く(記録の `question` の行のうち、元サーバーの接続先を求める問いに Q3 の答えを返した行から導ける)。判定に使わない。
+
+## 変種の基準の判定(D-0189)
+
+変種の基準(spec 6.5 A2 の `uncovered` の回・ラージオブジェクトの回・DB を断った回の基準)は、監督が、回の後・環境を down する前に、バックアップサーバーの `sitate def show` の正規化した定義(`source.declined`・`source.targets`)、手順 8 の `source check` の記録、エージェントの人への報告を読んで判定する(observer の記録を材料にしてよい)。ドライバの終了コード 0 は機械で判定する項目だけで、変種の基準を含まない。`a2_fields` の `q4_wish_asked`(true / false / null)と `start_input_reasked`(開始時の入力の求め直しの回数。同じ回で 2 回を超えた分は `unscripted_questions` にも数える)は、変種の基準とは別の欄で、判定に使わない。

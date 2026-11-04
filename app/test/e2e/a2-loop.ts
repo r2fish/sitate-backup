@@ -23,6 +23,8 @@ const RATE_WAIT_MS = 60000;
 const RATE_RETRY_MAX = 5;
 const LAST_STEP = 13;
 /** 続行の介入の直前の応答の最後の文が同じなら、この回数目で「同じ依頼の繰り返し」の印を付ける(D-0171)。 */
+/** 開始時の入力の求め直しを問いに数えない回数の上限(同じ回。D-0189)。超えた分は台本に無い問いにも数える。 */
+const START_REASK_MAX = 2;
 const REPEAT_MARK = 3;
 /** 手順の合格の行の見分け。先頭の語(「手順」)に頼らず、番号と「が合格しました」で見る。 */
 const STEP_PASSED_LINE = /(\d+) が合格しました/;
@@ -246,6 +248,7 @@ export class A2Loop {
     const s = this.#d.script;
     if (isStartInputReask(reply, s)) { // D-0188: 開始時の入力の求め直し。Q3 などと照合せず、開始時の入力と同じ内容を答える。問いに数えない
       this.counts.startReasked += 1;
+      if (this.counts.startReasked > START_REASK_MAX) { this.counts.unscripted += 1; this.counts.questions += 1; this.marks.push("intervene"); } // 2 回を超えた分は台本に無い問いにも数える(往復が終わらない道を断つ)
       return this.#say("start_input_reasked", locationMessage(this.#d.answers), undefined, { count: this.counts.startReasked });
     }
     let q = matchQuestion(reply, s);

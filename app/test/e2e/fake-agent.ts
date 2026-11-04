@@ -20,10 +20,10 @@ export const Q4_PROPOSAL_FIRST = "元サーバーを調べました。指定が�
 const Q4_PROPOSAL = "いただいた希望に当たる場所を対象にした案を作りました。取れない場所はその理由とともに状態の表示にあります。この案で進めてよろしいでしょうか?";
 const Q2_TEXT = "復旧のフレーズを控えたことを確かめます。何のために聞くか: バックアップサーバーを全部失ったときの唯一の手掛かりだからです。推奨の案: 別々の場所に 2 部置きます。分からなければ推奨の案でよいです。印刷か手書きで 2 か所に保管しましたか?";
 
-function definitionOf(a: Answers, survey?: Survey, added: readonly Candidate[] = []): Record<string, unknown> {
+function definitionOf(a: Answers, survey?: Survey, added: readonly Candidate[] = [], declineSrv = false): Record<string, unknown> {
   return {
     version: 1,
-    source: { host: a.sourceHost, ...sourceTargets(survey, added) },
+    source: { host: a.sourceHost, ...sourceTargets(survey, added, declineSrv) },
     storage: [{ endpoint: a.storageEndpoint, bucket: a.bucket, key_ref: "storage", prefix: "sitate/" }],
     restore: { adapter: "ssh-host", dest: { at: `ssh://${a.adminUser}@${a.destHost}:${a.destPort}`, key_ref: "restore-init" } },
     notify: { to: [HOOK_NAME] },
@@ -38,13 +38,15 @@ export interface PlanOptions {
   readonly extras?: boolean;
   /** 筋「案が先」: 手順 4 で Q4 の希望を聞かず、案の確認を先に出す(ドライバが Q4 として照合することの試験)。 */
   readonly proposalFirst?: boolean;
+  /** 筋「/srv を断る」: 定義で `/srv` の下を選ばず `source.declined` に `mount: /srv` を書く(D-0189)。既定は /srv/shopapp を対象にする。 */
+  readonly declineSrv?: boolean;
 }
 
 export function planOf(a: Answers, afterBootstrap: () => Promise<void>, o: PlanOptions = {}, survey?: Survey, added: readonly Candidate[] = []): PlanStep[][] {
   const s3 = { endpoint: a.storageEndpoint, bucket: a.bucket, prefix: "sitate/", adapter: o.adapter ?? "minio", admin_ref: "admin" };
   const sourceHost = `ssh://${a.adminUser}@${a.sourceHost}`;
   const destAt = `ssh://${a.adminUser}@${a.destHost}:${a.destPort}`;
-  const definition = definitionOf(a, survey, added);
+  const definition = definitionOf(a, survey, added, o.declineSrv === true);
   // 手順 8(3.8): 足せる候補(mount・db)があれば、人に問わず定義へ足し、def validate → source enroll 再実行 → 完了確認のやり直し。seal の前なので承認は要らない。
   const readdSources = added.length > 0 ? [call("sitate_def_validate", { definition }), call("sitate_source_enroll", { host: sourceHost, admin_ref: "source-admin" }), call("sitate_source_check")] : [];
   return [

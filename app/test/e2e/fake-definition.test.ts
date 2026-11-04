@@ -33,3 +33,15 @@ test("add: source check の actionable の mount・db を定義へ足す。large
   assert.deepEqual(r.targets, [{ id: "t1", files: "/srv/shopapp" }, { id: "t2", files: "pr:m" }, { id: "t3", postgresql: "pr:n", port: 5432 }]);
   assert.deepEqual(candidatesFrom([check([])]), []);
 });
+
+test("[D-0189] /srv を断る筋: /srv の下を対象にせず、declined に mount: /srv を書く。DB の対象と断りの id は続き番号", () => {
+  const s = surveyFrom([envelope({ databases: dbs(["pr:a", 5432, false], ["pr:x", 5433, false]), clusters: [{ port: 5433 }, { port: 5432 }] })]);
+  const r = sourceTargets(s, [], true);
+  assert.deepEqual(r.declined, [{ id: "d1", mount: "/srv" }, { id: "d2", postgresql_cluster: 5433 }]);
+  assert.deepEqual(r.targets, [{ id: "t1", postgresql: "pr:a", port: 5432 }]);
+  assert.equal(JSON.stringify(r.targets).includes("/srv"), false);
+});
+test("[D-0189] 既定の筋(/srv/shopapp を対象にする)は変わらない", () => {
+  assert.deepEqual(sourceTargets(undefined).targets, [{ id: "t1", files: "/srv/shopapp" }]);
+  assert.deepEqual(sourceTargets(undefined).declined, []);
+});

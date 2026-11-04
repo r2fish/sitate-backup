@@ -48,7 +48,7 @@ async function main(): Promise<number> {
   rec.write("header", { driver: kind, mode: v.mode, variant: v.variant, lang: v.lang, script_version: script.version, ...headerFields(repo) });
   const doubles = v.doubles === undefined ? async () => undefined : () => placeDoubles(resolve(v.doubles!));
   const llm = await startLlmEndpoint(v.mode === "fake"
-    ? { mode: "fake", rec, expectKey: answers.llmKey, fake: makeFakeAgent(answers, doubles, kind === "A6" ? "ご依頼の操作に使える道具はありません。" : undefined, { adapter: v.b2 ? "b2" : "minio", extras: v.preflight }) }
+    ? { mode: "fake", rec, expectKey: answers.llmKey, fake: makeFakeAgent(answers, doubles, kind === "A6" ? "ご依頼の操作に使える道具はありません。" : undefined, { adapter: v.b2 ? "b2" : "minio", extras: v.preflight, declineSrv: process.env.SITATE_FAKE_DECLINE_SRV === "1" }) }
     : { mode: "proxy", rec, expectKey: answers.llmKey, ...(v.upstream === undefined ? {} : { upstream: v.upstream }) });
   const bridge = await startBridge(answers.containers);
   const state = prepareState(v["state-dir"] === undefined ? undefined : resolve(v["state-dir"]), v.reset);
