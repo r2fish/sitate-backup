@@ -458,3 +458,16 @@ A2 の測定 1 の 1 回目の手順 11 の原因(`test/records/A2/m1-pre.md`)�
   - 案 B: `/srv` だけを volume にし、`/home` はコンテナの根に残す(`/home` は今と同じく数えない)。手順 8 は今と同じ。
   - 案 C: `/home` に対象の根を持たせる(合成データの置き方を変える。バックアップの中身の件数が変わる)。
 - 監督の見方: ファイルの対象を A2 で選べるようにするという D-0185 (2) の狙いは、案 B でも満たせる(`/srv` の合成データ)。推奨の検証は通していない。
+
+## 51. 定義の `source.host` の直しの案(2026-11-04。裁定の依頼)
+
+測定 2 の 1 回目(`test/records/A2/m2.md`)で、エージェントが定義の `source.host` に `ssh://<user>@source:22` を書いた。`def validate` が通し、`source enroll` で `DEF_INVALID`(`/source/host`、`invalid_value`、`next` は空)になった。2・3 回目も同じ誤りが 1 回ずつ出て、モデルが自分で直した。測定 3 の前に入れる案。
+
+- (i) 定義の検査で形を拒む(製品の核): `internal/state/validate_source.go:20` は `source.host` を必須の文字列として見るだけ。契約のスキーマ `cli/common.json#/$defs/host`(`^[A-Za-z0-9][A-Za-z0-9._:-]{0,254}$`)の形を当て、合わなければ `DEF_INVALID`(`/source/host`、`invalid_value`)を返す。`def validate`・`propose`・`apply` の検査はどれも `ValidateDef` を通るので、1 か所の直しで済む。`restore.dest.at` は別の形(URI)で、変えない。
+- (ii) `source enroll` の食い違いの detail: 案は 2 つ。
+  - 案 A: 契約を変えない。(i) で URI の形が定義に入らなくなるので、enroll で食い違うのは `--host` の `<host>` と `source.host` が別の名前のときだけになる。`next` に `["sitate","def","show"]` を入れて、定義の値を見る道を示す。
+  - 案 B: `DEF_INVALID` の `reason` に `host_mismatch` を足す(契約の enum の変更)。
+  - 監督は案 A を推す(契約を測定 3 の前に変えないため)。
+- (iii) 文: 道具 `sitate_def_validate`・`sitate_propose` の説明と、手順書の定義の形の節、製品の説明書に「`source.host` は裸のホスト名(`--host` の `ssh://<user>@<host>:<port>` の `<host>` の部分)。URI・ユーザー・ポートを書かない」を足す。
+- (iv) ドライバ: 元サーバーの所在・接続先を求める問いは、Q3(復元先)と照合せず、開始時の入力の元サーバーの所在を答える。D-0185 の B と同じ照合の直しとして `wp/r2-q4` に足す。
+- 推奨の検証は通していない。
