@@ -22,17 +22,19 @@
 | 3 | 監督 | 同 | `make build`(製品) | 終了 0。`dist/product/bundle/<版>/` に `linux-arm64`・`linux-x86_64`・`prices`・ソースのアーカイブ・SBOM |
 | 4 | 利用者 | 自分のターミナル(Claude Code を起動していないもの)で、リポジトリの根 | `SECRET_KEY=<秘密鍵の絶対パス> PUBLIC_KEY_FILE=<公開鍵の絶対パス> make sign` | パスワードを 1 回だけ聞かれる。最後の行に署名の件数。失敗の行が出たら止まって監督へ貼る |
 | 5 | 監督 | main | `PUBLIC_KEY_FILE=<公開鍵の絶対パス> make build-app` | `build-app: product -> …`。試験用ドライバの混入の検査で失敗しないこと |
-| 6 | 利用者 | 自分のターミナル | `SECRET_KEY=<秘密鍵の絶対パス> make sign-installer INSTALLER=<インストーラーのパス>` | 下の「未決」を見る |
-| 7 | 監督 | main | README の【日 7 に入れる】を 1 の集計行とその時点の git から埋め、`Submission:` の commit(D-0141) | 受入試験の環境と提出 branch をここで一致させて止める |
-| 8 | 監督 | 7 の commit | 動画の場面 4・5 用の A2 の環境と、場面 6 用の A6 の環境を `accept-env.sh up` で起こす(D-0200 の追記 2 の (1)) | `prepare-a2` まで終了 0 |
+| 6 | 監督 | main | README の【日 7 に入れる】を 1 の集計行とその時点の git から埋め、`Submission:` の commit(D-0141) | 受入試験の環境と提出 branch をここで一致させて止める |
+| 7 | 監督 | 6 の commit | 動画の場面 4・5 用の A2 の環境と、場面 6 用の A6 の環境を `accept-env.sh up` で起こす(D-0200 の追記 2 の (1)) | `prepare-a2` まで終了 0 |
+
+- `make sign-installer` は行わない(D-0205。イテレーション 1 はインストーラーを配らない。アプリはリポジトリから `make build-app` で組んで起動する)。作業指示書の 3.1・6 章の `sign-installer` の文言は直していないので、日 7 の手順と evidence-auditor の照合では D-0205 を正として読む。
+- 動画の製品の場面の起動(D-0205。試験用ドライバと同じ起動の仕方。リポジトリの根から): `app/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron app --user-data-dir=<撮影用の空のディレクトリ> --lang=ja`。製品ビルドは利用者のログインのキーチェーンを使う(試験ビルドの `SITATE_TEST_KEYCHAIN` は無い)。撮影の後に `jp.sitate-backup.app` の項目を消すかは利用者が決める。受入試験の環境へ届くかは下の「未決」。
 
 - 公開鍵のパスと秘密鍵のパスは、監督の会話・記録・commit に書かない(利用者のターミナルの行だけに置く)。監督が示すのは手順の文だけ。
-- 4 と 6 の後に貼ってもらうのは、終了コードと最後の数行だけ(パスワードやパスが写っていれば伏せる)。
+- 4 の後に貼ってもらうのは、終了コードと最後の数行だけ(パスワードやパスが写っていれば伏せる)。
 
 ## 未決(設計の監督に問う)
 
-- インストーラー: イテレーション 1 のアプリのビルドは `dist/` に Electron の読み込む置き場を作るだけで、インストーラーのファイルを作るターゲットが無い(`app/package.json` の scripts、`Makefile`)。`make sign-installer` に渡す `INSTALLER` が無い。6 を飛ばすか、何に署名するかの裁定が要る。
-- 製品ビルドで導入を始められるか: 日 6 に、試験の鍵を配布用の鍵の代わりにした製品ビルド(`make build` → `sign.sh product` → `build-app`)で、実物の LLM を使わずに確かめる(D-0200 の追記 2 の (1))。結果はこの下に足す。
+- (決着)インストーラー: D-0205 で案 A(配らない)。
+- 製品ビルドのアプリが受入試験の環境に届かない見込み(コードを読んだ所見。実行での確かめは日 6): 受入試験の環境のコンテナは SSH の口を作業端末に公開していない(`app/test/e2e/bridge.ts` の冒頭)。試験ビルドでは、ドライバが `docker exec` で橋を作り、試験ビルドだけの `SITATE_TEST_HOST_MAP`(`app/src/testing/host-map.ts`、`attach.ts`)で管理用 SSH の接続先を読み替えている。製品ビルドにはこの読み替えが無いので、開始時の入力の `backup`・`source`・`dest` に作業端末から届かない。設計の監督に問う。
 
 ## 予行(2026-11-05、監督。HEAD 1a11cb0)
 
