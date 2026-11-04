@@ -11,7 +11,7 @@
 | 受け口: 根の外・シンボリックリンクの先を読まない | recv: `TestRecvReadBatchSafety`、`TestRecvReadBatchInput`、`TestRecvListRefusesSeparatorInLinkOrDirName` | 緑 | |
 | 受け口: 読む前後の `stat` の変化の一覧 | recv: `TestRecvReadBatchChanged`、files: `TestFilesIncremental` | 緑 | |
 | 受け口: `source-setup` の再実行で何も変わらない | recv: `TestSetupViaSudoThenRootIdempotent` | 未実行 | SKIP(root で実行する受入試験の容器が要る) |
-| 受け口: `--rotate` の後に authorized_keys が 1 行 | — | 試験なし | `adapters/acquire/recv` の試験に `rotate` を含むものが無い(`grep -i rotate` が 0 件) |
+| 受け口: `--rotate` の後に authorized_keys が 1 行 | — | 範囲外(D-0177 でイテレーション 3) | `adapters/acquire/recv` の試験に `rotate` を含むものが無い(`grep -i rotate` が 0 件) |
 | 受け口: `selftest`、`dump-pg` の途中失敗、読み取り専用ロールの書き込み拒否 | recv: `TestRecvSelftestTargets`、`TestContractRecvSelftest`(緑)。`TestSelftestConnectRevoked`、`TestSetupAndDBRole`、`TestSetupDBNamesToolsTablespace`、`TestRealPostgreSQL`(adapters/acquire/postgresql) | 未実行 | 緑は `selftest` の対象の確認まで。`dump-pg` の失敗の終了状態・書き込み拒否・DB のロールの権限(`pg_authid` を読めない等)は PostgreSQL が要る題が SKIP |
 | 1 調査の処理 | recv: `TestSurveyOutputAndNoResidue`(緑)、`TestRecvScriptsSyntaxNoEval`、`TestSurveyPrereqMissing`、`TestSurveyExit77NotLinux`、`TestSetupPrereqToolMissing`、`TestSetupPrereqUnsupportedOS`。`TestSurveyViaRootAndSudoWritesNothing`、`TestSurveyDuTimeout` | 一部 | `sh -n`・`eval` 無し・出力のスキーマ・prereq・終了状態 77 は緑。root と `sudo -n` で何も書かないこと、`du` の打ち切りで `bytes` が `null` は SKIP(未実行) |
 | 2 クラスタの読み方 | recv: `TestSetupAndDBRole`(SKIP)。`TestSetupForbiddenRootsMatchContract`(緑) | 未実行 | 2 クラスタ・WAL を別の場所に置いた構成は PostgreSQL の環境が要る。緑の題は禁止する根の一覧が契約と一致する確認 |
@@ -22,5 +22,5 @@
 | 追加 D-0159: `from=` が空・不正で `from_missing` | recv: `TestSetupFromAndForbiddenAndAncestor`(SKIP) | 未実行 | 題名からの推測。本文を読んでいない |
 
 ## 集計(行ごと 14 行)
-- 緑 4 / 一部 4 / 未実行 5 / 試験なし 1(`--rotate`) / 範囲外 0。
+- 緑 4 / 一部 4 / 未実行 5(root の分は `make test-adapters-root` で緑。2026-11-04) / 試験なし 0 / 範囲外 1(`--rotate`。D-0177)。
 - 受け口の root と PostgreSQL が要る題は、受入試験の環境でしか緑にならない(この実行で SKIP)。U2a の受け入れの記録(`test/records/U2a/acceptance.md`、`gaps-2026-11-04.md`)に別の実行がある場合は、そちらの結果で上の「未実行」を置き換える(この調査は読んでいない)。
