@@ -28,10 +28,6 @@
         },
         "uniqueItems": true,
         "description": "このコマンドが使う秘密の参照名の配列(重複なし)。値はアプリがキーチェーンから差し込む。"
-      },
-      "dry_run": {
-        "type": "boolean",
-        "description": "true なら何も変えずに計画だけ返す。"
       }
     },
     "additionalProperties": false

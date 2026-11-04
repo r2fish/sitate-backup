@@ -58,7 +58,7 @@ func TestFailedTargetCarriesDetailAndNext(t *testing.T) {
 		t.Fatal(err)
 	}
 	tg := r.Targets[0]
-	if tg.ErrorCode != "STORAGE_UNREACHABLE" || string(tg.Detail) != `{"target":"source","reason":"connect"}` || len(tg.Next) != 1 {
+	if tg.ErrorCode != "STORAGE_UNREACHABLE" || string(tg.Detail) != `{"target":"source","reason":"connect"}` || len(tg.Next) != 2 {
 		t.Errorf("アダプタの error の detail が載らない: %+v", tg)
 	}
 

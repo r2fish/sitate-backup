@@ -23,10 +23,10 @@ func TestTargetNextByCause(t *testing.T) {
 		out  TargetOutcome
 		want []contract.Next
 	}{
-		{"STORAGE_UNREACHABLE", a, TargetOutcome{Status: "failed", ErrorCode: "STORAGE_UNREACHABLE"}, []contract.Next{nx("STORAGE_UNREACHABLE", "doctor")}},
-		{"MISMATCH seal 後", a, TargetOutcome{Status: "failed", ErrorCode: "RECEIVER_TARGETS_MISMATCH"}, []contract.Next{nx("RECEIVER_TARGETS_MISMATCH", "propose", "source-change")}},
-		{"MISMATCH seal 前", pre, TargetOutcome{Status: "failed", ErrorCode: "RECEIVER_TARGETS_MISMATCH"}, []contract.Next{nx("RECEIVER_TARGETS_MISMATCH", "source", "enroll")}},
-		{"INTERNAL acquire", a, TargetOutcome{Status: "failed", ErrorCode: "INTERNAL", FailInfo: FailInfo{Detail: json.RawMessage(`{"component":"acquire"}`)}}, []contract.Next{nx("INTERNAL", "status")}},
+		{"STORAGE_UNREACHABLE", a, TargetOutcome{Status: "failed", ErrorCode: "STORAGE_UNREACHABLE"}, []contract.Next{nx("STORAGE_UNREACHABLE", "sitate", "backup"), nx("STORAGE_UNREACHABLE", "sitate", "doctor")}},
+		{"MISMATCH seal 後", a, TargetOutcome{Status: "failed", ErrorCode: "RECEIVER_TARGETS_MISMATCH"}, []contract.Next{nx("RECEIVER_TARGETS_MISMATCH", "sitate", "propose", "source-change")}},
+		{"MISMATCH seal 前", pre, TargetOutcome{Status: "failed", ErrorCode: "RECEIVER_TARGETS_MISMATCH"}, []contract.Next{nx("RECEIVER_TARGETS_MISMATCH", "sitate", "source", "enroll")}},
+		{"INTERNAL acquire", a, TargetOutcome{Status: "failed", ErrorCode: "INTERNAL", FailInfo: FailInfo{Detail: json.RawMessage(`{"component":"acquire"}`)}}, []contract.Next{nx("INTERNAL", "sitate", "status")}},
 		{"INTERNAL adapter", a, TargetOutcome{Status: "failed", ErrorCode: "INTERNAL", FailInfo: FailInfo{Detail: json.RawMessage(`{"component":"adapter"}`)}}, empty},
 		{"ADAPTER_ERROR", a, TargetOutcome{Status: "failed", ErrorCode: "ADAPTER_ERROR"}, empty},
 		{"NOT_FOUND", a, TargetOutcome{Status: "failed", ErrorCode: "NOT_FOUND"}, empty},
@@ -68,5 +68,19 @@ func TestFailDetailClosedShapes(t *testing.T) {
 	}
 	if v, ok := m["reason"]; !ok || v != nil {
 		t.Errorf("型の無い誤りの reason は null: %s", d)
+	}
+}
+
+// STORAGE_UNREACHABLE の next は 3.1.3 の一般の行: 同じ操作の再実行と doctor を、この順で列挙する(D-0183)。
+func TestStorageUnreachableNextEnumeratesRetryThenDoctor(t *testing.T) {
+	a := &Acquire{State: &fake.StateFiles{Items: map[string]json.RawMessage{}}}
+	got := a.withNext(t.Context(), TargetOutcome{Status: "failed", ErrorCode: "STORAGE_UNREACHABLE"}).Next
+	if len(got) != 2 || !reflect.DeepEqual(got[0].Argv, []string{"sitate", "backup"}) || !reflect.DeepEqual(got[1].Argv, []string{"sitate", "doctor"}) {
+		t.Fatalf("next = %+v", got)
+	}
+	for _, n := range got {
+		if n.RequiresHuman {
+			t.Errorf("requires_human が true: %+v", n)
+		}
 	}
 }
