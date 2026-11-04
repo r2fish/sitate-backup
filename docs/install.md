@@ -84,9 +84,9 @@
 
 ### Q4 何を守りたいか(手順 4 の前半)
 
-- 順序: 手順 3 の後、定義を組み立てる前に行う。エージェントは `sitate source survey` で元サーバーを調べ、結果から対象の案を作り、`sitate estimate` で月額の目安を出してから問う。
+- 順序: 手順 3 の後、定義を組み立てる前に行う。エージェントは `sitate source survey` で元サーバーを調べ、調査の結果(種別と大きさ、v1 で取れないもの)を示して、何を守りたいかを聞く問いで発話を終える。人の答えを受けてから案を作り、`sitate estimate` で月額の目安を出して、案と月額を示して確かめる(同じ Q4 の続き)。人の答えを待たずに「指定が無いので」と案の確認を求めない。
 - 説明: 取れていない場所は被災のときに戻せない。調査で見つけた場所は、実名ではなく種別と大きさで示される(実名は状態の表示で人が見る)。v1 で取れないもの(対象外のディレクトリ、対象外のマウント、ラージオブジェクト、DB の生ファイルの場所)は、ファイルの対象にできず、DB は論理ダンプで取る。取れるマウントと DB は、人が断らなければ対象に入る。断ったものは定義の `source.declined` に人の判断として残り、週次の通知に毎回出る。調べていない置き場はチャットで伝えれば対象にできる。保持は日次 90 日・月次 12 か月で固定。大きさの調査が不完全なときは、大きさと月額が小さめに出る。月額は初回の取得の前の目安で、バックアップサーバーと復元先の費用は含まない。
-- 推奨の案: 人の言葉(例「会計ソフトのデータと介護記録」)に当たる候補を選んだ案。分からないと答えたときは、調査で見つけた取れる候補をすべて含む案を、月額とともに示す。DB の生ファイルの場所は根にせず、その下の DB でない直下のディレクトリを根にする。
+- 推奨の案: 人の言葉(例「会計ソフトのデータと介護記録」)に当たる候補を選んだ案。種別と大きさで当たりを付けられないときと、人が分からないと答えたときは、調査で見つけた取れる候補をすべて含む案を、月額とともに示す。DB の生ファイルの場所は根にせず、その下の DB でない直下のディレクトリを根にする。
 - 確かめ: 人が案を受ければ手順 4 の後半へ進む。違うと言われれば案を直して示し直す(同じ Q4 の続き)。断った候補は定義の `source.declined` に書く。取れるマウントは `mount: <マウントの根>`、DB はクラスタの単位で `postgresql_cluster: <ポート>` と書く。調査で外した場所とその理由は、黙らずに人へ示す。
 
 ### H1 保管先の事業者との契約と支払い(手順 2 の前)
@@ -120,7 +120,7 @@
 | 5 | 保管先を作成し、消せない設定と鍵の権限を確かめる | `sitate init-storage --endpoint ... --bucket ... --prefix sitate/ --adapter b2 --admin-ref admin`(保管先準備アダプタの無い事業者は付録「事業者別(組 A)」。事業者の管理用鍵は保存しないモードで入れ、キーチェーンに残らない) | `sitate bucket check` と `sitate doctor` | 1 つ目: `/result/lock_mode` = `COMPLIANCE`、`/result/versioning` = `true`、`/result/permissions/<i>/actual` = `/result/permissions/<i>/expected`(書き込み鍵の版指定なしの削除の要素を除く)。2 つ目: `/result/passed` = `true` | `BUCKET_MISMATCH` → 設定の食い違いを人と直す(管理用鍵を入れ直す)。`KEY_TOO_POWERFUL` → 鍵の権限を絞って発行し直す。`KEY_MISSING_PERMISSION` → 鍵に足りない権限を足す。`ALREADY_INITIALIZED` → 済みなので完了確認へ進む |
 | 6 | バックアップの暗号化の仕組みと承認鍵を初期化する | `sitate init`(道具 `sitate_init`。承認鍵の公開鍵と秘密の出力先 `--secret-fd` はアプリが付けるので、エージェントは渡さない。失敗として扱った出力のときは、手順 7 の前なら同じ `init` を再実行する) | `sitate status` | `/result/initialized` = `true` | `ALREADY_INITIALIZED` → 手順 7 の確認に進む。`SECRET_FD_REQUIRED` → 秘密の渡し方を確かめる。`KEYRING_MISMATCH` → 保管先の既存の内容を人と確かめる |
 | 7 | フレーズを人が保管したことと復旧キットの保管を確かめる | Q2、H2、面: `sitate phrase verify`、`sitate kit`、面: `sitate kit confirm` | `sitate status` | `/result/phrase_confirmed` = `true`、`/result/kit/confirmed` = `true` | `PHRASE_INVALID` → 入れ直してもらう。`PHRASE_UNCONFIRMED` → 保管を確かめるまで次へ進まない |
-| 8 | 元サーバーに受け口を設置し、対象の取得を自己検査する | `sitate source enroll --host ssh://<user>@<host> --admin-ref source-admin`(元サーバーに道具が無いときは H5) | `sitate source check` | `/result/selftest/<i>/ok` = `true`、`/result/actionable` = `[]`(足せる候補が無い。知らせるだけの種別は完了の条件から除く) | `SOURCE_SETUP_FAILED` → 道具が無い(`tool_missing`)なら H5 を行う。`SOURCE_HOSTKEY_MISMATCH` → 元サーバーのホスト鍵を人と確かめる。`RECEIVER_SELFTEST_FAILED` → 結果の `next` に従う。`RECEIVER_TARGETS_MISMATCH` → 対象と受け口の設定を合わせる |
+| 8 | 元サーバーに受け口を設置し、対象の取得を自己検査する | `sitate source enroll --host ssh://<user>@<host> --admin-ref source-admin`(元サーバーに道具が無いときは H5) | `sitate source check` | `/result/selftest/<i>/ok` = `true`、`/result/actionable` = `[]`(足せる候補が無い。知らせるだけの種別は完了の条件から除く) | `DEF_INVALID`(`/source/host`、`invalid_value`)→ `next` は空。`def validate` に渡した定義の `source.host` と `--host` の `<host>` を比べ、`--host` を合わせて呼び直す。`SOURCE_SETUP_FAILED` → 道具が無い(`tool_missing`)なら H5 を行う。`SOURCE_HOSTKEY_MISMATCH` → 元サーバーのホスト鍵を人と確かめる。`RECEIVER_SELFTEST_FAILED` → 結果の `next` に従う。`RECEIVER_TARGETS_MISMATCH` → 対象と受け口の設定を合わせる |
 | 9 | 復元先を登録し、隔離の設定を確かめる | `sitate restore-dest enroll --admin-ref dest-admin` | `sitate restore-dest check` | `/result/isolation/<i>/ok` = `true` | `RESTORE_ENROLL_MISMATCH` → 登録の内容を確かめる。`RESTORE_ISOLATION_FAILED` → 復元先の隔離を直す。`RESTORE_HOST_DENIED` → 復元先の権限を確かめる |
 | 10 | 定義を承認して確定する | `sitate propose seal --file -`(定義を標準入力で渡す) → H4(承認カード。手順 4 の確認語を宛先ごとに入力)→ `sitate apply` | `sitate def show` と `sitate status` | 1 つ目: `/result/sealed` = `true`。2 つ目: `/result/notify/proof_confirmed` = `true` | `NOTIFY_PROOF_MISMATCH` → 通知先を確かめ、手順 4 の `notify set` と `notify test` だけやり直してこの手順を出し直す。`APPROVAL_REQUIRED` → 承認カードで承認する。`DELAY_NOT_ELAPSED` → 遅延の時刻まで待つ。`PRECONDITION_CHANGED` → 提案し直す。`DEF_INVALID`(`unresolved_ref`。参照名が未解決、または渡した定義が最後に `def validate` を通した内容と違う)→ 手順 5・9 が済んでいるか確かめ、`def validate --file -` に通した内容をそのまま渡して出し直す |
 | 11 | 最初のバックアップを取る | `sitate backup` | `sitate status` | `/result/last_backup/ok` = `true`(読み取り中に変化したファイルは警告で、成功を妨げない) | `ALL_TARGETS_FAILED` → 結果の `next` に従い対象を確かめる。`TARGET_EMPTY`(警告。取得した対象のエントリが 0 件で、世代は不完全になり通知が出る)→ 元サーバーの対象のデータを確かめ、正しく空なら対象から外す提案(`source-change`)を出す。`STORAGE_UNREACHABLE` → 保管先への到達を確かめる。`NOT_SEALED` → 手順 10 を済ませる。`LOCKED` → 実行中の処理の終わりを待つ |
@@ -181,7 +181,7 @@ Q1〜Q4 と手順 2・3 の値から、次の形の JSON を作って `sitate_de
 }
 ```
 
-- `source.host` は裸のホスト名(`--host` の `ssh://<user>@<host>:<port>` の `<host>` の部分)。URI・ユーザー・ポートを書かない(書くと `DEF_INVALID` の `/source/host`、`invalid_value`)。復元先の `restore.dest.at` は `ssh://<ユーザー>@<ホスト>:22` の形のまま。
+- `source.host` は裸のホスト名(`--host` の `ssh://<user>@<host>:<port>` の `<host>` の部分。IPv6 は括弧を外す)。URI・ユーザー・ポートを書かない(書くと `DEF_INVALID` の `/source/host`、`invalid_value`)。`source enroll` が同じ `invalid_value`(`/source/host`)を返したら、`next` は空なので、自分が `def validate` に渡した定義の `source.host` と `--host` の `<host>` を比べ、`--host` を定義の値に合わせて呼び直す。復元先の `restore.dest.at` は `ssh://<ユーザー>@<ホスト>:22` の形のまま。
 - 対象 `targets` の `id` は `t1`、`t2` の形(`t` と 1〜9999)。種別のキーは `files` か `postgresql` のどちらか 1 つ。除外 `declined` の `id` は `d1`、`d2` の形で、種別は `mount` か `postgresql_cluster`。
 - `files` の根は絶対パスで、`/`、`/etc`、`/var`、`/home`、`/srv`、`/opt` そのものと、`/proc` などのシステムの場所は置けない(`DEF_INVALID` の `root_forbidden`)。
 - `notify.to` は通知先の参照名(手順 4 の `notify set` で先に登録した名前)。メールアドレスの通知先はイテレーション 1 の範囲の外。
