@@ -10,7 +10,7 @@ import { Human } from "./human.ts";
 import type { HumanDeps, Outcome } from "./human.ts";
 import type { Port } from "./port.ts";
 import type { Recorder } from "./record.ts";
-import { isQuestion, lastSentence, locationMessage, matchQuestion, questionForm } from "./script.ts";
+import { isQuestion, isStartInputReask, lastSentence, locationMessage, matchQuestion, questionForm } from "./script.ts";
 import type { A2Script, Answers, QId } from "./script.ts";
 import type { TestEvent } from "../../src/testing/driver-server.ts";
 
@@ -50,7 +50,7 @@ export class A2Loop {
   readonly #human: Human;
   readonly stepsPassed = new Set<number>();
   readonly marks: Mark[] = [];
-  readonly counts = { questions: 0, unscripted: 0, continues: 0, turnLimit: 0, toolCalls: 0, withheld: 0, rateRetries: 0, questionNotLast: 0, multiQuestion: 0, repeatedRequests: 0 };
+  readonly counts = { questions: 0, unscripted: 0, continues: 0, turnLimit: 0, toolCalls: 0, withheld: 0, rateRetries: 0, questionNotLast: 0, multiQuestion: 0, repeatedRequests: 0, startReasked: 0 };
   readonly #repeats = new Map<string, number[]>();
   #stall: Outcome | null = null;
   status: ReturnType<typeof judgeStatus> | null = null;
@@ -244,6 +244,10 @@ export class A2Loop {
 
   async #answer(reply: string): Promise<Outcome | null> {
     const s = this.#d.script;
+    if (isStartInputReask(reply, s)) { // D-0188: 開始時の入力の求め直し。Q3 などと照合せず、開始時の入力と同じ内容を答える。問いに数えない
+      this.counts.startReasked += 1;
+      return this.#say("start_input_reasked", locationMessage(this.#d.answers), undefined, { count: this.counts.startReasked });
+    }
     let q = matchQuestion(reply, s);
     if (q === null && this.#lastQ === "Q4" && this.#q4 !== "none") q = "Q4";
     // D-0185: Q4 の希望が未回答のまま、調査の後に定義の案の確認が来たら、それを Q4 として照合し、台本の希望を答える(問いの数え方は変えない)。

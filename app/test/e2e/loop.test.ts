@@ -13,7 +13,7 @@ import { FakeApp, envelope, toolCall } from "./fake-app.ts";
 import type { AgentTurn } from "./fake-app.ts";
 import { Q4_PROPOSAL_FIRST, planOf } from "./fake-agent.ts";
 import { Recorder } from "./record.ts";
-import { B2_ENDPOINT_RE, isQuestion, matchQuestion, readJson } from "./script.ts";
+import { B2_ENDPOINT_RE, isQuestion, isStartInputReask, locationMessage, matchQuestion, readJson } from "./script.ts";
 import type { A2Script, Answers } from "./script.ts";
 
 const repo = join(import.meta.dirname, "..", "..", "..");
@@ -295,5 +295,40 @@ test("[D-0185] 調査の前の案の確認は Q4 にしない(台本に無い問
   const r = await drive([{ lines: agent("この案でよろしいでしょうか?") }, END_FAIL]);
   assert.equal(r.loop.counts.unscripted, 1);
   assert.equal(r.loop.q4WishAsked, null);
+  cleanup(r);
+});
+
+// 測定 2 の 1 回目の記録で、ドライバが Q3 と照合し Q3 の答えを返した、元サーバーの接続先を求め直す問い(最後の文。合成の別名に置き換えた)。
+const REASKED = [
+  "元サーバーには、`source` 以外の接続先(正式なホスト名か IP アドレス)がありますか?",
+  "正式なホスト名か IP アドレスがありますか。ない場合は、次のことを教えてもらえますか。`source` は、このバックアップサーバーから名前で引けるホスト名ですか?",
+  "元サーバーを、`source` 以外のホスト名か IP アドレスで指定できますか?",
+  "元サーバーの接続先として、`source` 以外のホスト名か IP アドレスを教えてもらえますか?",
+];
+
+test("[D-0188] 開始時の入力の求め直しは Q3 と照合せず、開始時の入力を答え、問いに数えない", async () => {
+  for (const t of REASKED) {
+    assert.equal(matchQuestion(t, script) === "Q3" || matchQuestion(t, script) === null, true, "記録では Q3 に当たっていた(旧の照合)");
+    assert.equal(isStartInputReask(t, script), true, t);
+  }
+  const r = await drive([{ lines: agent(`接続先が不正でした。${REASKED[0]}`) }, { lines: agent(REASKED[3]!) }, END_FAIL]);
+  assert.equal(r.app.chats[1], locationMessage(answers));
+  assert.equal(r.app.chats[2], locationMessage(answers));
+  assert.equal(r.loop.counts.questions, 0);
+  assert.equal(r.loop.counts.unscripted, 0);
+  assert.equal(r.loop.counts.startReasked, 2);
+  assert.match(readFileSync(r.file, "utf8"), /"kind":"start_input_reasked"/);
+  cleanup(r);
+});
+
+test("[D-0188] Q3 の本来の問い(復元先)は今までどおり Q3 に当たる", async () => {
+  const t = "復元先のホストを教えてください。何のために聞くか: 別のサーバーで試すためです。教えていただけますか?";
+  assert.equal(isStartInputReask("次に復元先を決めます。復元先のホストと管理アカウントを教えていただけますか?", script), false);
+  assert.equal(isStartInputReask(t, script), false);
+  assert.equal(matchQuestion("復元先のホストを教えてください", script), "Q3");
+  const r = await drive([{ lines: agent("復元先のホストと管理アカウントを教えてもらえますか?") }, END_FAIL]);
+  assert.match(r.app.chats[1]!, /^復元先は dest/);
+  assert.equal(r.loop.counts.questions, 1);
+  assert.equal(r.loop.counts.startReasked, 0);
   cleanup(r);
 });
