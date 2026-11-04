@@ -1463,5 +1463,52 @@
  },
  "status.unreachable.fixed": {
   "args": {}
+ },
+ "status.progress.step.1": {
+  "args": {}
+ },
+ "status.progress.step.2": {
+  "args": {}
+ },
+ "status.progress.step.3": {
+  "args": {}
+ },
+ "status.progress.step.4": {
+  "args": {}
+ },
+ "status.progress.step.5": {
+  "args": {}
+ },
+ "status.progress.step.6": {
+  "args": {}
+ },
+ "status.progress.step.7": {
+  "args": {}
+ },
+ "status.progress.step.8": {
+  "args": {}
+ },
+ "status.progress.step.9": {
+  "args": {}
+ },
+ "status.progress.step.10": {
+  "args": {}
+ },
+ "status.progress.step.11": {
+  "args": {}
+ },
+ "status.progress.step.12": {
+  "args": {}
+ },
+ "status.progress.step.13": {
+  "args": {}
+ },
+ "chat.tool.group.heading": {
+  "args": {
+   "count": "number"
+  }
+ },
+ "chat.wait.label": {
+  "args": {}
  }
 }
