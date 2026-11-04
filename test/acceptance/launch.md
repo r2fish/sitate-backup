@@ -97,6 +97,8 @@ A2 と A6 の記録を取り終えた後に、記録の親のディレクトリ�
 
 期待値の JSON は `accept-env.sh up` が環境ごとに書く(個人名入りの名前の一覧)。A2 の回が環境を作り直すたびに書き換わるので、名前は回で変わらない合成語だが、環境を down する前に使う。
 
+秘密の値の検索は、回ごとに環境を down する前に行う手順を `test/acceptance/a7-secrets.md` に書いた(環境が生成した値を出す `test/tools/a7_env_secrets.sh` を使う。利用者が貼るのは件数の行だけ)。以下は手で持つ値だけを渡す最小の形。
+
 秘密の値の検索(利用者が自分のターミナルで。値は `read -rs` で渡し、引数・ファイル・履歴に残さない。件数だけを監督に伝える):
 
     read -rs K; printf '%s\n' "$K" | python3 test/tools/check_a7.py secrets --records test/acceptance/records; unset K
