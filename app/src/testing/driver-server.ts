@@ -40,7 +40,7 @@ export function scriptFor(c: DriverCommand): string {
     case "fill": return `(()=>{const i=document.querySelector('[data-surface=${q(c.surface)}] [data-proof=${q(c.target)}], [data-surface=${q(c.surface)}] input, [data-surface=${q(c.surface)}] textarea');if(!i)return false;i.value=${q(c.value)};return true})()`;
     case "read": return `(()=>{const s=document.querySelector('[data-surface=${q(c.surface)}]');return s?s.innerText:null})()`;
     case "lang": case "events": return "true";
-    case "lines": return `[...document.querySelectorAll('#chat-lines li')].map((li)=>({role:li.getAttribute('data-role'),text:li.textContent}))`;
+    case "lines": return `[...document.querySelectorAll('#chat-lines > li[data-text]')].map((li)=>({role:li.getAttribute('data-role'),text:li.getAttribute('data-text')}))`;
     case "pending": return PENDING_SCRIPT;
   }
 }

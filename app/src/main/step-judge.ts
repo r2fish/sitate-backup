@@ -137,6 +137,11 @@ export class StepJudge {
     return this.#steps.length;
   }
 
+  /** その手順がこの会話で合格したか(導入の進み具合の表示用)。 */
+  isPassed(id: string): boolean {
+    return this.#passed.has(id);
+  }
+
   /** 会話を捨てたとき(新しい会話)。合格の記録を捨てる。 */
   reset(): void {
     this.#passed.clear();

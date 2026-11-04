@@ -1,7 +1,7 @@
 // モデルの文の引用の照合(T-55。spec 3.7「引用の形と判定」、完了条件 22・26・29)。
 // 印 `[[<サブコマンド>:<JSON Pointer>=<値>]]` を、その会話でそのサブコマンドの最後の結果と照らす。照合を掛けるのは核の結果の値を主張する文だけ。
-import { appErrorEnvelope } from "./app-envelope.ts";
-import type { AppEnvelope } from "./app-envelope.ts";
+import { appErrorSection } from "./app-section.ts";
+import type { PathRefTable } from "./path-ref.ts";
 
 const MARK = /\[\[([^:[\]]+):(\/[^=\]]*)=([^\]]*)\]\]/g;
 /** 問いの終わり方の一覧(規則ファイル quote-check-forms の既定。規則ファイルが中身を持つまでの既定)。 */
@@ -112,13 +112,13 @@ export class QuoteRejections {
   }
 
   /** 入力を渡す直前に呼ぶ。区画の文字列(無ければ null)。呼んだ時点で消費する。 */
-  take(): string | null {
+  take(refs: PathRefTable): string | null {
     if (!this.#pending) return null;
-    const env: AppEnvelope = appErrorEnvelope("QUOTE_REJECTED", ["app", "quote-check"], { rejected: [...this.#rejected], missing: [...this.#missing], unquoted: this.#unquoted });
+    const section = appErrorSection("QUOTE_REJECTED", ["app", "quote-check"], refs, { rejected: [...this.#rejected], missing: [...this.#missing], unquoted: this.#unquoted });
     this.#rejected.clear();
     this.#missing.clear();
     this.#unquoted = 0;
     this.#pending = false;
-    return `<sitate-data command="app quote-check">\n${JSON.stringify(env)}\n</sitate-data>`;
+    return section;
   }
 }
