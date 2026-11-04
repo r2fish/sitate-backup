@@ -417,4 +417,4 @@ A2 の測定 1 の 1 回目の手順 11 の原因(`test/records/A2/m1-pre.md`)�
 6. (段 1)偽の LLM は DB 名が参照名(`pr:`)だけなので、人の言う「顧客のデータベース」を実名で選べない。実物の LLM も同じ条件で選ぶ(実名を見せない設計)。実物の A2 では、どの DB が対象になったかを記録で確かめる。Q4 の答え(lo の「顧客のデータベース」)と対象が食い違ったとき、A2 の合否にどう数えるか。
 7. (段 7)A6 の (3) の参考の回: `/etc/sitate/sitate.yaml` を書き換えても、承認済みの変更は適用される。D-0176 で読みは確定した。人が `/etc/sitate/sitate.yaml` を直接直したときに、それが反映されないことを人に知らせる文が要るか(製品の説明書か `doctor`)。
 8. (U2a)受け口の root 前提の試験は `make test` では SKIP になる。イメージの定義と make の的を足している(日 7 の再実行用)。`sudo -n` がパスワードを求めるとき・sudo が無いときの `step: sudo`・`sudo_unavailable` は核(U1c)の側で、受け口の試験の範囲外とした。
-9. (U1c)実物の容器での `TestPodmanContainerIsolation` は、入れ子の実行環境(`SITATE_NESTED=1`)が要るので、監督の通しでは SKIP。第 1 段の通し(`SITATE_NESTED=1 make test-mainpath STAGE=1`)では走る。監査の記録にこの理由を書く(D-0178 の (c))。
+9. (U1c)実物の容器での `TestPodmanContainerIsolation` は、入れ子の実行環境(`SITATE_NESTED=1`)が要るので、`make test` と監督の通しでは SKIP(第 1 段の通しもこのパッケージを流さない)。走らせるには `SITATE_NESTED=1 make shell-linux CMD='go test -run TestPodmanContainerIsolation ./internal/acquire/'`(試験の注記の手順。監督は未実行)。監査の記録にこの理由を書く(D-0178 の (c))。
