@@ -547,6 +547,9 @@
    "fields": [
     {
      "pointer": "/result/def_hash"
+    },
+    {
+     "pointer": "/result/pending_refs"
     }
    ]
   },
@@ -639,6 +642,9 @@
    "fields": [
     {
      "pointer": "/result/plan/errors/*/code"
+    },
+    {
+     "pointer": "/result/host_key_fp"
     }
    ]
   },
@@ -1139,6 +1145,24 @@
     },
     {
      "pointer": "/result/targets/*/error_code"
+    },
+    {
+     "pointer": "/result/targets/*/detail/component"
+    },
+    {
+     "pointer": "/result/targets/*/detail/reason"
+    },
+    {
+     "pointer": "/result/targets/*/next/*/argv"
+    },
+    {
+     "pointer": "/result/targets/*/next/*/requires_human"
+    },
+    {
+     "pointer": "/result/targets/*/next/*/requires_approval"
+    },
+    {
+     "pointer": "/result/targets/*/next/*/why"
     },
     {
      "pointer": "/result/checks/*/name"

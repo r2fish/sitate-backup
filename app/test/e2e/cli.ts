@@ -8,6 +8,7 @@ import { parseArgs } from "node:util";
 import { resolve } from "node:path";
 import { startBridge } from "./bridge.ts";
 import { A2Loop } from "./a2-loop.ts";
+import { appRecordSummary, coreVersion } from "./app-fields.ts";
 import { runA6 } from "./a6-loop.ts";
 import { makeFakeAgent } from "./fake-agent.ts";
 import { launchApp, prepareState, disposeState, keychainItems, appRoot } from "./launch.ts";
@@ -62,7 +63,7 @@ async function main(): Promise<number> {
   try {
     const deadlineMs = Number(v["max-minutes"]) * 60000;
     out = kind === "A2"
-      ? await runA2(script, answers, rec, app.driver, { catalog, variant: v.variant!, name, deadlineMs })
+      ? await runA2(script, answers, rec, app.driver, { catalog, variant: v.variant!, name, deadlineMs, userData: state.userData, backup: answers.containers.backup })
       : await runA6({ port: app.driver, script, answers, rec, catalog, sleep, now: Date.now, deadlineMs });
   } catch (e) {
     out = { exit: 1, reason: "ドライバの内部エラー: " + String(e).slice(0, 300) };
@@ -90,13 +91,15 @@ function leakCheck(out: Outcome, rec: Recorder, secrets: string[], appLog: strin
   return keyMismatches > 0 ? { exit: 1, reason: "アプリが SDK へ渡した LLM API キーが、入力ボックスに入れた値と違う" } : out;
 }
 
-async function runA2(script: A2Script, answers: ReturnType<typeof answersFor>, rec: Recorder, port: import("./port.ts").Port, o: { catalog: Record<string, string>; variant: string; name: string; deadlineMs: number }): Promise<Outcome> {
+async function runA2(script: A2Script, answers: ReturnType<typeof answersFor>, rec: Recorder, port: import("./port.ts").Port, o: { catalog: Record<string, string>; variant: string; name: string; deadlineMs: number; userData: string; backup: string }): Promise<Outcome> {
   const loop = new A2Loop({ port, script, answers, rec, variant: o.variant, endings: questionEndings(repo), catalog: o.catalog,
     hookWord: (r) => hookWordFrom(answers.hookRecordsFile, r), envOp: async (k) => addExtra(repo, o.name, k), sleep, now: Date.now, deadlineMs: o.deadlineMs });
   const out = await loop.run();
+  const core = coreVersion(o.backup); // 回の終わりの核の版(導入の途中で入るので、初めには取れない)。取れなくても判定は変えない
   const c = loop.counts;
   rec.write("a2_fields", { steps_passed: [...loop.stepsPassed].sort((a, b) => a - b), questions: c.questions, unscripted_questions: c.unscripted, continue_interventions: c.continues, turn_limit_inputs: c.turnLimit,
-    human_work: [...loop.humanWork].sort(), human_work_count: loop.humanWork.size, tool_calls: c.toolCalls, withheld_replies: c.withheld, question_not_last: c.questionNotLast, multi_question: c.multiQuestion, repeated_requests: c.repeatedRequests, status: loop.status, self_recovery: loop.recovery() });
+    human_work: [...loop.humanWork].sort(), human_work_count: loop.humanWork.size, tool_calls: c.toolCalls, withheld_replies: c.withheld, question_not_last: c.questionNotLast, multi_question: c.multiQuestion, repeated_requests: c.repeatedRequests, status: loop.status, self_recovery: loop.recovery(),
+    core_version: core, app_record: appRecordSummary(o.userData) });
   return out;
 }
 

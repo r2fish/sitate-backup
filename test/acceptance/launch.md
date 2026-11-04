@@ -71,3 +71,38 @@ LLM API キーと B2 の管理用鍵で、記録を検索する(そのままの�
     read -rs K; grep -rIc -F -e "$K" -e "$(printf %s "$K" | base64)" test/acceptance/records/ | grep -v ':0$' | wc -l; unset K
 
 件数が 0 であることを確かめてから、監督は記録の識別子を伏せ字にする。MinIO の資格情報と使い捨ての鍵は `test/env/` が生成するので、受入試験 WP が検索する。
+
+## A6 の実行(鍵の要らない部分を先に)
+
+台本は `test/acceptance/scripts/A6/script.md`。環境は `bash test/env/bin/accept-env.sh up <NAME>`、`LOCK_DEFAULT_DAYS=90 make test-env-up NAME=<NAME>`。
+
+- 鍵の要らない検査(監督が実行する):
+
+      bash test/acceptance/scripts/A6/static-checks.sh          # A6-15・17・18 の静的検査
+      bash test/acceptance/scripts/A6/check-16.sh <NAME>        # A6-16(sitate-ro が pg_authid を読めない)
+      bash test/acceptance/scripts/A6/inject-env.sh <NAME>      # 元サーバーに F1 のファイル名を置く(A6-15 の環境の側の注入)
+      bash test/acceptance/scripts/A6/simtime.sh <NAME> show    # A6-6 の時刻を進める前後の確認(advance <日数> で進める)
+
+- 注入文の回(LLM API キーを使う。利用者が起動。上の「起動のコマンドの行」の A6 の行。`--out` の `record.jsonl` が入力):
+
+      python3 test/tools/check_a6.py --record test/acceptance/records/A6/record.jsonl \
+        --injections test/acceptance/scripts/A6/injections.json --tools-dir app/src/tools [--cli-results <CLI の回の JSONL>]
+
+## A7 の検査(A2 と A6 の記録に対して)
+
+A2 と A6 の記録を取り終えた後に、記録の親のディレクトリを渡して 1 つのコマンドで検査する。秘密の値を使わない部分(監督が実行する):
+
+    python3 test/tools/check_a7.py fields --records test/acceptance/records --send-fields app/src/data/send-fields.json \
+      --names test/env/.run/accept-<NAME>/expect/source.json
+
+期待値の JSON は `accept-env.sh up` が環境ごとに書く(個人名入りの名前の一覧)。A2 の回が環境を作り直すたびに書き換わるので、名前は回で変わらない合成語だが、環境を down する前に使う。
+
+秘密の値の検索は、回ごとに環境を down する前に行う手順を `test/acceptance/a7-secrets.md` に書いた(環境が生成した値を出す `test/tools/a7_env_secrets.sh` を使う。利用者が貼るのは件数の行だけ)。以下は手で持つ値だけを渡す最小の形。
+
+秘密の値の検索(利用者が自分のターミナルで。値は `read -rs` で渡し、引数・ファイル・履歴に残さない。件数だけを監督に伝える):
+
+    read -rs K; printf '%s\n' "$K" | python3 test/tools/check_a7.py secrets --records test/acceptance/records; unset K
+
+LLM API キー、B2 の管理用鍵(キー ID とキー)、フレーズ、SSH 秘密鍵、Webhook の URL のそれぞれで 1 回ずつ(複数を 1 回に渡すときは、`printf '%s\n%s\n' "$K1" "$K2" |`)。検索はそのままの文字列と base64 の 2 つ。一致の合計が 0 であることを確かめてから、伏せ字にする(値は渡す種類ごとに `kind<TAB>値` の行。種類は `key-id`・`bucket`・`account`・`host`・`ip`):
+
+    read -rs KID; read -rs BKT; printf 'key-id\t%s\nbucket\t%s\n' "$KID" "$BKT" | python3 test/tools/check_a7.py redact --in test/acceptance/records --out <空のディレクトリ>; unset KID BKT

@@ -26,7 +26,7 @@ func ingestOut(ctx context.Context, acq *acquire.Acquire, idx *acquire.Index, c 
 	for _, t := range r.Targets {
 		m.Targets = append(m.Targets, TargetMaterial{ID: t.ID, Kind: t.Kind, Status: t.Status, Files: t.Files, Bytes: t.Bytes,
 			ChangedDuringRead: t.ChangedDuringRead, Dumps: t.Dumps})
-		o.Outcomes = append(o.Outcomes, IngestTarget{ID: t.ID, ErrorCode: t.ErrorCode, Errors: items(t.Errors), Warnings: items(t.Warnings),
+		o.Outcomes = append(o.Outcomes, IngestTarget{ID: t.ID, ErrorCode: t.ErrorCode, Detail: t.Detail, Next: t.Next, Errors: items(t.Errors), Warnings: items(t.Warnings),
 			ErrorsOmitted: t.ErrorsOmitted, WarningsOmitted: t.WarningsOmitted, Empty: t.Empty})
 	}
 	o.Material = m

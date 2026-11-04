@@ -112,7 +112,9 @@
     "changed_during_read",
     "errors_omitted",
     "warnings_omitted",
-    "error_code"
+    "error_code",
+    "detail",
+    "next"
    ],
    "additionalProperties": false,
    "properties": {
@@ -161,6 +163,22 @@
        "type": "null"
       }
      ]
+    },
+    "detail": {
+     "anyOf": [
+      {
+       "type": "object"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "next": {
+     "type": "array",
+     "items": {
+      "$ref": "https://sitate.invalid/schema/cli/envelope.json#/$defs/next"
+     }
     }
    }
   },

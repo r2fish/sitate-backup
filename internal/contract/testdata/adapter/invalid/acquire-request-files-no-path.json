@@ -1,0 +1,11 @@
+{
+ "contract": "sitate.acquire/v1",
+ "target": {
+  "id": "t1",
+  "kind": "files",
+  "spec": {
+   "port": 5432
+  }
+ },
+ "previous_index": null
+}

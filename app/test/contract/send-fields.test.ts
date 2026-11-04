@@ -13,3 +13,13 @@ test("send-fields data matches the U0 schema", () => {
   assert.ok(validate(data), JSON.stringify(validate.errors));
   assert.equal(validate({ format: "sitate.send-fields/v1", rows: [{ where: "x", fields: [{ pointer: "bad" }] }] }), false);
 });
+
+// backup の対象の next の欄は封筒の next[] と同じ(argv・requires_human・requires_approval・why)。op は無い(D-0179)。
+test("send-fields backup row carries target next fields without op", () => {
+  const data = readJson(join(appRoot, "src/data/send-fields.json")) as { rows: { where: string; fields: { pointer: string }[] }[] };
+  const ptrs = data.rows.filter((r) => r.where === "backup").flatMap((r) => r.fields.map((f) => f.pointer));
+  for (const f of ["argv", "requires_human", "requires_approval", "why"]) {
+    assert.ok(ptrs.includes(`/result/targets/*/next/*/${f}`), f);
+  }
+  assert.ok(!ptrs.some((p) => p.endsWith("/op")));
+});

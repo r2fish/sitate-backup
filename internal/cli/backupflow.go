@@ -22,7 +22,9 @@ type IngestItem struct {
 // IngestTarget は対象ごとの取得の結果のうち、マニフェストに入らない分(run_end の targets[] と結果の元)。
 type IngestTarget struct {
 	ID              string
-	ErrorCode       string // status が failed のとき
+	ErrorCode       string          // status が failed のとき
+	Detail          json.RawMessage // failed のとき、その原因コードの detail(INTERNAL では component・reason。3.1.2 の targets[]。D-0172)。無ければ nil(null)
+	Next            []contract.Next // failed のとき、その原因コードの next[]
 	Errors          []IngestItem
 	Warnings        []IngestItem
 	ErrorsOmitted   int64
@@ -76,7 +78,15 @@ func resultTargets(o IngestOut) []any {
 		if oc.ErrorCode != "" {
 			code = oc.ErrorCode
 		}
-		out = append(out, map[string]any{"id": t.ID, "status": t.Status, "bytes": t.Bytes, "files": t.Files, "changed_during_read": t.ChangedDuringRead,
+		var detail any
+		if len(oc.Detail) > 0 {
+			detail = oc.Detail
+		}
+		next := oc.Next
+		if next == nil {
+			next = []contract.Next{}
+		}
+		out = append(out, map[string]any{"detail": detail, "next": next, "id": t.ID, "status": t.Status, "bytes": t.Bytes, "files": t.Files, "changed_during_read": t.ChangedDuringRead,
 			"errors": itemsAny(oc.Errors), "warnings": itemsAny(oc.Warnings), "errors_omitted": oc.ErrorsOmitted, "warnings_omitted": oc.WarningsOmitted, "error_code": code})
 	}
 	return out

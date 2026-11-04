@@ -1,6 +1,6 @@
 {
   "name": "sitate_init_storage",
-  "description": "保管先(バケット)を準備し、書き込み鍵と読み取り鍵を発行する。dry_run で計画だけ確かめられる。事業者の管理用鍵は admin_ref の参照名で指す。 秘密の値と元サーバーのパスの実値は渡さず、参照名(secret_refs、path_ref)を使う。",
+  "description": "保管先(バケット)を準備し、書き込み鍵と読み取り鍵を発行する。dry_run で計画だけ確かめられる。Backblaze B2 では adapter に b2 を渡す(CLI の `--adapter b2`)。事業者の管理用鍵は admin_ref の参照名で指す。 秘密の値と元サーバーのパスの実値は渡さず、参照名(secret_refs、path_ref)を使う。",
   "input_schema": {
     "type": "object",
     "properties": {
@@ -18,7 +18,8 @@
         "type": "string"
       },
       "adapter": {
-        "type": "string"
+        "type": "string",
+        "description": "保管先準備アダプタの名前(必須。省略できない)。Backblaze B2 を使うときは b2(同梱。bucket check が省略時に使う既定も b2)。"
       },
       "admin_ref": {
         "type": "string",

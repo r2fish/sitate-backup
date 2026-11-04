@@ -13,7 +13,7 @@
   `kind` ごとの引数の組み合わせは、主プロセスが実行の前に検査し、合わなければ実行せず道具の結果でエラーを返す(U3a が実装する。種別ごとの `oneOf` は、この内部の検査用に定義ファイルの `input_schema` の外へ置く)。
   実際の API が受け付けるかは、U3a の最初の起動で確かめる。
 - `sitate_attest` の `step` は署名を要する段だけを受ける(`enum`・`pattern`・`oneOf` のどの書き方でもよい。試験が値を実際に通して確かめる)。
-- `dry_run`(boolean)は `internal/contract/schema/cli/subcommands.json` の `dry_run` の列が true の道具だけが持ち、false の道具は定義に持たない(核が `--dry-run` を `ARG_INVALID` で拒否するため)。`bootstrap`・`bootstrap-restore` は列が無く、見ない。`sitate_propose` は true なので持つ(`required` は `kind` だけのまま)。
+- `dry_run`(boolean)は `internal/contract/schema/cli/subcommands.json` の `dry_run` の列が true の道具だけが持ち、false の道具は定義に持たない(核が `--dry-run` を `ARG_INVALID` で拒否するため)。`bootstrap`・`bootstrap-restore` は列が無く、見ない。`sitate_propose` は true なので持つ(`required` は `kind` だけのまま)。ただし仕様 8.2 でイテレーション 3 へ送った 9 サブコマンド(`backup`・`hold set`・`notify set`・`extend`・`prune`・`init`・`source enroll`・`restore`・`restore-test`)は、列が true でも道具に `dry_run` を出さない(D-0183。列は変えず、`app/test/contract/tools.test.ts` の `DRY_RUN_DEFERRED` が例外の一覧)。
 - `kind` と引数の組み合わせの検査は `src/main/tool-kind-args.ts` の `checkKindArgs`、標準出力の 2 レコードは `src/main/stdout-records.ts` の `parseStdoutRecords`(どちらも骨格。U3a が実装)。
 
 骨格では空で、`app/test/contract/tools.test.ts` が「未実装」で失敗する。

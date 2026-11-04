@@ -13,7 +13,7 @@ var needsInit = map[string]bool{
 	"backup": true, "verify": true, "extend": true, "prune": true, "hold set": true, "restore-test": true, "apply": true,
 	"propose": true, "approve": true, "cancel": true, "attest": true, "kit": true, "kit confirm": true,
 	"restore-dest check": true, "restore-dest teardown": true, "restore-dest release": true, "source check": true,
-	"bucket check": true, "upgrade": true,
+	"upgrade": true, // bucket check は入れない: init の前(seal の前の手順 5)も候補の key_ref で動く(spec 3.8、3.1.2。D-0172)
 }
 
 // required はサブコマンドごとの必須の引数(spec 3.1.2 の「主な引数」。記録を持たない新しいホストの restore・list は別)。

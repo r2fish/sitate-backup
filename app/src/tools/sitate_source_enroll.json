@@ -9,7 +9,8 @@
         "description": "実行の識別子(省略可。アプリが作る)。"
       },
       "host": {
-        "type": "string"
+        "type": "string",
+        "description": "元サーバーの接続先。ssh://<ユーザー>@<ホスト>:<ポート> の形(例: ssh://admin@203.0.113.10:22)。ポートは 22 だけ受け、定義の source.host と同じ接続先を指す。"
       },
       "admin_ref": {
         "type": "string",
@@ -27,10 +28,6 @@
         },
         "uniqueItems": true,
         "description": "このコマンドが使う秘密の参照名の配列(重複なし)。値はアプリがキーチェーンから差し込む。"
-      },
-      "dry_run": {
-        "type": "boolean",
-        "description": "true なら何も変えずに計画だけ返す。"
       }
     },
     "additionalProperties": false

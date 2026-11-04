@@ -34,9 +34,6 @@
       },
       "spec": {
        "type": "object",
-       "required": [
-        "path"
-       ],
        "additionalProperties": false,
        "properties": {
         "path": {
@@ -49,7 +46,53 @@
         }
        }
       }
-     }
+     },
+     "allOf": [
+      {
+       "if": {
+        "properties": {
+         "kind": {
+          "const": "files"
+         }
+        },
+        "required": [
+         "kind"
+        ]
+       },
+       "then": {
+        "properties": {
+         "spec": {
+          "required": [
+           "path"
+          ]
+         }
+        }
+       }
+      },
+      {
+       "if": {
+        "properties": {
+         "kind": {
+          "const": "postgresql"
+         }
+        },
+        "required": [
+         "kind"
+        ]
+       },
+       "then": {
+        "properties": {
+         "spec": {
+          "not": {
+           "required": [
+            "path"
+           ]
+          }
+         }
+        }
+       }
+      }
+     ]
     },
     "previous_index": {
      "anyOf": [

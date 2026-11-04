@@ -90,7 +90,7 @@ type runResult struct {
 
 func request(id string) map[string]any {
 	return map[string]any{"contract": "sitate.acquire/v1",
-		"target":         map[string]any{"id": id, "kind": "postgresql", "spec": map[string]any{"path": "/run/postgresql", "port": 5432}},
+		"target":         map[string]any{"id": id, "kind": "postgresql", "spec": map[string]any{"port": 5432}}, // postgresql の要求は path 無し(spec 3.2.2。D-0172)
 		"previous_index": nil}
 }
 

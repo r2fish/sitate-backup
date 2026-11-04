@@ -4,7 +4,6 @@
   "id": "t3",
   "kind": "postgresql",
   "spec": {
-   "path": "/var/run/postgresql",
    "port": 5432
   }
  },
