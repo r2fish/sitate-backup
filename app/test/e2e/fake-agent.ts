@@ -15,6 +15,8 @@ const LOCATION_Q_TEXT = "導入を始めます。管理アカウントの秘密�
 const Q1_TEXT = "次に保管先を決めます。保管先のエンドポイントとバケット名、通知先を教えてください。何のために聞くか: バックアップの送り先と、失敗したときの知らせ先を決めるためです。推奨の案: 契約した事業者の値をそのまま使い、通知先は普段見る場所の受信 Webhook を 1 つにします。分からなければ推奨の案でよいです。教えていただけますか?";
 const Q3_TEXT = "次に復元先を決めます。復元先のホストを教えてください。何のために聞くか: 毎月の復元テストを別のサーバーで本当に試すためです。推奨の案: 本番と別のネットワークの小さなサーバーを 1 台使います。分からなければ推奨の案でよいです。教えていただけますか?";
 const Q4_TEXT = "元サーバーを調べました。何のために聞くか: 取れていない場所は被災のときに戻せないためです。推奨の案: 調査で見つけた取れる候補をすべて含めます。分からなければ推奨の案でよいです。何を守りたいですか?";
+/** 筋「案が先」(D-0185 の不具合の再現): 守りたいものを聞かず、「指定が無いので」と全部を含む案の確認を求める。 */
+export const Q4_PROPOSAL_FIRST = "元サーバーを調べました。指定が無いので、取れる候補をすべて含む案を作りました。この案で進めてよろしいでしょうか?";
 const Q4_PROPOSAL = "いただいた希望に当たる場所を対象にした案を作りました。取れない場所はその理由とともに状態の表示にあります。この案で進めてよろしいでしょうか?";
 const Q2_TEXT = "復旧のフレーズを控えたことを確かめます。何のために聞くか: バックアップサーバーを全部失ったときの唯一の手掛かりだからです。推奨の案: 別々の場所に 2 部置きます。分からなければ推奨の案でよいです。印刷か手書きで 2 か所に保管しましたか?";
 
@@ -34,6 +36,8 @@ export interface PlanOptions {
   readonly adapter?: string;
   /** 予行: backup の後に extend と bucket check を足す(保持の延長と、保持の短縮の試しの結果 permissions[] を記録に出す)。 */
   readonly extras?: boolean;
+  /** 筋「案が先」: 手順 4 で Q4 の希望を聞かず、案の確認を先に出す(ドライバが Q4 として照合することの試験)。 */
+  readonly proposalFirst?: boolean;
 }
 
 export function planOf(a: Answers, afterBootstrap: () => Promise<void>, o: PlanOptions = {}, survey?: Survey, added: readonly Candidate[] = []): PlanStep[][] {
@@ -48,7 +52,7 @@ export function planOf(a: Answers, afterBootstrap: () => Promise<void>, o: PlanO
     [call("sitate_bootstrap", { host: a.backupHost, admin_user: a.adminUser, admin_ref: "bak-admin" }), { hold: afterBootstrap, make: () => ({ toolUses: [{ name: "sitate_version", input: {} }] }) },
       call("sitate_doctor"), say(Q1_TEXT)],
     [call("sitate_init_storage", { ...s3, dry_run: true }), say(Q3_TEXT)],
-    [call("sitate_restore_dest_enroll", { dest: destAt, adapter: "ssh-host", admin_ref: "dest-admin", dry_run: true }), call("sitate_source_survey", { host: sourceHost, admin_ref: "source-admin" }), say(Q4_TEXT)],
+    [call("sitate_restore_dest_enroll", { dest: destAt, adapter: "ssh-host", admin_ref: "dest-admin", dry_run: true }), call("sitate_source_survey", { host: sourceHost, admin_ref: "source-admin" }), say(o.proposalFirst === true ? Q4_PROPOSAL_FIRST : Q4_TEXT)],
     [call("sitate_notify_set", { to: HOOK_NAME, secret_ref: HOOK_NAME }), call("sitate_def_validate", { definition }), call("sitate_notify_test"), say(Q4_PROPOSAL)],
     [call("sitate_init_storage", s3), call("sitate_init"), call("sitate_bucket_check"), call("sitate_doctor"), say(Q2_TEXT)],
     [call("sitate_source_enroll", { host: sourceHost, admin_ref: "source-admin" }), call("sitate_source_check"), ...readdSources,

@@ -64,6 +64,8 @@ export class A2Loop {
   #lastRun: TestEvent | null = null;
   #lastQ: QId | null = null;
   #q4: "none" | "wished" | "accepted" = "none";
+  /** Q4 の希望を聞く問いが案の前に出たか(D-0185)。Q4 を答えるまでは null。案の確認が先に来て Q4 として照合したときは false。 */
+  q4WishAsked: boolean | null = null;
   #surveyed = false;
   #lastAgent = "";
   /** 「始める」を押した後、エージェントの最初の応答(所在と管理アカウントの問い)を待っている。 */
@@ -244,6 +246,10 @@ export class A2Loop {
     const s = this.#d.script;
     let q = matchQuestion(reply, s);
     if (q === null && this.#lastQ === "Q4" && this.#q4 !== "none") q = "Q4";
+    // D-0185: Q4 の希望が未回答のまま、調査の後に定義の案の確認が来たら、それを Q4 として照合し、台本の希望を答える(問いの数え方は変えない)。
+    const proposalFirst = q === null && this.#q4 === "none" && this.#surveyed && lastSentence(reply).includes("案");
+    if (proposalFirst) q = "Q4";
+    if (q === "Q4" && this.q4WishAsked === null) { this.q4WishAsked = !proposalFirst; this.#d.rec.write("q4_wish", { asked_before_proposal: this.q4WishAsked }); }
     const continued = q !== null && q === this.#lastQ;
     if (q === null) { this.counts.unscripted += 1; this.counts.questions += 1; this.marks.push("intervene"); return this.#say("question", s.unscripted_question_answer, undefined, { q: null, continued: false }); }
     if (!continued) this.counts.questions += 1;

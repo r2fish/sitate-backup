@@ -11,6 +11,7 @@ import { A2Loop } from "./a2-loop.ts";
 import { Driver } from "./driver.ts";
 import { FakeApp, envelope, toolCall } from "./fake-app.ts";
 import type { AgentTurn } from "./fake-app.ts";
+import { Q4_PROPOSAL_FIRST, planOf } from "./fake-agent.ts";
 import { Recorder } from "./record.ts";
 import { B2_ENDPOINT_RE, isQuestion, matchQuestion, readJson } from "./script.ts";
 import type { A2Script, Answers } from "./script.ts";
@@ -256,5 +257,43 @@ test("[fix-drv] 再生: 記録 1 回目の末尾の型(説明に保管先の語�
   assert.equal(r.out.exit, 1);
   assert.match(r.out.reason, /人の作業で止まった/);
   assert.ok(r.app.chats.length < 10, `早く終わる(入力 ${r.app.chats.length} 回)`);
+  cleanup(r);
+});
+
+test("[D-0185] Q4 の希望を聞かずに案の確認が来たら、Q4 として照合して台本の希望を答える(q4_wish_asked は false。問いは 1 つ)", async () => {
+  const plan = planOf(answers, async () => undefined, { proposalFirst: true });
+  const normal = planOf(answers, async () => undefined);
+  const say = (steps: ReturnType<typeof planOf>[number]): string => String((steps.at(-1)!.make("") as { text?: string }).text);
+  assert.equal(say(plan[3]!), Q4_PROPOSAL_FIRST, "筋「案が先」は調査の後に案の確認を出す");
+  assert.ok(!say(normal[3]!).includes("指定が無いので") && say(normal[3]!).endsWith("何を守りたいですか?"), "通常の筋は希望を聞く");
+  const proposalFirst = Q4_PROPOSAL_FIRST;
+  assert.equal(matchQuestion(proposalFirst, script), null, "台本の Q4 の語には当たらない");
+  const r = await drive([
+    { events: [toolCall("sitate_source_survey", {})], lines: agent(proposalFirst) },
+    { lines: agent("案を直しました。この案でよろしいでしょうか?") },
+    END_FAIL,
+  ], "lo");
+  assert.equal(r.app.chats[1], script.questions.Q4.answers!.large_object, "変種 lo の希望を答える");
+  assert.equal(r.app.chats[2], script.questions.Q4.accept_proposal);
+  assert.equal(r.loop.counts.unscripted, 0, "台本に無い問いに数えない");
+  assert.equal(r.loop.counts.questions, 1);
+  assert.equal(r.loop.q4WishAsked, false);
+  cleanup(r);
+});
+
+test("[D-0185] 通常の筋(希望を先に聞く)では q4_wish_asked は true", async () => {
+  const r = await drive([
+    { events: [toolCall("sitate_source_survey", {})], lines: agent("何を守りたいですか?") },
+    { lines: agent("この案でよろしいでしょうか?") },
+    END_FAIL,
+  ]);
+  assert.equal(r.loop.q4WishAsked, true);
+  cleanup(r);
+});
+
+test("[D-0185] 調査の前の案の確認は Q4 にしない(台本に無い問いのまま)", async () => {
+  const r = await drive([{ lines: agent("この案でよろしいでしょうか?") }, END_FAIL]);
+  assert.equal(r.loop.counts.unscripted, 1);
+  assert.equal(r.loop.q4WishAsked, null);
   cleanup(r);
 });

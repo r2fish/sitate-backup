@@ -98,7 +98,7 @@ async function runA2(script: A2Script, answers: ReturnType<typeof answersFor>, r
   const core = coreVersion(o.backup); // 回の終わりの核の版(導入の途中で入るので、初めには取れない)。取れなくても判定は変えない
   const c = loop.counts;
   rec.write("a2_fields", { steps_passed: [...loop.stepsPassed].sort((a, b) => a - b), questions: c.questions, unscripted_questions: c.unscripted, continue_interventions: c.continues, turn_limit_inputs: c.turnLimit,
-    human_work: [...loop.humanWork].sort(), human_work_count: loop.humanWork.size, tool_calls: c.toolCalls, withheld_replies: c.withheld, question_not_last: c.questionNotLast, multi_question: c.multiQuestion, repeated_requests: c.repeatedRequests, status: loop.status, self_recovery: loop.recovery(),
+    human_work: [...loop.humanWork].sort(), human_work_count: loop.humanWork.size, tool_calls: c.toolCalls, withheld_replies: c.withheld, question_not_last: c.questionNotLast, multi_question: c.multiQuestion, repeated_requests: c.repeatedRequests, q4_wish_asked: loop.q4WishAsked, status: loop.status, self_recovery: loop.recovery(),
     core_version: core, app_record: appRecordSummary(o.userData) });
   return out;
 }
