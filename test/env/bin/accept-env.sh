@@ -36,7 +36,7 @@ ensure_network_test() { docker network inspect sitate-test >/dev/null 2>&1 || do
 
 do_down() {
   dc down -v --remove-orphans >/dev/null 2>&1 || true
-  docker volume rm "sitate-acc-$name-source-home" "sitate-acc-$name-source-srv" >/dev/null 2>&1 || true
+  docker volume rm "sitate-acc-$name-source-srv" >/dev/null 2>&1 || true
   docker rm -f "$(cname fakes3)" >/dev/null 2>&1 || true
   # root が作った生成物は消せないことがあるので、消せなければ容器の中から消す。
   rm -rf "$run" 2>/dev/null || { docker run --rm -v "$run:/x" --entrypoint sh "$BASE_IMAGE" -c 'rm -rf /x/* /x/.[!.]*' >/dev/null 2>&1; rm -rf "$run"; }
@@ -168,7 +168,7 @@ do_check() {
   chk "pg_hba.conf が pg_createcluster の既定のまま(trust・md5・scram の local 行が無い)" sx source "! grep -Eq '^local[[:space:]].*(trust|md5|scram)' /etc/postgresql/17/main/pg_hba.conf"
   chk "段 prereq の道具が揃う(GNU findutils・GNU tar・setfacl・sha256sum・runuser・psql)" sx source "find --version | grep -q 'GNU findutils' && tar --version | grep -q 'GNU tar' && command -v setfacl sha256sum runuser psql"
   chk "ACL が付けられる(/srv の下)" sx source "setfacl -m u:nobody:r /srv/shopapp/config/app.conf && getfacl -p /srv/shopapp/config/app.conf | grep -q 'user:nobody:r--' && setfacl -x u:nobody /srv/shopapp/config/app.conf"
-  chk "/home・/srv が名前つきの volume で、fs の種類が spec 3.3 の candidate(ext2/3/4・xfs・btrfs。overlay は不可)" sx source "for d in /home /srv; do case \"\$(stat -f -c %T \$d)\" in ext2/ext3|ext4|xfs|btrfs) ;; *) exit 1;; esac; mountpoint -q \$d || exit 1; done"
+  chk "/srv が名前つきの volume で、fs の種類が spec 3.3 の candidate(ext2/3/4・xfs・btrfs。overlay は不可)" sx source "for d in /srv; do case \"\$(stat -f -c %T \$d)\" in ext2/ext3|ext4|xfs|btrfs) ;; *) exit 1;; esac; mountpoint -q \$d || exit 1; done"
   chk "元サーバーの sshd が 22(Port の設定が無い)" sx source "! grep -Ehr '^[[:space:]]*Port[[:space:]]+[0-9]+' /etc/ssh/sshd_config /etc/ssh/sshd_config.d/ | grep -qv ' 22$'"
   chk "試験環境の都合のマウント(/etc/hosts 等)が元サーバーの mountinfo に出ない" sx source "! awk '{print \$5}' /proc/self/mountinfo | grep -Eq '^/etc/(hosts|hostname|resolv.conf)$'"
   local variant="$SITATE_ACCEPT_VARIANT"

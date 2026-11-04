@@ -54,8 +54,7 @@ func (w *s2) definition() string {
 	d := map[string]any{"version": 1,
 		"source": map[string]any{"host": accEnv(w.t, "SITATE_ACCEPT_SOURCE_HOST"), "targets": targets,
 			// 元サーバーの PostgreSQL のクラスタは DB の対象を持たないので対象にしない(A2 の変種 (c)。source check の actionable を空にする)。
-			// /home は名前つきの volume のマウントで下に対象の根が無く mount_parent になるので、人が断った形で d2 に書く(D-0185)。
-			"declined": []any{map[string]any{"id": "d1", "postgresql_cluster": 5432}, map[string]any{"id": "d2", "mount": "/home"}}},
+			"declined": []any{map[string]any{"id": "d1", "postgresql_cluster": 5432}}},
 		"storage": []any{map[string]any{"endpoint": w.s3.endpoint, "bucket": w.s3.bucket, "key_ref": "storage", "prefix": "sitate/"}},
 		"restore": map[string]any{"adapter": "ssh-host", "dest": map[string]any{"at": w.destAt(), "key_ref": "restore-init"}},
 		"notify":  map[string]any{"to": []string{w.notifyDest()}}}

@@ -35,7 +35,7 @@ touch -d '2026-10-01 09:00:00 UTC' %[1]s/sub %[1]s
 func (w *s2) changeTargetRoot(files string) {
 	src := map[string]any{"host": accEnv(w.t, "SITATE_ACCEPT_SOURCE_HOST"), "admin_user": adminUser(w.t),
 		"targets":  []any{map[string]any{"id": "t1", "files": files}},
-		"declined": []any{map[string]any{"id": "d1", "postgresql_cluster": 5432}, map[string]any{"id": "d2", "mount": "/home"}}}
+		"declined": []any{map[string]any{"id": "d1", "postgresql_cluster": 5432}}}
 	id := w.proposeKind("propose source-change("+files+")", "", "source-change", "--source", compact(src))
 	w.approveKind("source-change("+files+")", id, nil)
 	w.applyKind("source-change("+files+")", id, w.sourceAdmin(), "--source-admin-ref", "admin", "--secrets-stdin")

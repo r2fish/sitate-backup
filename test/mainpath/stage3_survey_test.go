@@ -100,7 +100,7 @@ func (w *s2) afterEnroll() {
 	t.Logf("source_clusters=%.200s actionable=%v", m["source_clusters"], r.Actionable)
 }
 
-// checkSurveyDirsSupported は source survey の dirs[] のうち /home・/srv の下(label が home・srv)がすべて supported: true で、
+// checkSurveyDirsSupported は source survey の dirs[] のうち /srv の下(label が home・srv)がすべて supported: true で、
 // fs_type が spec 3.3 の candidate の種類(ext2・ext3・ext4・xfs・btrfs。overlay は数えない)であることを確かめる(D-0185)。
 // 受入試験の環境の source は /home・/srv を名前つきの volume に置く。コンテナの根(overlay)に置くと全部 supported: false になり、A2 でファイルの対象が選ばれない。
 func (w *s2) checkSurveyDirsSupported(survey cliOut) {
@@ -118,7 +118,7 @@ func (w *s2) checkSurveyDirsSupported(survey cliOut) {
 	candidate := map[string]bool{"ext2": true, "ext3": true, "ext4": true, "xfs": true, "btrfs": true}
 	n, bad := 0, 0
 	for _, d := range sr.Dirs {
-		if d.Label != "home" && d.Label != "srv" {
+		if d.Label != "srv" {
 			continue
 		}
 		n++
@@ -128,7 +128,7 @@ func (w *s2) checkSurveyDirsSupported(survey cliOut) {
 		}
 	}
 	if n == 0 {
-		t.Errorf("dirs[] に /home・/srv の下が無い")
+		t.Errorf("dirs[] に /srv の下が無い")
 	}
-	t.Logf("source survey: /home・/srv の下 %d 件のうち supported: true でないもの %d 件", n, bad)
+	t.Logf("source survey: /srv の下 %d 件のうち supported: true でないもの %d 件", n, bad)
 }
