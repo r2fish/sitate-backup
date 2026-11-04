@@ -8,7 +8,7 @@
 |---|---|---|---|
 | 共通(契約) | `TestContractAdapter` | 緑 | |
 | ダンプの途中失敗を失敗として返す | `TestDumpFailsMidway` | 緑 | |
-| globals を本体より先に送り、`format` が `globals`/`custom` | `TestBothItemsOK`、`TestEmptyBody`、`TestLargeBodyIsFragmented` | 緑 | 「globals が先」の順序の確認は `TestBothItemsOK` の本文を読んでいない |
+| globals を本体より先に送り、`format` が `globals`/`custom` | `TestBothItemsOK`、`TestEmptyBody`、`TestLargeBodyIsFragmented` | 緑 | 本文で確認(maps2)。`TestBothItemsOK`: 受け口の呼び出しが `dump-pg-globals` → `dump-pg` の順 1 回ずつ、dump の並びが globals(`format: globals`)→ custom、本体・ハッシュ・バイト数が一致 |
 | globals の失敗は `partial`、`item_ref` が `d:<target-id>:globals` | `TestGlobalsFailureIsPartial`、`TestItemRefHasOnlyFixedParts`、`TestAllItemsFailIsFailed` | 緑 | ロール名・DB 名を使わないことは `TestItemRefHasOnlyFixedParts` |
 | 受け口が無い・不一致・不達 | `TestReceiverMissingFailsTarget`、`TestMismatchAndUnreachable`、`TestBadRequests` | 緑 | |
 | 実物の PostgreSQL | `TestRealPostgreSQL` | 未実行 | SKIP(PostgreSQL が要る。受入試験の環境) |

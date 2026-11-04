@@ -19,8 +19,8 @@
 | 4 `source-setup` の `roots`・`db_role` | recv: `TestSetupFromAndForbiddenAndAncestor`(SKIP)、`TestSetupForbiddenRootsMatchContract`(緑) | 一部 | `root_forbidden` の材料を返して止まり ACL を付けない部分は SKIP(未実行) |
 | 追加 D-0159: `\001` を含む名前 | files: `TestFilesSeparatorNameIsPermission`、recv: `TestRecvListSeparatorFileNameIsUnreadableRecord`、`TestRecvListRefusesSeparatorInLinkOrDirName` | 緑 | |
 | 追加 D-0159: リンクの根の `realpath` が (i)〜(iii) で `root_forbidden` | recv: `TestSetupFromAndForbiddenAndAncestor`(SKIP) | 未実行 | |
-| 追加 D-0159: `from=` が空・不正で `from_missing` | recv: `TestSetupFromAndForbiddenAndAncestor`(SKIP) | 未実行 | 題名からの推測。本文を読んでいない |
+| 追加 D-0159: `from=` が空・不正で `from_missing` | recv: `TestSetupFromAndForbiddenAndAncestor`(SKIP) | 緑 | 本文で確認し実行した(maps2)。`TestSetupFromAndForbiddenAndAncestor` は `from` が空・引用符・空白を含むとき失敗し `reason: from_missing`。root の容器(`test/env/bin/in-linux-root.sh`)で `--- PASS`。ログは scratchpad の `test-maps2-root.log` |
 
 ## 集計(行ごと 14 行)
-- 緑 4 / 一部 4 / 未実行 5(root の分は `make test-adapters-root` で緑。2026-11-04) / 試験なし 0 / 範囲外 1(`--rotate`。D-0177)。
+- 緑 5(maps2 で `from_missing` の題を root の容器で実行して緑) / 一部 4 / 未実行 4(root の分は `make test-adapters-root` で緑。2026-11-04) / 試験なし 0 / 範囲外 1(`--rotate`。D-0177)。
 - 受け口の root と PostgreSQL が要る題は、受入試験の環境でしか緑にならない(この実行で SKIP)。U2a の受け入れの記録(`test/records/U2a/acceptance.md`、`gaps-2026-11-04.md`)に別の実行がある場合は、そちらの結果で上の「未実行」を置き換える(この調査は読んでいない)。

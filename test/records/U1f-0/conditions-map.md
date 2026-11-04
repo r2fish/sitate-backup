@@ -12,7 +12,7 @@
 | 3 標準エラーの制限と秘密の伏せ | `TestRedactForms`、`TestStderrLimitedAndRedacted`、`TestStderrAndSecretsNotInErrors`、`TestStderrTailNeverLost` | 緑 | |
 | 4 kind ごとの時限 | `TestLimitForKinds`、`TestKindTimeoutKillsAfterGrace`、`TestKindTimeoutSigtermStops`、`TestRunDeadlineEarlierThanKindLimit`、`TestKindLimitEarlierThanDeadline`、`TestRunContextCancelled` | 緑 | |
 | 5 `contract` の版の照合 | `TestRunResultContractMismatch`、`TestContractRunnerRunContractMismatch` | 緑 | |
-| 6 終了コードの読み替え | `TestRunExitCodeMapping`、`TestRunExit1NotImplemented`、`TestRunExit1InternalAndAdapterCode`、`TestRunExit1KindSpecificCodeIsAdapterError`、`TestRunExit1AdapterCarriesWholeError` | 緑 | kind `check` を除く扱いは `TestRunExit1NotImplemented` の本文を読んでいない |
+| 6 終了コードの読み替え | `TestRunExitCodeMapping`、`TestRunExit1NotImplemented`、`TestRunExit1InternalAndAdapterCode`、`TestRunExit1KindSpecificCodeIsAdapterError`、`TestRunExit1AdapterCarriesWholeError`、TestMapAdapterErrorNotImplementedExceptKindCheck | 緑 | 本文で確認(maps2)。`TestRunExit1NotImplemented` は kind notify だけ。kind `check` を除く扱いは `TestMapAdapterErrorNotImplementedExceptKindCheck`(`internal/adapter/exitmap_notimpl_test.go`)を足して確認(変異で赤) |
 | 7 子プロセスの環境 | `TestChildEnvIsMinimal`、`TestChildEnvAcquireRecv`、`TestProductBuildDoesNotPassTestVars`(`env_product`)、`TestTestBuildPassesTestVars`(`env_testbuild`、試験ビルドのタグ) | 緑 | `TestTestBuildPassesTestVars` は `-tags sitate_testbuild` の実行で緑 |
 | 8 `adapter.json` の `contract` とスキーマ | `TestRunDeclContractAndSchemaNotStarted`、`TestRunRequestSchemaInvalidNotStarted`、`TestContractRunnerDeclaration` | 緑 | |
 | 9 trusted comment の期待値 | `TestRunTrustedCommentExpectation` | 緑 | |
