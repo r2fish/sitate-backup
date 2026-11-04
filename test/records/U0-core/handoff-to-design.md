@@ -404,3 +404,17 @@ A2 の測定 1 の 1 回目の手順 11 の原因(`test/records/A2/m1-pre.md`)�
 
 - (1) 「署名なしの `apply`」の読み方: 承認の記録が無い変更の `apply` は `CHANGE_STATE_INVALID`(`detail.state` = `proposed`)を返し、6.5 の合格基準の `SIGNATURE_INVALID` にならない(3.1.3 の表の `CHANGE_STATE_INVALID` の文には素直に当たる)。署名を欠いた・壊した `approve` は `SIGNATURE_INVALID` を返す。案 A: (1) を「署名の無い・不正な承認での `approve` と `apply`」と読み、合格基準はそのまま。案 B: 承認の記録が無い `apply` も (1) に含め、合格基準に `CHANGE_STATE_INVALID` を足す。製品の監督の考え: 案 A(実装を変えない)。
 - (2) (3) の「定義ファイルの内容」: 前提のハッシュは `def/approved.json` の `def_hash` から取る。`/etc/sitate/sitate.yaml` を書き換えても、承認済みの変更は適用される。3.1.2.9 の「定義ファイルのハッシュ」を承認済みの定義(`def/approved.json`)と読めば実装と一致する。読み方の確認を頼む。
+
+## 46. 急がない疑義のまとめ(2026-11-04。裁定の依頼)
+
+これまで「急がない」「測定 1 の後」とした疑義をまとめた。実装は今の形(下の「今の形」)で動いている。裁定が今の形と違えば直す。42 節は D-0172・D-0175 で閉じた。43 節は D-0179 で裁定済み(統合の branch で直し中)。
+
+1. (44 から)`status.warnings[]` の `PRICE_UNKNOWN` の `since` が毎回「今」になる。`warnings_since` を書く者が核に無い。今の形: 呼ぶたびに今の時刻。案 A: 今の形のまま(イテレーション 1 は導入の直後だけで差が出ない)。案 B: `status` が初めて当たった時刻を `warnings_since` に書く。
+2. (44 から)対象の失敗の `detail` が、アダプタ由来の一部(`ADAPTER_ERROR` で `Adapter` が無く `detail.adapter_code` だけを持つ誤り)で `error_code` と食い違い得る(`internal/acquire/run_target.go` の `failDetail`)。型付きでない誤りを `INTERNAL` の `component: adapter`、`reason: output` とする扱いも、原因を取り違える恐れがある。今は偽物の経路でだけ起きる。
+3. (45 から)`ReadDef` は `def/approved.json` の `def_hash` を `normalized` から計算し直さない。管理アクセスで `normalized` だけを書き換えても、前提のハッシュは変わらない。今の形: 保存したハッシュを信じる(状態ディレクトリは sitate の 0700)。
+4. (段 3 の (2)〜(5))A6 の N1 は D-0177 で裁定済み(口が無いことを静的に確かめる。`n1-static.test.ts`)。dest に核が無いので、模擬時刻は backup の `sitate version` で確かめ、dest は共有の値のファイルの sha256 で代えた。A7 の部分集合の判定は、表の欄の親の空の入れ物(`error: {}` など)を許す(D-0177 の返事で可)。区画の外の文字は件数だけ(可)。記録のための確認。
+5. (段 13 の (1)(3))A6 (15): `fetch`・`WebSocket` は実行時もエージェントのプロセスに残る。担保は静的検査(`egress-static.test.ts`)と、試験の stderr の送り先の記録。通知の facts の `confirmation_word`(最大 256 文字)は自由な文字列が入る唯一の欄で、核が作る語なので口にならないと読んだ。どちらも D-0177 の後の返事で可。記録のための確認。
+6. (段 1)偽の LLM は DB 名が参照名(`pr:`)だけなので、人の言う「顧客のデータベース」を実名で選べない。実物の LLM も同じ条件で選ぶ(実名を見せない設計)。実物の A2 では、どの DB が対象になったかを記録で確かめる。Q4 の答え(lo の「顧客のデータベース」)と対象が食い違ったとき、A2 の合否にどう数えるか。
+7. (段 7)A6 の (3) の参考の回: `/etc/sitate/sitate.yaml` を書き換えても、承認済みの変更は適用される。D-0176 で読みは確定した。人が `/etc/sitate/sitate.yaml` を直接直したときに、それが反映されないことを人に知らせる文が要るか(製品の説明書か `doctor`)。
+8. (U2a)受け口の root 前提の試験は `make test` では SKIP になる。イメージの定義と make の的を足している(日 7 の再実行用)。`sudo -n` がパスワードを求めるとき・sudo が無いときの `step: sudo`・`sudo_unavailable` は核(U1c)の側で、受け口の試験の範囲外とした。
+9. (U1c)実物の容器での `TestPodmanContainerIsolation` は、入れ子の実行環境(`SITATE_NESTED=1`)が要るので、監督の通しでは SKIP。第 1 段の通し(`SITATE_NESTED=1 make test-mainpath STAGE=1`)では走る。監査の記録にこの理由を書く(D-0178 の (c))。
