@@ -107,3 +107,5 @@ PostgreSQL のデータベースは、ファイルをそのまま写さず、論
 - 調べていない置き場(`/home` と `/srv` の外)は、管理者がチャットで伝えれば対象にできる。
 - 大きさの調査が不完全なときは、大きさと月額が小さめに出ていると伝える。
 - 元サーバーに調査に要る道具が無いときは、人が OS のパッケージ管理で入れる(人の作業が 1 つ増える)。エージェントは入れる命令を示して説明する。
+
+定義の `source.host` は裸のホスト名(`--host` の `ssh://<user>@<host>:<port>` の `<host>` の部分。IPv6 は括弧を外す)。URI・ユーザー・ポートを書かない。書くと定義の検査が `DEF_INVALID`(`/source/host`、`invalid_value`)で止める。`source enroll` が同じ `invalid_value`(`/source/host`)を返したら、`next` は空なので、自分が `def validate` に渡した定義の `source.host` と `--host` の `<host>` を比べ、`--host` を合わせて呼び直す。
