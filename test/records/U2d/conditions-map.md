@@ -8,7 +8,7 @@
 |---|---|---|---|
 | 共通(契約) | `TestContractAdapter` | 緑 | |
 | `stop` の `remaining` が空でない場合の結果の形 | `TestFakeStopRemainingShape`、`TestFakeStopAttribution`、`TestFakeStopOnlyOwnSession`、`TestAcceptStopRemaining`(Accept 系) | 一部 | Fake 系(偽の宛先)は緑。`TestAcceptStopRemaining` は SKIP(受入試験の環境が要る) |
-| D-0159: `host_key_fp` が違う宛先で初期資格情報を使わず `hostkey_mismatch`、省略で初回のホスト鍵を返す(21-F7) | `TestFakeEnrollHostKeyPinMismatch`、`TestFakeEnrollHostKeyPinMatchAndOmitted`、`TestFakeHostKeyPinned` | 緑 | 「偽の宛先が初期資格情報を受けない」確認は題の本文を読んでいない |
+| D-0159: `host_key_fp` が違う宛先で初期資格情報を使わず `hostkey_mismatch`、省略で初回のホスト鍵を返す(21-F7) | `TestFakeEnrollHostKeyPinMismatch`、`TestFakeEnrollHostKeyPinMatchAndOmitted`、`TestFakeHostKeyPinned` | 緑 | 本文で確認(maps2)。`TestFakeEnrollHostKeyPinMismatch` は認証の試行 0 回・セッション 0 回・ホームに何も置かれないことまで確かめる |
 | D-0159: `observed_from`(`SSH_CONNECTION` の先頭、読めなければ `null`。sudo の下でも読める。15-f) | `TestFakeObservedFromReadBeforeSudo`、`TestFakeEnrollNoObservedFrom`、`TestAcceptEnrollObservedFromAndHostKeyPin`(SKIP) | 一部 | 偽の宛先は緑。実機(`Accept`)は SKIP |
 | D-0159: `allow_ssh_from` を省くと受信許可が先頭になる、読めなければ `no_observed_from` | `TestAllowFromRule`、`TestFakeEnrollEmptyAllowIsInvalid`、`TestFakeEnrollNoObservedFrom` | 緑 | |
 | D-0159: `stop` の `remaining` がセッションごと、帰属できない処理、「消去」が除く処理(20-f) | `TestFakeStopAttribution`、`TestFakeInspectSweep`、`TestAcceptStopNeverTouchesOtherResources`(SKIP) | 一部 | 条件が求める「U2d の受け入れで実機の 1 回の `restore-test` の `remaining` を確かめる」は実機の記録(`test/records/U2d/`、本調査は読んでいない) |

@@ -14,10 +14,10 @@
 | e `kit` の結果が `kit_version` と `fields`(フレーズを含まない) | `TestKitFieldsSteps`(`kitfields`)、`TestContractKeysKit`、`TestKeysInitModesAndNoWordsArray` | 緑 | |
 | f `bucket check` の `permissions/<i>/actual` と `expected` の一致 | `TestContractKeysBucketCheck`、`TestKeysBucketMismatchAllRoutes`、`TestContractKeysBucketCheckTooPowerful`、`TestContractKeysBucketCheckUntested` | 緑 | 試験用の MinIO に対する同じ判定は U1f-2 の結合の後(別の記録) |
 | g `KEY_ALLOWS_UNVERSIONED_DELETE`(警告、終了 0) | `TestContractKeysBucketCheckUnversionedDelete`、`contract_keys_bucket_test.go`(155・176 行付近の許す・許さない両方) | 緑 | |
-| h `doctor`(段階 defined)の時刻のずれと、オフセットを与えたときずれと判定しない | `TestContractKeysDoctorTimeSkew`(`contract_keys_cmds`) | 緑 | オフセットを与えた時計の偽物でずれと判定しない部分の専用の題名は特定できなかった(本文を読んでいない) |
-| i 署名の合わないアダプタ・価格表を使わない | `internal/adapter/contract_adapter_test.go`(74・98・101 行付近)、`internal/adapter/trust_run_test.go`、`internal/cli/prices_signed_test.go: TestSignedPricesBadOrMissingSignatureMeansNoTable` | 緑 | 使い捨ての鍵を試験用の信頼の起点に差し込む形は本文を読んでいない |
+| h `doctor`(段階 defined)の時刻のずれと、オフセットを与えたときずれと判定しない | `TestContractKeysDoctorTimeSkew`(`contract_keys_cmds`) | 緑 | 本文で確認(maps2)。`TestContractKeysDoctorTimeSkew` の表に「オフセットを与えた時計(24 時間)は ok」「オフセットの外で進んでいれば外れ」の行がある |
+| i 署名の合わないアダプタ・価格表を使わない | `internal/adapter/contract_adapter_test.go`(74・98・101 行付近)、`internal/adapter/trust_run_test.go`、`internal/cli/prices_signed_test.go: TestSignedPricesBadOrMissingSignatureMeansNoTable` | 緑 | 本文で確認(maps2)。`contract_adapter_test.go` は署名の合わないアダプタを起動せず(印のファイルが無い)宣言も返さない。試験用の鍵を信頼の起点に差し込む形(`newRunner(t, signed, ...)`) |
 | j `check_images` が `ok: true`・`count: 0`、他の要素は `count` を持たない | `internal/cli/osprobe_test.go: TestProbeCheckImagesAndUnknown`、`internal/contract/contract_enums_test.go`(`DoctorCheckImagesCount` が 0)、`TestContractKeysDoctorOSChecks` | 一部 | 「他の要素が `count` を持たない」を確かめる題は特定できなかった |
-| k `doctor` bootstrap 段階が NFS・CIFS・FUSE で `LOCK_UNAVAILABLE` | `TestContractKeysDoctorStateFS`(`contract_keys_doctor`) | 緑 | `statfs` の差し替えか否かは本文を読んでいない |
+| k `doctor` bootstrap 段階が NFS・CIFS・FUSE で `LOCK_UNAVAILABLE` | `TestContractKeysDoctorStateFS`(`contract_keys_doctor`) | 緑 | 本文で確認(maps2)。`OSProbe` の偽物の `FS` に `contract.FSTypesStateForbidden` の各値を与えて `LOCK_UNAVAILABLE`(終了 3)、ext4・xfs・btrfs は ok(`statfs` の差し替えは継ぎ目の偽物) |
 | l `seal` の前は候補を読み、候補が無ければ `DEF_INVALID` | `TestKeysInitNeedsCandidateDefinition`、`TestBucketCheckWithoutKeyRefUsesCandidateStorageKeyRef`、`TestBucketCheckWithoutKeyRefAndWithoutCandidateIsDefInvalid`、`TestContractKeysInitStorageNoCandidate` | 緑 | |
 | m Argon2id のパラメータを定数の名前で参照し、キーリングに記録 | `internal/format/contract_format_test.go: TestContractCryptoArgon2id`、`internal/format/format_test.go: TestArgon2idParamsMatter`、`TestContractKeysPhraseVerifyKeyringVersion` | 一部 | 「定数の名前で参照する(数値を直書きしない)」は `make lint-size` ではなく `internal/contract` の定数の検査の範囲。この表では確かめていない |
 | n フレーズは BIP-39 で 24 語 | `TestKeysInitModesAndNoWordsArray`、`internal/restore/contract_restore_test` 側の語数の題は特定できなかった | 一部 | BIP-39 の語彙表そのものを確かめる題は特定できなかった(24 語の長さの確認までを `contract_keys_test.go` が持つかは未読) |
@@ -34,4 +34,4 @@
 ## 集計(行ごと 24 行)
 - 緑 16 / 一部 5(共通・j・m・n・t) / 未実行 1(u) / 試験なし 0 / 範囲外 2(o・v。イテレーション 3)。
 - 範囲外: o(`secrets set`)と v(`init --adopt` が渡す定義)は、仕様 8.2 の U1g のイテレーション 3 の行(設計の監督の返事、2026-11-04)。
-- 本文を読まずに題名だけで対応づけた行(h・i・k・m)は、受け入れの前に題の本文の確認が要る。
+- maps2 で h・i・k の本文を確認した(m は未確認)。
