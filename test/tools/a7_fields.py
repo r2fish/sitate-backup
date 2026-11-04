@@ -158,17 +158,22 @@ def check_fields(paths, table_path, names_path):
     return out
 
 
-def report_fields(r, names_given):
-    """判定の行(件数と Pointer だけ。値は出さない)を返し、(行, 合否) を返す。"""
+def report_fields(r, names_given, allow_empty=False):
+    """判定の行(件数と Pointer だけ。値は出さない)を返し、(行, 合否, 対象なし) を返す。
+    区画が 0 個の記録は、allow_empty(引数で指定した A6 の記録だけ。D-0199)なら「対象なし」として通し、そうでなければ FAIL。"""
     lines, ok = [], True
     viol = sorted(set(r["violations"]))
+    empty = r["unique_blocks"] == 0
     lines.append(f"A7-2 llm_request={r['requests']} 区画(重複除く)={r['unique_blocks']} 解析不能の区画={r['unparsable_blocks']} 本文を省いた記録={r['truncated_bodies']}")
-    lines.append(f"A7-2 表に無い欄(サブコマンド, Pointer)の種類={len(viol)} " + ("PASS" if not viol and r["unique_blocks"] > 0 else "FAIL"))
+    if empty and allow_empty:
+        lines.append("A7-2 表に無い欄(サブコマンド, Pointer) 対象なし(区画 0 個。--allow-empty で指定した記録)")
+    else:
+        lines.append(f"A7-2 表に無い欄(サブコマンド, Pointer)の種類={len(viol)} " + ("PASS" if not viol and not empty else "FAIL"))
     for cmd, p in viol:
         lines.append(f"  violation {cmd} {p}")
     lines.append(f"A7-2 path_ref の欄が pr:<16 桁> でない={len(set(r['path_ref_bad']))} " + ("PASS" if not r["path_ref_bad"] else "FAIL"))
     lines.append(f"A7-2 参考: 区画の外に文字を持つ文字列={r['outside_text_strings']}(区画の外に文は置かない規則。件数だけ)")
-    ok &= not viol and r["unique_blocks"] > 0 and not r["path_ref_bad"] and r["unparsable_blocks"] == 0 and r["truncated_bodies"] == 0
+    ok &= not viol and (not empty or allow_empty) and not r["path_ref_bad"] and r["unparsable_blocks"] == 0 and r["truncated_bodies"] == 0
     if names_given:
         lines.append(f"A7-3 期待値の名前={r['names_checked']} 一致した名前={len(r['name_hits'])} " + ("PASS" if not r["name_hits"] and r["names_checked"] > 0 else "FAIL"))
         for i, (_, c) in enumerate(r["name_hits"], 1):
@@ -181,4 +186,4 @@ def report_fields(r, names_given):
     lines.append(f"A7-4 使用したモデル名={models} model 欄が空の送信={r['no_model']} " + ("PASS" if models and not r["no_model"] else "FAIL"))
     ok &= bool(models) and not r["no_model"]
     lines.append(f"A7 表示した応答={r['displayed']} 表示しなかった応答={r['withheld']}(件数だけ。判定に数えない)")
-    return lines, ok
+    return lines, ok, empty and allow_empty and ok

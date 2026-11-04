@@ -4,6 +4,8 @@
   check_a7.py fields --records <record.jsonl|dir>... --send-fields app/src/data/send-fields.json --names <期待値の JSON>
       (i) 送った欄の JSON Pointer の集合が送る欄の表の部分集合、(ii) 個人名入りの名前の一致、使用したモデル名、
       表示しなかった応答の件数。--names は test/env/.run/accept-<NAME>/expect/source.json(accept-env.sh up が書く)。
+      --allow-empty <path>...: 区画が 0 個でも「対象なし」として通す記録(A6 だけ。D-0199)。--records の全部が
+      この一覧に入るときだけ効き、A2 の記録で区画が 0 個なら FAIL のまま。
   <秘密の値を標準入力へ> | check_a7.py secrets --records <path>...
       秘密の値(1 行 1 値、8 文字以上)をそのままと base64 で検索。値は標準入力だけで受け、件数だけを出す。
       例(利用者のターミナル): read -rs K; printf '%s\\n' "$K" | check_a7.py secrets --records test/acceptance/records; unset K
@@ -28,6 +30,7 @@ def main():
     f.add_argument("--records", nargs="+", required=True)
     f.add_argument("--send-fields", required=True)
     f.add_argument("--names")
+    f.add_argument("--allow-empty", nargs="+", default=[])
     s = sub.add_parser("secrets")
     s.add_argument("--records", nargs="+", required=True)
     r = sub.add_parser("redact")
@@ -37,9 +40,11 @@ def main():
     try:
         if a.cmd == "fields":
             res = a7_fields.check_fields(a.records, a.send_fields, a.names)
-            lines, ok = a7_fields.report_fields(res, bool(a.names))
+            allowed = {os.path.realpath(x) for x in a.allow_empty}
+            allow_empty = bool(allowed) and all(os.path.realpath(x) in allowed for x in a.records)
+            lines, ok, empty = a7_fields.report_fields(res, bool(a.names), allow_empty)
             print("\n".join(lines))
-            print("A7 fields " + ("PASS" if ok else "FAIL"))
+            print("A7 fields " + ("対象なし" if empty else "PASS" if ok else "FAIL"))
             return 0 if ok else 1
         if a.cmd == "secrets":
             return a7_secrets.cmd_secrets(a.records)
