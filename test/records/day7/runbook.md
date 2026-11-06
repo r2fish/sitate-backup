@@ -20,8 +20,8 @@
 | 1 | 監督 | main の最終の作業ツリー | `make test`・`make test-app`・`make contract-status` | 集計行(README の【日 7 に入れる】の値の出どころ)。赤なら止まる |
 | 2 | 監督 | 同 | evidence-auditor(受け入れパケット)を起動 | 充足 / 未充足 / 証拠不足。未充足があれば止まって利用者と設計の監督へ |
 | 3 | 監督 | 同 | `make build`(製品) | 終了 0。`dist/product/bundle/<版>/` に `linux-arm64`・`linux-x86_64`・`prices`・ソースのアーカイブ・SBOM |
-| 4 | 利用者 | 自分のターミナル(Claude Code を起動していないもの)で、リポジトリの根 | `SECRET_KEY=<秘密鍵の絶対パス> PUBLIC_KEY_FILE=<公開鍵の絶対パス> make sign` | パスワードを 1 回だけ聞かれる。最後の行に署名の件数。失敗の行が出たら止まって監督へ貼る |
-| 5 | 監督 | main | `PUBLIC_KEY_FILE=<公開鍵の絶対パス> make build-app` | `build-app: product -> …`。試験用ドライバの混入の検査で失敗しないこと |
+| 4 | 利用者 | 自分のターミナル(Claude Code を起動していないもの)で、リポジトリの根 | `SECRET_KEY=<秘密鍵の絶対パス> PUBLIC_KEY_FILE=<公開鍵の絶対パス> make sign` | パスワードを 1 回だけ聞かれる。最後の行に署名の件数。失敗の行が出たら止まって監督へ貼る。**先に、公開鍵のファイルの 2 行目が `internal/contract/trust_product.go` の `DistributionPublicKey` と同じであることを確かめる**(`make sign` も `make build-app` も、この一致を確かめない。`make sign` が確かめるのは、秘密鍵と `PUBLIC_KEY_FILE` が組であることだけ(`tools/sign.sh:92`)。違う組で署名すると、両方とも通るが、核は配布物の署名を受け付けない。11/7 に新しい組を作ってしまいかけた) |
+| 5 | 監督 | main | `PUBLIC_KEY_FILE=<公開鍵の絶対パス> make build-app` | `build-app: product -> …`。試験用ドライバの混入の検査で失敗しないこと。監督が `app/dist/embedded-keys.json` の `keys` が `DistributionPublicKey` だけであることを確かめる |
 | 6 | 監督 | main | README の【日 7 に入れる】を 1 の集計行とその時点の git から埋め、`Submission:` の commit(D-0141) | 受入試験の環境と提出 branch をここで一致させて止める |
 | 7 | 監督・利用者 | 6 の commit | 動画の場面 4〜6 を撮る(案 D。D-0208。下の「動画の撮影(案 D)」) | 撮影の後、down の前に A7 を流し、`Docs:` で記録に足す |
 
