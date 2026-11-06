@@ -49,6 +49,8 @@
 
 撮るのは 6 の `Submission:` の commit の後。製品のコードは `f9fa3d8` から変えていないので、試験ビルドは測定 4 と同じものになる。
 
+- 2026-11-06 に前へ動かして撮った(利用者の希望、設計の監督が了承。記録は `test/records/day7/video-2026-11-06.md`)。日 7 の 7 の段は、提出までに `Fix:` で製品のコードが変わったときだけ、変わった場面を下の手順で撮り直す。A7 もそのときだけ行う。
+
 1. 監督: accept の worktree の追跡されていない記録(`test/acceptance/records/A2/`・`A6/`。縮める前の元の記録)をリポジトリの外の置き場へ移す(6 の commit には縮めた記録が同じパスにあるので、移さないと checkout が止まる。元の記録は受け入れ監査が済むまで残す)。accept の worktree を 6 の commit に合わせ(`git checkout --detach <6 の commit>`)、`make build-test sign-test build-app-test` を流す。`dist/test/install.md.orig.sha256` が `docs/install.md` の sha256 と一致することを確かめる。`make build-app-test` は `app/dist` を試験ビルドで上書きするので、main の作業ツリーの製品ビルド(5 の成果物)とは別の worktree で行う。
 2. 場面 4・5(A2。変種 `add`): 監督が `accept-env.sh up <NAME> --variant add` と `prepare-a2 <NAME>` を流す。利用者が新しいバケットで、`test/acceptance/launch.md` の A2 の行を流す。`--out` は `test/acceptance/records/video/A2/`。
 3. 場面 6(A6): 監督が A6 用の環境を起こす(`accept-env.sh up`、`LOCK_DEFAULT_DAYS=90 make test-env-up`、`prep.sh`・`prepare-a2`、偽の LLM で A2 を `seal` まで、`inject-env.sh`。測定 4 の A6 と同じ。`test/records/A6/real-m4-2026-11-05.md` の冒頭)。利用者が A6 の行を流す。`--out` は `test/acceptance/records/video/A6/`。
