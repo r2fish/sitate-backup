@@ -9,7 +9,7 @@
 import { build } from "esbuild";
 import { createHash } from "node:crypto";
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
-import { dirname, join, relative, resolve } from "node:path";
+import { dirname, join, relative, resolve, sep } from "node:path";
 import { parseArgs } from "node:util";
 
 const { values } = parseArgs({ options: { mode: { type: "string" }, "pubkey-file": { type: "string" }, "bundle-dir": { type: "string" }, version: { type: "string" }, out: { type: "string", default: "dist" } } });
@@ -68,7 +68,8 @@ writeFileSync(join(out, "package.json"), JSON.stringify({ type: "commonjs" }));
 writeFileSync(join(out, "embedded-keys.json"), JSON.stringify({ kind: values.mode, keys }));
 
 if (!isTest) {
-  const leaked = walk(out).filter((f) => /\.(js|json)$/.test(f)).filter((f) => /startDriverServer|driver-server|SITATE_TEST_DRIVER_SOCKET|SITATE_TEST_KEYCHAIN/.test(readFileSync(f, "utf8")));
+  // 写した同梱物(bundle/)は署名を確かめ済みの核の配布物で、SBOM はソースのファイル名として driver-server を挙げる。調べるのは束ねたアプリの成果物だけ。
+  const leaked = walk(out).filter((f) => /\.(js|json)$/.test(f) && !f.startsWith(join(out, "bundle") + sep)).filter((f) => /startDriverServer|driver-server|SITATE_TEST_DRIVER_SOCKET|SITATE_TEST_KEYCHAIN/.test(readFileSync(f, "utf8")));
   if (leaked.length > 0) fail("製品の成果物に試験用ドライバが入っている: " + leaked.join(", "));
 }
 console.log(`build-app: ${values.mode} -> ${out}`);

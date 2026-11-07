@@ -15,6 +15,9 @@ test("build-app: 製品に試験用ドライバが入らず、署名の無い同
     mkdirSync(join(dir, "bd"));
     writeFileSync(join(dir, "bd", "manual.md"), "x");
     writeFileSync(join(dir, "bd", "manual.md.sig"), "x");
+    // 同梱物の SBOM はソースのファイル名として driver-server を挙げる。束ねたアプリの成果物ではないので、製品のビルドを止めない。
+    writeFileSync(join(dir, "bd", "s.spdx.json"), JSON.stringify({ fileName: "./app/src/testing/driver-server.ts" }));
+    writeFileSync(join(dir, "bd", "s.spdx.json.sig"), "x");
     writeFileSync(join(dir, "pk.txt"), Buffer.concat([Buffer.from("Ed"), Buffer.alloc(40, 7)]).toString("base64") + "\n");
     const run = (mode: string, out: string) => spawnSync(process.execPath, [script, "--mode", mode, "--pubkey-file", join(dir, "pk.txt"), "--bundle-dir", join(dir, "bd"), "--out", join(dir, out)], { encoding: "utf8" });
     assert.equal(run("product", "p").status, 0);
