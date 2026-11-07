@@ -83,6 +83,10 @@
 
 - `make test`: 終了 0、`ok` のパッケージ 73。`make test-app`: 終了 0、`ℹ pass 372`・`ℹ fail 0`・`ℹ skipped 0`。`make contract-status`: 終了 0、全 WP で未実装 0・その他 0(skip は U1e 1・U1f-1 2・U1g 3)。
 
+## 日 7 の 1(2026-11-08、監督。HEAD e39f19d の後の作業ツリー。製品のコードは 2fbea95 と同じ)
+
+- `make test`(`test/env/bin/in-linux.sh 'GOFLAGS=-count=1 make _test'`。`make test` の入口は GOFLAGS をコンテナへ渡さず、61 パッケージがキャッシュの結果だったので流し直した): 終了 0、`ok` のパッケージ 73、`FAIL` 0、`(cached)` 0。`make test-app`: 終了 0、`ℹ tests 372`・`ℹ pass 372`・`ℹ fail 0`・`ℹ skipped 0`。`make contract-status`: 終了 0、全 WP で未実装 0・その他 0。
+
 ## README の【日 7 に入れる】の値の出どころ
 
 | 印 | 取る場所 |
