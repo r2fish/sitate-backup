@@ -147,7 +147,7 @@ A2 の「分からないまま答えを求めた問い」は、問いの観測�
 | 期間中の実装の日数 | 4 日(最初の commit `784e3ca` の 11/2 から、最後に製品のコードが変わった `f9fa3d8` の 11/5 まで。以後の commit は文書・記録と、同じ 11/5 に足した受入試験の記録の道具(`test/tools/`)と、11/7 のアプリの組み立ての道具の検査の直し(`app/scripts/build-app.mjs`。製品ビルドで、写した同梱物の SBOM を試験用ドライバの混入と誤って判定していた。核とアプリのコードは変えていない)だけ) |
 | 最初の commit の中身 | 459 ファイル・61,781 行。うち 43,555 行は、期間中に仕様書から書き起こした契約(`internal/contract/`。JSON Schema 23,815 行、試験の例 9,426 行、偽物と試験の道具など)。各部品は `NOT_IMPLEMENTED` を返す骨格で、実装はその後の commit |
 | 作業パッケージ(WP)の数 | 作業指示書 4 章の表で 23(U4 の下書きと確定、受入試験を含む)。WP ごとの受け入れの記録の置き場は 21(`test/records/U*`。枝分けした `U1g-kit`・`U3a-card` を除く) |
-| commit の数 | 【日 7 に入れる: 提出の commit までの数と、そのうち `Co-Authored-By` の行のある数(git から取る)】 |
+| commit の数 | 249(最初の commit から、この行を入れた提出の `Submission:` の commit 自身までを数える。`git rev-list --count HEAD`)。そのうち `Co-Authored-By` の行のあるものは 235。無い 14 は、作業の branch を統合したときの merge の commit |
 | 試験の数 | `make test` は `ok` のパッケージ 73(Go の試験は 1 つの数にまとまらないのでパッケージで数える)。`make test-app` は tests 372。どちらも 2026-11-08 に、キャッシュを使わずに流して失敗 0 と skip 0 |
 | 往復の回数 | 3 回。A2 の測定は 1〜4 の 4 回(各 3 回)で、測定 1・2・3 のそれぞれの後に、規則ファイル・説明書・手順書・アプリを直して測り直した(`test/records/A2/m1-pre.md`〜`m4.md`、下の「作りながら変えたこと」) |
 | 役割エージェントの起動 | 期間中(11/2 12:00 から 11/8 04:10 まで)に、製品の側 140 回(implementer 101・reviewer 26・observer 6・evidence-auditor 3・drafter 2・reader 2)、設計の側 62 回(reviewer 41・drafter 9・researcher 7・reader 5)。道具の呼び出しの id で重複を除き、起動済みのエージェントの再開は数えていない |
